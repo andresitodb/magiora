@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import {
+  isStaleSubscriptionEvent,
+  subscriptionProfileId,
+} from '@/lib/stripeSubscription';
 
 function getWebhookClients() {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -54,7 +58,10 @@ export async function POST(request: NextRequest) {
         const sub = await stripe.subscriptions.retrieve(
           session.subscription as string
         );
-        const profileId = session.metadata?.profile_id ?? sub.metadata.profile_id;
+        const profileId = subscriptionProfileId(
+          session.metadata?.profile_id,
+          sub.metadata.profile_id
+        );
         if (!profileId) break;
         const subscriptionItem = sub.items.data[0];
         if (!subscriptionItem) break;
@@ -107,8 +114,10 @@ export async function POST(request: NextRequest) {
             .maybeSingle();
         if (storedLookupError) throw storedLookupError;
         if (
-          storedSubscription?.stripe_subscription_id &&
-          storedSubscription.stripe_subscription_id !== sub.id
+          isStaleSubscriptionEvent(
+            storedSubscription?.stripe_subscription_id,
+            sub.id
+          )
         ) {
           break;
         }

@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { castingApplicationIssue } from '@/lib/castingEligibility';
 
 export async function postCastingCall(formData: FormData) {
   const supabase = await createClient();
@@ -31,7 +32,7 @@ export async function postCastingCall(formData: FormData) {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const insertData: any = {
+  const insertData: Record<string, unknown> = {
     posted_by: user.id,
     status,
     project_title: formData.get('project_title') as string,
@@ -105,10 +106,6 @@ export async function applyCastingCall(formData: FormData) {
     .eq('id', user.id)
     .single();
 
-  if (profile?.plan !== 'member') {
-    redirect(errorRedirect('A Member subscription is required to apply.'));
-  }
-
   const { data: call } = await supabase
     .from('casting_calls')
     .select('id, status, posted_by, application_deadline')
@@ -118,30 +115,21 @@ export async function applyCastingCall(formData: FormData) {
   if (!call) {
     redirect('/casting-calls?error=call_not_found');
   }
-  if (call.status !== 'open') {
-    redirect(errorRedirect('This casting call is not open for applications.'));
-  }
-  if (call.posted_by === user.id) {
-    redirect(errorRedirect('You cannot apply to your own casting call.'));
-  }
-  if (call.application_deadline) {
-    const deadlineValue = call.application_deadline.includes('T')
-      ? call.application_deadline
-      : `${call.application_deadline}T23:59:59.999`;
-    const deadline = new Date(deadlineValue);
-    if (!Number.isNaN(deadline.getTime()) && deadline.getTime() < Date.now()) {
-      redirect(errorRedirect('The application deadline has passed.'));
-    }
-  }
-
   const { data: existingApplication } = await supabase
     .from('applications')
     .select('id')
     .eq('casting_call_id', callId)
     .eq('applicant_id', user.id)
     .maybeSingle();
-  if (existingApplication) {
-    redirect(errorRedirect('You have already applied to this casting call.'));
+  const eligibilityIssue = castingApplicationIssue({
+    isMember: profile?.plan === 'member',
+    status: call.status,
+    isOwner: call.posted_by === user.id,
+    applicationDeadline: call.application_deadline,
+    alreadyApplied: Boolean(existingApplication),
+  });
+  if (eligibilityIssue) {
+    redirect(errorRedirect(eligibilityIssue));
   }
 
   const { error } = await supabase.from('applications').insert({

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { normalizeNotification } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,42 +24,10 @@ export async function GET() {
     .is('read_at', null);
 
   // Normalize: flatten payload fields into top-level for the client
-  const notifications = (rows ?? []).map((r: any) => ({
-    id: r.id,
-    type: r.type,
-    title: r.payload?.title ?? defaultTitle(r.type),
-    body: r.payload?.body ?? null,
-    related_id:
-      r.payload?.related_id ??
-      r.payload?.call_id ??
-      r.payload?.interview_id ??
-      r.payload?.event_id ??
-      r.payload?.application_id ??
-      r.payload?.story_id ??
-      null,
-    read_at: r.read_at,
-    created_at: r.created_at,
-  }));
+  const notifications = (rows ?? []).map(normalizeNotification);
 
   return Response.json({
     notifications,
     unreadCount: unreadCount ?? 0,
   });
-}
-
-function defaultTitle(type: string): string {
-  switch (type) {
-    case 'casting_call_match':
-      return 'New casting call match';
-    case 'interview_invited':
-      return 'You were invited for an interview';
-    case 'application_status_changed':
-      return 'Application update';
-    case 'event_reminder':
-      return 'Upcoming event';
-    case 'story_published':
-      return 'Your story was published';
-    default:
-      return 'Notification';
-  }
 }

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:sprint-1.5": "node --experimental-strip-types --test tests/sprint-1-5.test.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
