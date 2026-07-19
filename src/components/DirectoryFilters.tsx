@@ -1,0 +1,155 @@
+'use client';
+
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useTransition, useEffect } from 'react';
+import { LANGUAGES } from '@/lib/languages';
+import RoleAutocomplete from '@/components/RoleAutocomplete';
+import CityAutocomplete from '@/components/CityAutocomplete';
+
+const PINNED_LANGS = ['en', 'es'];
+
+export default function DirectoryFilters({
+  roleFilters,
+  knownCities,
+  currentRole,
+  currentCity,
+  currentLang,
+  currentQuery,
+  currentVerified,
+}: {
+  roleFilters: { value: string; label: string }[];
+  knownCities: string[];
+  currentRole: string;
+  currentCity: string;
+  currentLang: string;
+  currentQuery: string;
+  currentVerified: boolean;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
+
+  const [q, setQ] = useState(currentQuery);
+
+  useEffect(() => {
+    setQ(currentQuery);
+  }, [currentQuery]);
+
+  function pushFilter(updates: Record<string, string | null>) {
+    const next = new URLSearchParams(searchParams.toString());
+    for (const [k, v] of Object.entries(updates)) {
+      if (v === null || v === '') next.delete(k);
+      else next.set(k, v);
+    }
+    startTransition(() => {
+      router.push(`/directory?${next.toString()}`);
+    });
+  }
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (q !== currentQuery) pushFilter({ q: q || null });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sort roles alphabetically by label
+  const sortedRoles = [...roleFilters].sort((a, b) => a.label.localeCompare(b.label));
+
+  const sortedLangs = [
+    ...PINNED_LANGS.map((c) => LANGUAGES.find((l) => l.code === c)).filter(
+      (language): language is (typeof LANGUAGES)[number] => language !== undefined
+    ),
+    ...[...LANGUAGES]
+      .filter((l) => !PINNED_LANGS.includes(l.code))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  ];
+
+  const hasAnyFilter = currentRole || currentCity || currentLang || currentQuery || currentVerified;
+
+  return (
+    <div className="bg-white border border-stone-200 rounded-md p-5 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-1 italic font-serif">
+            Search by name
+          </label>
+          <input
+            type="text"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Type a name..."
+            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-1 italic font-serif">
+            Role
+          </label>
+          <RoleAutocomplete
+            options={sortedRoles}
+            currentValue={currentRole}
+            onChange={(value) => pushFilter({ role: value || null })}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-1 italic font-serif">
+            City
+          </label>
+          <CityAutocomplete
+            defaultValue={currentCity}
+            knownCities={knownCities}
+            onChange={(value) => pushFilter({ city: value || null })}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-1 italic font-serif">
+            Language
+          </label>
+          <select
+            value={currentLang}
+            onChange={(e) => pushFilter({ lang: e.target.value || null })}
+            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white text-sm cursor-pointer"
+          >
+            <option value="">Any language</option>
+            {sortedLangs.map((l: any) => (
+              <option key={l.code} value={l.code}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={currentVerified}
+            onChange={(e) => pushFilter({ verified: e.target.checked ? '1' : null })}
+            className="w-4 h-4 cursor-pointer accent-[#712B13]"
+          />
+          <span className="text-sm font-serif text-stone-700 flex items-center gap-1.5">
+            Only show verified
+            <span className="inline-flex w-4 h-4 bg-[#712B13] text-white rounded-full text-[10px] items-center justify-center font-bold">
+              ✓
+            </span>
+          </span>
+        </label>
+
+        {hasAnyFilter && (
+          <button
+            type="button"
+            onClick={() => router.push('/directory')}
+            className="text-xs text-stone-500 italic font-serif hover:text-[#712B13] cursor-pointer"
+          >
+            Clear all filters →
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

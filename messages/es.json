@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "profile": "Perfil",
+    "my_calls": "Mis Castings",
+    "browse": "Explorar",
+    "casting_calls": "Castings",
+    "events": "Eventos",
+    "stories": "Historias",
+    "pricing": "Precios",
+    "sign_in": "Ingresar",
+    "sign_up": "Unirme",
+    "sign_out": "Salir"
+  },
+  "login": {
+    "kicker": "Bienvenido de vuelta",
+    "title": "Ingresar",
+    "subtitle": "Continuá donde lo dejaste.",
+    "email": "Email",
+    "password": "Contraseña",
+    "submit": "Ingresar",
+    "forgot": "¿Olvidaste tu contraseña?",
+    "no_account": "¿No tenés cuenta?",
+    "sign_up": "Unirme gratis →"
+  },
+  "signup": {
+    "kicker": "Comenzá",
+    "title": "Creá tu cuenta",
+    "subtitle": "Listado gratis en el directorio. Mejorás cuando quieras.",
+    "email": "Email",
+    "password": "Contraseña",
+    "submit": "Crear cuenta",
+    "has_account": "¿Ya tenés cuenta?",
+    "sign_in": "Ingresar →"
+  },
+  "forgot": {
+    "kicker": "Recuperar cuenta",
+    "title": "¿Olvidaste tu contraseña?",
+    "subtitle": "Ingresá tu email y te mandamos un link para crear una nueva.",
+    "email": "Email",
+    "submit": "Enviar link",
+    "back": "← Volver a ingresar",
+    "sent_title": "Revisá tu email",
+    "sent_body": "Si existe una cuenta con ese email, te mandamos un link para restablecer tu contraseña. El link vence en una hora."
+  },
+  "reset": {
+    "kicker": "Nueva contraseña",
+    "title": "Definí una contraseña nueva",
+    "subtitle": "Elegí algo que recuerdes.",
+    "password": "Nueva contraseña",
+    "confirm": "Confirmar contraseña",
+    "submit": "Actualizar contraseña"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "back": "Volver",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "submit": "Enviar",
+    "loading": "Cargando..."
+  }
+}

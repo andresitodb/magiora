@@ -1,0 +1,55 @@
+{
+  "nav": {
+    "casting_calls": "Casting calls",
+    "members": "Members",
+    "releases": "Releases",
+    "events": "Events",
+    "pricing": "Pricing",
+    "sign_in": "Sign in",
+    "sign_up": "Sign up",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "my_calls": "My calls",
+    "browse": "Browse",
+    "admin": "Admin",
+    "sign_out": "Sign out"
+  },
+  "home": {
+    "tagline_label": "Issue No. 1",
+    "tagline": "A working directory for indie cinema's actors, directors, and crew.",
+    "join_cta": "Join the directory",
+    "browse_cta": "Browse casting calls",
+    "now_open_label": "Now open",
+    "featured_calls": "Featured casting calls",
+    "featured_members": "Featured members"
+  },
+  "auth": {
+    "sign_in_title": "Welcome back",
+    "sign_up_title": "Join Kinora",
+    "email": "Email",
+    "password": "Password",
+    "display_name": "Display name",
+    "primary_role": "Primary role",
+    "create_account": "Create account",
+    "no_account": "No account yet?",
+    "have_account": "Already a member?"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "your_profile": "Your profile",
+    "edit_profile": "Edit profile",
+    "your_activity": "Your activity"
+  },
+  "pricing": {
+    "label": "Membership",
+    "title": "Join Kinora",
+    "subtitle": "A working directory for indie cinema's actors, directors, and crew.",
+    "listed_plan": "Listed",
+    "listed_price_unit": "Forever",
+    "member_plan": "Member",
+    "member_subtitle": "Full access",
+    "per_month": "per month",
+    "or_annual": "or",
+    "annual_suffix": "/year"
+  }
+}

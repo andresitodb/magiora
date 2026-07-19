@@ -1,0 +1,55 @@
+{
+  "nav": {
+    "casting_calls": "Castings",
+    "members": "Miembros",
+    "releases": "Estrenos",
+    "events": "Eventos",
+    "pricing": "Membresía",
+    "sign_in": "Iniciar sesión",
+    "sign_up": "Registrarse",
+    "dashboard": "Panel",
+    "profile": "Perfil",
+    "my_calls": "Mis castings",
+    "browse": "Explorar",
+    "admin": "Admin",
+    "sign_out": "Cerrar sesión"
+  },
+  "home": {
+    "tagline_label": "Número 1",
+    "tagline": "Un directorio activo para actores, directores y crew del cine independiente.",
+    "join_cta": "Sumate al directorio",
+    "browse_cta": "Ver castings",
+    "now_open_label": "Abiertos ahora",
+    "featured_calls": "Castings destacados",
+    "featured_members": "Miembros destacados"
+  },
+  "auth": {
+    "sign_in_title": "Bienvenido de vuelta",
+    "sign_up_title": "Sumate a Kinora",
+    "email": "Email",
+    "password": "Contraseña",
+    "display_name": "Nombre visible",
+    "primary_role": "Rol principal",
+    "create_account": "Crear cuenta",
+    "no_account": "¿Sin cuenta?",
+    "have_account": "¿Ya sos miembro?"
+  },
+  "dashboard": {
+    "welcome": "Bienvenido de vuelta",
+    "your_profile": "Tu perfil",
+    "edit_profile": "Editar perfil",
+    "your_activity": "Tu actividad"
+  },
+  "pricing": {
+    "label": "Membresía",
+    "title": "Sumate a Kinora",
+    "subtitle": "Un directorio activo para actores, directores y crew del cine independiente.",
+    "listed_plan": "Listado",
+    "listed_price_unit": "Para siempre",
+    "member_plan": "Miembro",
+    "member_subtitle": "Acceso completo",
+    "per_month": "por mes",
+    "or_annual": "o",
+    "annual_suffix": "/año"
+  }
+}

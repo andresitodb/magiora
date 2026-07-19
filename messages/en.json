@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "my_calls": "My Casting",
+    "browse": "Browse",
+    "casting_calls": "Casting Calls",
+    "events": "Events",
+    "stories": "Stories",
+    "pricing": "Pricing",
+    "sign_in": "Sign in",
+    "sign_up": "Join",
+    "sign_out": "Sign out"
+  },
+  "login": {
+    "kicker": "Welcome back",
+    "title": "Sign in",
+    "subtitle": "Continue where you left off.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "forgot": "Forgot password?",
+    "no_account": "Don't have an account?",
+    "sign_up": "Join free →"
+  },
+  "signup": {
+    "kicker": "Get started",
+    "title": "Create your account",
+    "subtitle": "Free directory listing. Upgrade anytime.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Create account",
+    "has_account": "Already have an account?",
+    "sign_in": "Sign in →"
+  },
+  "forgot": {
+    "kicker": "Account recovery",
+    "title": "Forgot your password?",
+    "subtitle": "Type your email and we'll send you a link to set a new one.",
+    "email": "Email",
+    "submit": "Send reset link",
+    "back": "← Back to sign in",
+    "sent_title": "Check your email",
+    "sent_body": "If an account exists for that address, we sent a reset link. The link expires in one hour."
+  },
+  "reset": {
+    "kicker": "New password",
+    "title": "Set a new password",
+    "subtitle": "Choose something you'll remember.",
+    "password": "New password",
+    "confirm": "Confirm password",
+    "submit": "Update password"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "edit": "Edit",
+    "delete": "Delete",
+    "submit": "Submit",
+    "loading": "Loading..."
+  }
+}
