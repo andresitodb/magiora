@@ -16,6 +16,7 @@ export default function DirectoryFilters({
   currentLang,
   currentQuery,
   currentVerified,
+  currentSort,
 }: {
   roleFilters: { value: string; label: string }[];
   knownCities: string[];
@@ -24,6 +25,7 @@ export default function DirectoryFilters({
   currentLang: string;
   currentQuery: string;
   currentVerified: boolean;
+  currentSort: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,7 +64,22 @@ export default function DirectoryFilters({
       .sort((a, b) => a.name.localeCompare(b.name)),
   ];
 
-  const hasAnyFilter = currentRole || currentCity || currentLang || currentQuery || currentVerified;
+  const activeFilters = [
+    currentQuery && { key: 'q', label: `Search: ${currentQuery}` },
+    currentRole && {
+      key: 'role',
+      label: roleFilters.find((role) => role.value === currentRole)?.label ?? currentRole,
+    },
+    currentCity && { key: 'city', label: currentCity },
+    currentLang && {
+      key: 'lang',
+      label: LANGUAGES.find((language) => language.code === currentLang)?.name ?? currentLang,
+    },
+    currentVerified && { key: 'verified', label: 'Verified' },
+  ].filter(
+    (filter): filter is { key: string; label: string } => Boolean(filter)
+  );
+  const hasAnyFilter = activeFilters.length > 0;
 
   return (
     <div className="bg-white border border-stone-200 rounded-md p-5 space-y-4">
@@ -121,7 +138,7 @@ export default function DirectoryFilters({
         </div>
       </div>
 
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-end justify-between flex-wrap gap-3">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -137,6 +154,20 @@ export default function DirectoryFilters({
           </span>
         </label>
 
+        <label className="text-xs font-medium text-stone-600 italic font-serif">
+          Sort
+          <select
+            value={currentSort}
+            onChange={(event) => pushFilter({ sort: event.target.value })}
+            className="block mt-1 px-3 py-2 border border-stone-300 rounded-md bg-white text-sm not-italic cursor-pointer"
+          >
+            <option value="relevance">Relevance</option>
+            <option value="newest">Newest</option>
+            <option value="verified">Verified first</option>
+            <option value="name">Name</option>
+          </select>
+        </label>
+
         {hasAnyFilter && (
           <button
             type="button"
@@ -147,6 +178,26 @@ export default function DirectoryFilters({
           </button>
         )}
       </div>
+
+      {activeFilters.length > 0 && (
+        <div className="pt-3 border-t border-stone-100 flex flex-wrap items-center gap-2">
+          <span className="text-xs italic font-serif text-stone-500">Active:</span>
+          {activeFilters.map((filter) => (
+            <button
+              key={filter.key}
+              type="button"
+              onClick={() => {
+                if (filter.key === 'q') setQ('');
+                pushFilter({ [filter.key]: null });
+              }}
+              className="rounded-full border border-stone-300 bg-stone-50 px-3 py-1 text-xs font-serif text-stone-700 hover:border-[#712B13] cursor-pointer"
+              aria-label={`Remove ${filter.label} filter`}
+            >
+              {filter.label} ×
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

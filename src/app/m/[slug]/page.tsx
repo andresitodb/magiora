@@ -10,7 +10,7 @@ import SocialLinksList from '@/components/SocialLinksList';
 import ProfileProjectsList from '@/components/ProfileProjectsList';
 import Link from 'next/link';
 import { getLanguageName } from '@/lib/languages';
-import { getAccent, getTemplate } from '@/lib/profile_themes';
+import { getAccent, getTemplate, type Accent } from '@/lib/profile_themes';
 
 const FREE_GALLERY_DISPLAY_LIMIT = 3;
 
@@ -36,10 +36,38 @@ function tieBreakValue(seed: string): number {
 }
 
 // Sort experience by year DESC for display
-function sortByYearDesc(items: any[]): any[] {
+type ExperienceItem = {
+  year?: string;
+  title?: string;
+  role?: string;
+  project?: string;
+  link?: string;
+};
+
+type Recommendation = {
+  quote?: string;
+  from_name?: string;
+  from_role?: string;
+};
+
+type EquipmentItem = {
+  category?: string;
+  items?: string;
+};
+
+type Representation = {
+  agency?: string;
+  manager?: string;
+  agent?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+};
+
+function sortByYearDesc(items: ExperienceItem[]): ExperienceItem[] {
   return [...items].sort((a, b) => {
-    const ay = parseInt(a?.year);
-    const by = parseInt(b?.year);
+    const ay = parseInt(a.year ?? '');
+    const by = parseInt(b.year ?? '');
     const aValid = !isNaN(ay);
     const bValid = !isNaN(by);
     if (!aValid && !bValid) return 0;
@@ -88,6 +116,7 @@ export default async function PublicProfilePage({
     { data: relatedCandidates },
     { count: projectCount },
     { count: creditCount },
+    { data: profileCreditProjects },
   ] = await Promise.all([
     supabase
       .from('interviews')
@@ -113,14 +142,69 @@ export default async function PublicProfilePage({
       .from('project_credits')
       .select('id', { count: 'exact', head: true })
       .eq('profile_id', profile.id),
+    supabase
+      .from('project_credits')
+      .select('project_id')
+      .eq('profile_id', profile.id),
   ]);
 
+  const profileProjectIds = Array.from(
+    new Set((profileCreditProjects ?? []).map((credit) => credit.project_id))
+  );
+  const candidateIds = ((relatedCandidates ?? []) as RelatedProfile[]).map(
+    (candidate) => candidate.id
+  );
+  const sharedProjectCounts = new Map<string, number>();
+  if (profileProjectIds.length > 0 && candidateIds.length > 0) {
+    const { data: sharedCredits, error: sharedCreditsError } = await supabase
+      .from('project_credits')
+      .select('profile_id, project_id')
+      .in('profile_id', candidateIds)
+      .in('project_id', profileProjectIds);
+
+    if (sharedCreditsError) {
+      console.error('[profile] Shared-project ranking unavailable', {
+        profileId: profile.id,
+        message: sharedCreditsError.message,
+        code: sharedCreditsError.code,
+      });
+    } else {
+      const sharedByProfile = new Map<string, Set<string>>();
+      for (const credit of sharedCredits ?? []) {
+        const projects = sharedByProfile.get(credit.profile_id) ?? new Set<string>();
+        projects.add(credit.project_id);
+        sharedByProfile.set(credit.profile_id, projects);
+      }
+      for (const [profileId, projects] of sharedByProfile) {
+        sharedProjectCounts.set(profileId, projects.size);
+      }
+    }
+  }
+
+  const complementaryRoles: Record<string, string[]> = {
+    director: ['producer', 'cinematographer', 'writer', 'editor'],
+    producer: ['director', 'writer', 'cinematographer'],
+    cinematographer: ['director', 'production_designer', 'editor'],
+    writer: ['director', 'producer'],
+    editor: ['director', 'cinematographer', 'sound'],
+    actor: ['director', 'producer', 'writer'],
+    sound: ['director', 'editor'],
+    production_designer: ['director', 'cinematographer', 'costume'],
+    costume: ['production_designer', 'makeup_hair'],
+    makeup_hair: ['costume', 'production_designer'],
+  };
   const relatedProfiles = ((relatedCandidates ?? []) as RelatedProfile[])
     .map((candidate) => ({
       candidate,
       tieBreak: tieBreakValue(`${profile.id}:${candidate.id}`),
     }))
     .sort((a, b) => {
+      const aSharedProjects = sharedProjectCounts.get(a.candidate.id) ?? 0;
+      const bSharedProjects = sharedProjectCounts.get(b.candidate.id) ?? 0;
+      if (aSharedProjects !== bSharedProjects) {
+        return bSharedProjects - aSharedProjects;
+      }
+
       const aSameRole =
         Boolean(profile.role_category) &&
         a.candidate.role_category === profile.role_category;
@@ -138,6 +222,11 @@ export default async function PublicProfilePage({
         b.candidate.location_city?.trim().toLowerCase() === profileCity;
       if (aSameCity !== bSameCity) return aSameCity ? -1 : 1;
 
+      const complements = complementaryRoles[profile.role_category] ?? [];
+      const aComplementary = complements.includes(a.candidate.role_category ?? '');
+      const bComplementary = complements.includes(b.candidate.role_category ?? '');
+      if (aComplementary !== bComplementary) return aComplementary ? -1 : 1;
+
       if (a.candidate.verified !== b.candidate.verified) {
         return a.candidate.verified ? -1 : 1;
       }
@@ -150,12 +239,12 @@ export default async function PublicProfilePage({
     .map(({ candidate }) => candidate);
 
   const videoLinks: { label: string; url: string }[] = profile.video_links ?? [];
-  const experience: any[] = sortByYearDesc(profile.experience ?? []);
-  const recommendations: any[] = profile.recommendations ?? [];
-  const equipment: any[] = profile.equipment ?? [];
+  const experience: ExperienceItem[] = sortByYearDesc(profile.experience ?? []);
+  const recommendations: Recommendation[] = profile.recommendations ?? [];
+  const equipment: EquipmentItem[] = profile.equipment ?? [];
   const physical = profile.physical_details ?? {};
   const social: Record<string, string> = profile.social_links ?? {};
-  const rep: any = profile.representation ?? {};
+  const rep: Representation = profile.representation ?? {};
 
   let gallery: string[] = profile.gallery ?? [];
   if (!isMember) gallery = gallery.slice(0, FREE_GALLERY_DISPLAY_LIMIT);
@@ -290,6 +379,26 @@ export default async function PublicProfilePage({
           </div>
         </section>
 
+        {!isOwner && (profile.contact_email || profile.website_url) && (
+          <div className="mb-8">
+            <a
+              href={
+                profile.contact_email
+                  ? `mailto:${profile.contact_email}`
+                  : profile.website_url
+              }
+              target={profile.contact_email ? undefined : '_blank'}
+              rel={profile.contact_email ? undefined : 'noopener noreferrer'}
+              className="inline-flex items-center justify-center rounded-md px-5 py-2.5 font-serif text-sm font-medium transition-opacity hover:opacity-85"
+              style={{ backgroundColor: accent.accent, color: accent.card }}
+            >
+              {profile.contact_email
+                ? `Contact ${profile.display_name}`
+                : 'Visit professional website ↗'}
+            </a>
+          </div>
+        )}
+
         <PublicProfileTabs
           accent={accent}
           about={
@@ -415,7 +524,7 @@ export default async function PublicProfilePage({
                 <div className="pt-6 border-t" style={{ borderColor: accent.border }}>
                   <p className="font-serif italic text-sm mb-3" style={{ color: accent.accent }}>Equipment</p>
                   <dl className="space-y-3">
-                    {equipment.map((e: any, i: number) => (
+                    {equipment.map((e, i) => (
                       <div key={i}>
                         <dt className="font-serif italic text-xs" style={{ color: accent.textMuted }}>{e.category}</dt>
                         <dd className="font-serif text-sm" style={{ color: accent.text }}>{e.items}</dd>
@@ -471,7 +580,7 @@ export default async function PublicProfilePage({
                 <div>
                   <p className="font-serif italic text-sm mb-4" style={{ color: accent.accent }}>Credits</p>
                   <div className="space-y-4">
-                    {experience.map((e: any, i: number) => (
+                    {experience.map((e, i) => (
                       <div key={i} className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 pb-4 border-b last:border-0" style={{ borderColor: accent.border }}>
                         <p className="font-serif" style={{ color: accent.textMuted }}>{e.year}</p>
                         <div>
@@ -498,7 +607,7 @@ export default async function PublicProfilePage({
                 <div>
                   <p className="font-serif italic text-sm mb-4" style={{ color: accent.accent }}>Recommendations</p>
                   <div className="space-y-6">
-                    {recommendations.map((r: any, i: number) => (
+                    {recommendations.map((r, i) => (
                       <blockquote key={i} className="border-l-4 pl-6" style={{ borderColor: accent.accent }}>
                         <p className="font-serif italic text-base md:text-lg leading-relaxed" style={{ color: accent.text }}>
                           &ldquo;{r.quote}&rdquo;
@@ -688,7 +797,7 @@ export default async function PublicProfilePage({
   );
 }
 
-function Detail({ accent, label, value }: { accent: any; label: string; value: string }) {
+function Detail({ accent, label, value }: { accent: Accent; label: string; value: string }) {
   return (
     <>
       <dt className="italic" style={{ color: accent.textMuted }}>{label}</dt>

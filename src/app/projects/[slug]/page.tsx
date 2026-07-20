@@ -29,6 +29,19 @@ type ProjectCredit = {
   profile: CreditProfile | CreditProfile[] | null;
 };
 
+type RelatedProject = {
+  id: string;
+  slug: string;
+  title: string;
+  project_type: string | null;
+  status: string | null;
+  year: number | null;
+  poster_url: string | null;
+  location_city: string | null;
+  location_state: string | null;
+  created_at: string;
+};
+
 export default async function PublicProjectPage({
   params,
 }: {
@@ -54,7 +67,7 @@ export default async function PublicProjectPage({
 
   if (!project.visible && !isOwner) notFound();
 
-  const { data: credits } = await supabase
+  const { data: credits, error: creditsError } = await supabase
     .from('project_credits')
     .select(
       `id, role_title, role_category, character_name, external_name, position,
@@ -62,6 +75,15 @@ export default async function PublicProjectPage({
     )
     .eq('project_id', project.id)
     .order('position', { ascending: true });
+
+  if (creditsError) {
+    console.error('[project] Credits unavailable', {
+      projectId: project.id,
+      message: creditsError.message,
+      code: creditsError.code,
+      details: creditsError.details,
+    });
+  }
 
   const creditsByRole = new Map<string, ProjectCredit[]>();
   for (const credit of (credits ?? []) as ProjectCredit[]) {
@@ -71,8 +93,87 @@ export default async function PublicProjectPage({
     creditsByRole.set(role, group);
   }
   const accent = getAccent('coral');
-  const links = project.links ?? {};
+  const links: Record<string, string> = project.links ?? {};
+  const linkEntries = Object.entries(links).filter(
+    ([key, value]) => key.trim() && value?.trim()
+  );
   const gallery: string[] = project.gallery ?? [];
+  const linkedProfileIds = ((credits ?? []) as ProjectCredit[])
+    .map((credit) => {
+      const linked = Array.isArray(credit.profile)
+        ? credit.profile[0]
+        : credit.profile;
+      return linked?.id;
+    })
+    .filter((id): id is string => Boolean(id));
+
+  const relatedFromCreditsQuery = linkedProfileIds.length
+    ? supabase
+        .from('project_credits')
+        .select(
+          `profile_id, project:projects!inner(id, slug, title, project_type, status, year, poster_url, location_city, location_state, created_at, visible)`
+        )
+        .in('profile_id', linkedProfileIds)
+        .neq('project_id', project.id)
+        .eq('project.visible', true)
+        .limit(100)
+    : Promise.resolve({ data: [], error: null });
+
+  const [{ data: relatedCreditRows, error: relatedCreditsError }, { data: fallbackProjects, error: fallbackError }] =
+    await Promise.all([
+      relatedFromCreditsQuery,
+      supabase
+        .from('projects')
+        .select('id, slug, title, project_type, status, year, poster_url, location_city, location_state, created_at')
+        .eq('visible', true)
+        .neq('id', project.id)
+        .order('created_at', { ascending: false })
+        .limit(50),
+    ]);
+
+  if (relatedCreditsError || fallbackError) {
+    console.error('[project] Related projects partially unavailable', {
+      projectId: project.id,
+      credits: relatedCreditsError?.message ?? null,
+      fallback: fallbackError?.message ?? null,
+    });
+  }
+
+  const relatedScores = new Map<string, { project: RelatedProject; sharedPeople: number }>();
+  for (const row of relatedCreditRows ?? []) {
+    const relation = row.project;
+    const candidate = (Array.isArray(relation) ? relation[0] : relation) as
+      | (RelatedProject & { visible?: boolean })
+      | undefined;
+    if (!candidate) continue;
+    const current = relatedScores.get(candidate.id);
+    relatedScores.set(candidate.id, {
+      project: candidate,
+      sharedPeople: (current?.sharedPeople ?? 0) + 1,
+    });
+  }
+  for (const candidate of (fallbackProjects ?? []) as RelatedProject[]) {
+    if (!relatedScores.has(candidate.id)) {
+      relatedScores.set(candidate.id, { project: candidate, sharedPeople: 0 });
+    }
+  }
+  const relatedProjects = Array.from(relatedScores.values())
+    .sort((a, b) => {
+      if (a.sharedPeople !== b.sharedPeople) return b.sharedPeople - a.sharedPeople;
+      const aType = a.project.project_type === project.project_type;
+      const bType = b.project.project_type === project.project_type;
+      if (aType !== bType) return aType ? -1 : 1;
+      const city = project.location_city?.trim().toLowerCase();
+      const aCity = Boolean(city) && a.project.location_city?.trim().toLowerCase() === city;
+      const bCity = Boolean(city) && b.project.location_city?.trim().toLowerCase() === city;
+      if (aCity !== bCity) return aCity ? -1 : 1;
+      const aStatus = a.project.status === project.status;
+      const bStatus = b.project.status === project.status;
+      if (aStatus !== bStatus) return aStatus ? -1 : 1;
+      return new Date(b.project.created_at).getTime() - new Date(a.project.created_at).getTime();
+    })
+    .slice(0, 4)
+    .map(({ project: candidate }) => candidate);
 
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
@@ -210,22 +311,66 @@ export default async function PublicProjectPage({
           </section>
         )}
 
-        {Object.keys(links).length > 0 && (
+        {linkEntries.length > 0 && (
           <section className="mb-12">
             <p className="font-serif italic text-sm text-[#993C1D] mb-3">Links</p>
             <ul className="space-y-2">
-              {Object.entries(links).map(([key, val]) => {
-                if (!val) return null;
-                return (
-                  <li key={key} className="font-serif">
-                    <span className="text-stone-500 italic capitalize">{key}: </span>
-                    <a href={val as string} target="_blank" rel="noopener" className="text-[#712B13] hover:underline">
-                      {val as string} ↗
-                    </a>
-                  </li>
-                );
-              })}
+              {linkEntries.map(([key, value]) => (
+                <li key={key} className="font-serif">
+                  <span className="text-stone-500 italic capitalize">{key}: </span>
+                  <a href={value} target="_blank" rel="noopener noreferrer" className="text-[#712B13] hover:underline">
+                    {value} ↗
+                  </a>
+                </li>
+              ))}
             </ul>
+          </section>
+        )}
+
+        {relatedProjects.length > 0 && (
+          <section className="mb-12 pt-8 border-t border-stone-200">
+            <p className="font-serif italic text-sm text-[#993C1D] mb-2">
+              Keep exploring
+            </p>
+            <h2 className="font-serif text-2xl md:text-3xl font-medium mb-6">
+              Related Projects
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {relatedProjects.map((candidate) => (
+                <Link
+                  key={candidate.id}
+                  href={`/projects/${candidate.slug}`}
+                  className="group block"
+                >
+                  <div className="aspect-[3/4] rounded-md overflow-hidden bg-[#FAECE7] mb-3">
+                    {candidate.poster_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={candidate.poster_url}
+                        alt={candidate.title}
+                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center px-3 text-center font-serif italic text-[#712B13]">
+                        {candidate.title}
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="font-serif font-medium group-hover:text-[#712B13] line-clamp-2">
+                    {candidate.title}
+                  </h3>
+                  <p className="text-xs italic font-serif text-stone-500 mt-1">
+                    {getProjectTypeLabel(candidate.project_type)}
+                    {candidate.year && ` · ${candidate.year}`}
+                  </p>
+                  {candidate.status && (
+                    <p className="text-xs italic font-serif text-stone-400 mt-1">
+                      {getProjectStatusLabel(candidate.status)}
+                    </p>
+                  )}
+                </Link>
+              ))}
+            </div>
           </section>
         )}
       </main>

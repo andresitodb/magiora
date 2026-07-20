@@ -46,6 +46,7 @@ export default async function DirectoryPage({
     lang?: string;
     q?: string;
     verified?: string;
+    sort?: string;
     page?: string;
   }>;
 }) {
@@ -89,11 +90,24 @@ export default async function DirectoryPage({
     query = query.eq('verified', true);
   }
 
-  const profilesPromise = query
-    .order('verified', { ascending: false })
-    .order('featured_at', { ascending: false, nullsFirst: false })
-    .order('display_name', { ascending: true })
-    .range(from, to);
+  const sort = ['relevance', 'newest', 'verified', 'name'].includes(params.sort ?? '')
+    ? params.sort!
+    : 'relevance';
+  if (sort === 'newest') {
+    query = query.order('created_at', { ascending: false });
+  } else if (sort === 'name') {
+    query = query.order('display_name', { ascending: true, nullsFirst: false });
+  } else {
+    query = query
+      .order('verified', { ascending: false })
+      .order('featured_at', { ascending: false, nullsFirst: false });
+    if (sort === 'verified') {
+      query = query.order('created_at', { ascending: false });
+    } else {
+      query = query.order('display_name', { ascending: true, nullsFirst: false });
+    }
+  }
+  const profilesPromise = query.range(from, to);
 
   // Fetch distinct cities for autocomplete
   const cityRowsPromise = supabase
@@ -188,6 +202,7 @@ export default async function DirectoryPage({
     if (params.lang) next.set('lang', params.lang);
     if (params.q) next.set('q', params.q);
     if (params.verified === '1') next.set('verified', '1');
+    if (sort !== 'relevance') next.set('sort', sort);
     if (page > 1) next.set('page', String(page));
     const suffix = next.toString();
     return suffix ? `/directory?${suffix}` : '/directory';
@@ -216,7 +231,14 @@ export default async function DirectoryPage({
         </p>
 
         <DirectoryFilters
-          key={params.q ?? ''}
+          key={[
+            params.q,
+            params.role,
+            params.city,
+            params.lang,
+            params.verified,
+            sort,
+          ].join(':')}
           roleFilters={ROLE_FILTERS}
           knownCities={knownCities}
           currentRole={params.role ?? ''}
@@ -224,6 +246,7 @@ export default async function DirectoryPage({
           currentLang={params.lang ?? ''}
           currentQuery={params.q ?? ''}
           currentVerified={params.verified === '1'}
+          currentSort={sort}
         />
 
         {cityRowsError && !profilesError && (
