@@ -65,7 +65,7 @@ export default function RoleAutocomplete({
         }}
         onFocus={() => setOpen(true)}
         placeholder="Everyone (type to filter)"
-        className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white text-sm cursor-text"
+        className="k-control pr-9 cursor-text"
       />
       {currentValue && (
         <button
@@ -79,11 +79,11 @@ export default function RoleAutocomplete({
       )}
 
       {open && (
-        <div className="absolute z-10 left-0 right-0 mt-1 max-h-64 overflow-y-auto border border-stone-200 rounded-md bg-white shadow-lg">
+        <div className="k-card absolute z-10 left-0 right-0 mt-1 max-h-64 overflow-y-auto shadow-lg">
           <button
             type="button"
             onClick={() => pick('', '')}
-            className={`w-full text-left px-3 py-2 text-sm font-serif cursor-pointer hover:bg-[#FAECE7] ${
+            className={`w-full min-h-11 text-left px-3 py-2 text-sm font-serif cursor-pointer hover:bg-[#FAECE7] ${
               !currentValue ? 'bg-[#FAECE7]/50' : ''
             }`}
           >
@@ -95,7 +95,7 @@ export default function RoleAutocomplete({
                 key={o.value}
                 type="button"
                 onClick={() => pick(o.value, o.label)}
-                className={`w-full text-left px-3 py-2 text-sm font-serif cursor-pointer hover:bg-[#FAECE7] border-t border-stone-100 ${
+                className={`w-full min-h-11 text-left px-3 py-2 text-sm font-serif cursor-pointer hover:bg-[#FAECE7] border-t border-stone-100 ${
                   o.value === currentValue ? 'bg-[#FAECE7]/50' : ''
                 }`}
               >

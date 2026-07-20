@@ -103,8 +103,8 @@ export default function DirectoryFilters({
   const hasAnyFilter = activeFilters.length > 0;
 
   return (
-    <div className="bg-white border border-stone-200 rounded-md p-5 space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="k-card p-4 md:p-5 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
         <div>
           <label className="block text-xs font-medium text-stone-600 mb-1 italic font-serif">
             Search by name
@@ -114,7 +114,7 @@ export default function DirectoryFilters({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Type a name..."
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white text-sm"
+            className="k-control"
           />
         </div>
 
@@ -150,7 +150,7 @@ export default function DirectoryFilters({
           <select
             value={currentLang}
             onChange={(e) => pushFilter({ lang: e.target.value || null })}
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white text-sm cursor-pointer"
+            className="k-control cursor-pointer"
           >
             <option value="">Any language</option>
             {sortedLangs.map((l) => (
@@ -160,9 +160,23 @@ export default function DirectoryFilters({
             ))}
           </select>
         </div>
+
+        <label className="block text-xs font-medium text-stone-600 italic font-serif">
+          Sort
+          <select
+            value={currentSort}
+            onChange={(event) => pushFilter({ sort: event.target.value })}
+            className="k-control block mt-1 not-italic cursor-pointer"
+          >
+            <option value="relevance">Relevance</option>
+            <option value="newest">Newest</option>
+            <option value="verified">Verified first</option>
+            <option value="name">Name</option>
+          </select>
+        </label>
       </div>
 
-      <div className="flex items-end justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -178,25 +192,11 @@ export default function DirectoryFilters({
           </span>
         </label>
 
-        <label className="text-xs font-medium text-stone-600 italic font-serif">
-          Sort
-          <select
-            value={currentSort}
-            onChange={(event) => pushFilter({ sort: event.target.value })}
-            className="block mt-1 px-3 py-2 border border-stone-300 rounded-md bg-white text-sm not-italic cursor-pointer"
-          >
-            <option value="relevance">Relevance</option>
-            <option value="newest">Newest</option>
-            <option value="verified">Verified first</option>
-            <option value="name">Name</option>
-          </select>
-        </label>
-
         {hasAnyFilter && (
           <button
             type="button"
             onClick={() => router.push('/directory')}
-            className="text-xs text-stone-500 italic font-serif hover:text-[#712B13] cursor-pointer"
+            className="k-button k-button-ghost min-h-0 px-2 py-1 text-xs font-serif italic"
           >
             Clear all filters →
           </button>

@@ -3,7 +3,7 @@ import { createAnonClient } from '@/lib/supabase/anon';
 export const dynamic = 'force-dynamic';
 
 interface SearchResult {
-  kind: 'profile' | 'casting_call' | 'event' | 'story';
+  kind: 'profile' | 'project' | 'casting_call' | 'event' | 'story';
   id: string;
   title: string;
   subtitle: string | null;
@@ -48,7 +48,32 @@ export async function GET(request: Request) {
     });
   }
 
-  // 2. Casting calls (by title or role name)
+  // 2. Public projects
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('id, slug, title, tagline, description, project_type, year, poster_url')
+    .eq('visible', true)
+    .or(`title.ilike.${pattern},tagline.ilike.${pattern},description.ilike.${pattern}`)
+    .limit(5);
+
+  for (const project of projects ?? []) {
+    results.push({
+      kind: 'project',
+      id: project.id,
+      title: project.title,
+      subtitle: [
+        project.project_type?.replace('_', ' '),
+        project.year,
+        project.tagline,
+      ]
+        .filter(Boolean)
+        .join(' Â· '),
+      href: `/projects/${project.slug}`,
+      thumbnail: project.poster_url,
+    });
+  }
+
+  // 3. Casting calls (by title or role name)
   const { data: calls } = await supabase
     .from('casting_calls')
     .select('id, project_title, role_name, project_type, location_city')
@@ -69,7 +94,7 @@ export async function GET(request: Request) {
     });
   }
 
-  // 3. Events
+  // 4. Events
   const { data: events } = await supabase
     .from('events')
     .select('id, title, event_date, location_name, cover_image_url')
@@ -95,7 +120,7 @@ export async function GET(request: Request) {
     });
   }
 
-  // 4. Stories
+  // 5. Stories
   const { data: stories } = await supabase
     .from('interviews')
     .select('id, slug, title, hero_image_url, subject:profiles!interviews_subject_profile_id_fkey(display_name)')
@@ -104,11 +129,12 @@ export async function GET(request: Request) {
     .limit(5);
 
   for (const s of stories ?? []) {
+    const subject = Array.isArray(s.subject) ? s.subject[0] : s.subject;
     results.push({
       kind: 'story',
       id: s.slug ?? s.id,
       title: s.title ?? 'Untitled',
-      subtitle: (s.subject as any)?.display_name ? `On ${(s.subject as any).display_name}` : null,
+      subtitle: subject?.display_name ? `On ${subject.display_name}` : null,
       href: `/stories/${s.slug}`,
       thumbnail: s.hero_image_url,
     });

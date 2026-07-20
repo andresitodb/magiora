@@ -30,18 +30,18 @@ export default function EmptyState({
     action ?? (ctaHref && ctaLabel ? { href: ctaHref, label: ctaLabel } : undefined);
 
   return (
-    <div className="bg-white border border-stone-200 rounded-md p-10 md:p-16 text-center">
+    <div className="k-empty">
       <div className="mx-auto w-24 h-24 mb-6 text-[#FAC775]">
         {renderIcon(icon)}
       </div>
-      <h2 className="font-serif text-2xl font-medium mb-3">{title}</h2>
-      <p className="font-serif italic text-stone-600 max-w-md mx-auto leading-relaxed mb-6">
+      <h2 className="k-section-title mb-3">{title}</h2>
+      <p className="k-body-muted max-w-md mx-auto mb-6">
         {body}
       </p>
       {resolvedAction && (
         <Link
           href={resolvedAction.href}
-          className="inline-block bg-[#712B13] text-white py-2 px-5 rounded-md font-medium hover:bg-[#4A1B0C]"
+          className="k-button k-button-primary"
         >
           {resolvedAction.label}
         </Link>

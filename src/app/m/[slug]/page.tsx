@@ -346,7 +346,7 @@ export default async function PublicProfilePage({
               }
               target={profile.contact_email ? undefined : '_blank'}
               rel={profile.contact_email ? undefined : 'noopener noreferrer'}
-              className="inline-flex items-center justify-center rounded-md px-5 py-2.5 font-serif text-sm font-medium transition-opacity hover:opacity-85"
+              className="k-button font-serif hover:opacity-85"
               style={{ backgroundColor: accent.accent, color: accent.card }}
             >
               {profile.contact_email
@@ -717,7 +717,7 @@ export default async function PublicProfilePage({
             <p className="font-serif italic text-sm mb-2" style={{ color: accent.accent }}>
               Keep exploring
             </p>
-            <h2 className="font-serif text-2xl md:text-3xl font-medium mb-6">
+            <h2 className="k-section-title mb-6">
               Related Professionals
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -178,7 +178,7 @@ export default async function PublicProjectPage({
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
       <Nav />
-      <main className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
+      <main className="k-container k-section max-w-5xl">
         {isOwner && !project.visible && (
           <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-md p-4 mb-6 flex items-start justify-between gap-3">
             <p className="font-serif italic text-sm">
@@ -215,7 +215,7 @@ export default async function PublicProjectPage({
               {getProjectTypeLabel(project.project_type)}
               {project.year && <span className="text-stone-500"> · {project.year}</span>}
             </p>
-            <h1 className="font-serif text-3xl md:text-5xl font-medium leading-tight">
+            <h1 className="k-page-title">
               {project.title}
             </h1>
             {project.tagline && (
@@ -272,7 +272,7 @@ export default async function PublicProjectPage({
               href={linkEntries[0][1]}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center rounded-md bg-[#712B13] px-5 py-2.5 text-sm font-serif font-medium text-white hover:bg-[#4A1B0C]"
+              className="k-button k-button-primary font-serif"
             >
               Visit {linkEntries[0][0]} ↗
             </a>
@@ -324,7 +324,7 @@ export default async function PublicProjectPage({
         {credits && credits.length > 0 && (
           <section className="mb-12">
             <p className="font-serif italic text-sm text-[#993C1D] mb-3">The team</p>
-            <h2 className="font-serif text-2xl md:text-3xl font-medium mb-6">Cast &amp; Crew</h2>
+            <h2 className="k-section-title mb-6">Cast &amp; Crew</h2>
 
             <div className="space-y-10">
               {Array.from(creditsByRole.entries()).map(([role, items]) => (
@@ -348,7 +348,7 @@ export default async function PublicProjectPage({
             <p className="font-serif italic text-sm text-[#993C1D] mb-2">
               Keep exploring
             </p>
-            <h2 className="font-serif text-2xl md:text-3xl font-medium mb-6">
+            <h2 className="k-section-title mb-6">
               Related Projects
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

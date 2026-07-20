@@ -102,10 +102,7 @@ export default async function HomePage() {
 
       {/* Masthead */}
       <section className="max-w-6xl mx-auto px-6 pt-10 pb-8 text-center border-b border-stone-300">
-        <p className="font-serif italic text-xs text-[#993C1D] tracking-widest uppercase mb-2">
-          Vol. 1 · {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-        </p>
-        <h1 className="font-serif text-7xl font-medium tracking-tight">Kinora</h1>
+        <h1 className="k-page-title text-5xl md:text-7xl">Kinora</h1>
         <p className="font-serif italic text-base text-stone-500 mt-3">
           The community of indie cinema — the people, projects, and conversations
         </p>
@@ -119,23 +116,22 @@ export default async function HomePage() {
               <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
                 In conversation
               </p>
-              <h2 className="font-serif text-3xl font-medium">Spotlight</h2>
+              <h2 className="k-section-title">Spotlight</h2>
             </div>
             <Link href="/stories" className="font-serif italic text-sm text-[#712B13] hover:underline">
               Explore Spotlight →
             </Link>
           </div>
 
-          <div className="space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             {spotlightStories.map((story) => {
               const subject = Array.isArray(story.subject)
                 ? story.subject[0]
                 : story.subject;
 
               return (
-                <Link key={story.id} href={`/stories/${story.slug}`} className="group block">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-                    <div className="aspect-[4/5] rounded-lg overflow-hidden bg-stone-100">
+                <Link key={story.id} href={`/stories/${story.slug}`} className="k-card k-card-interactive group flex flex-col">
+                    <div className="aspect-[16/10] overflow-hidden bg-stone-100">
                       {story.hero_image_url ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
@@ -147,24 +143,23 @@ export default async function HomePage() {
                         <div className="w-full h-full bg-gradient-to-br from-[#FAECE7] to-[#FBEAF0]" />
                       )}
                     </div>
-                    <div>
-                      <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-3">
+                    <div className="p-5 flex flex-1 flex-col">
+                      <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-2">
                         Spotlight
                         {subject?.display_name && ` · On ${subject.display_name}`}
                       </p>
-                      <h3 className="font-serif text-3xl md:text-5xl font-medium mb-5 group-hover:text-[#712B13] transition-colors leading-[1.05]">
+                      <h3 className="font-serif text-xl md:text-2xl font-medium mb-3 group-hover:text-[#712B13] transition-colors leading-tight line-clamp-2 min-h-[3.5rem]">
                         {story.title}
                       </h3>
                       {story.intro && (
-                        <p className="font-serif text-lg leading-relaxed text-stone-700 line-clamp-5">
+                        <p className="font-serif text-sm leading-relaxed text-stone-700 line-clamp-3">
                           {story.intro}
                         </p>
                       )}
-                      <p className="font-serif italic text-sm text-[#712B13] mt-5 group-hover:underline">
+                      <p className="font-serif italic text-sm text-[#712B13] mt-auto pt-4 group-hover:underline">
                         Read the interview →
                       </p>
                     </div>
-                  </div>
                 </Link>
               );
             })}
@@ -180,7 +175,7 @@ export default async function HomePage() {
               <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
                 On our radar
               </p>
-              <h2 className="font-serif text-3xl font-medium">Featured Professionals</h2>
+              <h2 className="k-section-title">Featured Professionals</h2>
             </div>
             <Link href="/directory" className="font-serif italic text-sm text-[#712B13] hover:underline">
               Browse all →
@@ -193,23 +188,23 @@ export default async function HomePage() {
                 (p.role_titles ?? [])[0] ??
                 (p.role_category === 'crew_other' ? p.custom_role_label : p.role_category?.replace('_', ' '));
               return (
-                <Link key={p.slug} href={`/m/${p.slug}`} className="block group">
-                  <div className="aspect-[4/5] bg-[#FAECE7] rounded-md overflow-hidden mb-4">
+                <Link key={p.slug} href={`/m/${p.slug}`} className="flex h-full flex-col group">
+                  <div className="h-64 md:h-72 bg-transparent overflow-hidden mb-4">
                     {p.headshot_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={p.headshot_url}
                         alt={p.display_name}
-                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
+                        className="w-full h-full object-contain object-top group-hover:scale-[1.01] transition-transform"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[#712B13] font-serif italic">
-                        ?
+                      <div className="w-full h-full rounded-md bg-[#FAECE7] flex items-center justify-center text-[#712B13] font-serif italic text-3xl">
+                        {(p.display_name?.[0] ?? '?').toUpperCase()}
                       </div>
                     )}
                   </div>
                   <p className="font-serif italic text-sm text-[#993C1D] capitalize mb-2">{roleTitle}</p>
-                  <p className="font-serif text-3xl font-medium group-hover:text-[#712B13] transition-colors flex items-center gap-2 mb-1">
+                  <p className="font-serif text-2xl font-medium group-hover:text-[#712B13] transition-colors flex items-center gap-2 mb-1">
                     {p.display_name}
                     {p.verified && <VerifiedBadge size="sm" />}
                   </p>
@@ -219,6 +214,9 @@ export default async function HomePage() {
                   {p.bio && (
                     <p className="font-serif text-base text-stone-700 line-clamp-3">{p.bio}</p>
                   )}
+                  <p className="k-link mt-auto pt-4 group-hover:underline">
+                    View profile →
+                  </p>
                 </Link>
               );
             })}
@@ -234,7 +232,7 @@ export default async function HomePage() {
               <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
                 From the community
               </p>
-              <h2 className="font-serif text-3xl font-medium">Featured Project</h2>
+              <h2 className="k-section-title">Featured Project</h2>
             </div>
             <Link href="/projects" className="font-serif italic text-sm text-[#712B13] hover:underline">
               Browse projects →
@@ -243,9 +241,9 @@ export default async function HomePage() {
 
           <Link
             href={`/projects/${featuredProject.slug}`}
-            className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 md:gap-10 items-center group"
+            className="k-card k-card-interactive grid grid-cols-1 md:grid-cols-[240px_1fr] group"
           >
-            <div className="aspect-[3/4] rounded-md overflow-hidden bg-[#FAECE7] max-w-[280px] w-full">
+            <div className="h-64 md:h-72 overflow-hidden bg-[#FAECE7] w-full">
               {featuredProject.poster_url ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -259,14 +257,14 @@ export default async function HomePage() {
                 </div>
               )}
             </div>
-            <div>
+            <div className="p-5 md:p-8 self-center">
               <p className="font-serif italic text-sm text-[#993C1D] mb-2">
                 {getProjectTypeLabel(featuredProject.project_type)}
                 {featuredProject.year && (
                   <span className="text-stone-500"> · {featuredProject.year}</span>
                 )}
               </p>
-              <h3 className="font-serif text-3xl md:text-5xl font-medium leading-tight group-hover:text-[#712B13] transition-colors">
+              <h3 className="font-serif text-2xl md:text-3xl font-medium leading-tight group-hover:text-[#712B13] transition-colors">
                 {featuredProject.title}
               </h3>
               {featuredProject.tagline && (
@@ -297,7 +295,7 @@ export default async function HomePage() {
               <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
                 The calendar
               </p>
-              <h2 className="font-serif text-3xl font-medium">Coming up</h2>
+              <h2 className="k-section-title">Coming up</h2>
             </div>
             <Link href="/events" className="font-serif italic text-sm text-[#712B13] hover:underline">
               All events →
@@ -311,7 +309,7 @@ export default async function HomePage() {
                 <Link
                   key={event.id}
                   href={`/events/${event.id}`}
-                  className="block hover:bg-white border border-stone-200 rounded-md p-5 transition-colors"
+                  className="k-card k-card-interactive block p-5"
                 >
                   <p className="font-serif italic text-xs text-[#993C1D] mb-2">
                     {start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}

@@ -214,11 +214,11 @@ export default async function DirectoryPage({
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
       <Nav />
-      <main className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12">
+      <main className="k-container k-section">
         <div className="flex flex-col md:flex-row md:items-baseline md:justify-between mb-2 gap-2">
           <div>
-            <p className="font-serif italic text-sm text-[#993C1D] mb-2">Browse the community</p>
-            <h1 className="font-serif text-4xl md:text-5xl font-medium">Directory</h1>
+            <p className="k-eyebrow mb-2">Browse the community</p>
+            <h1 className="k-page-title">Directory</h1>
           </div>
           <p className="text-sm text-stone-500 italic font-serif">
             {profilesError
@@ -226,7 +226,7 @@ export default async function DirectoryPage({
               : `${resultCount} ${resultCount === 1 ? 'artist' : 'artists'}`}
           </p>
         </div>
-        <p className="font-serif italic text-base md:text-lg text-stone-600 mb-10 max-w-2xl">
+        <p className="k-body-muted text-base md:text-lg mb-10 max-w-2xl">
           Directors, actors, cinematographers, and crew making indie cinema.
         </p>
 
@@ -269,7 +269,7 @@ export default async function DirectoryPage({
             </Link>
           </div>
         ) : !profiles || profiles.length === 0 ? (
-          <div className="text-center py-16 border-t border-stone-200 mt-10">
+          <div className="k-empty mt-10">
             <p className="font-serif italic text-stone-500">
               No artists match those filters yet.
             </p>
@@ -293,7 +293,7 @@ export default async function DirectoryPage({
                 <Link
                   key={p.slug}
                   href={`/m/${p.slug}`}
-                  className="block group bg-white border border-stone-200 rounded-md overflow-hidden hover:border-[#712B13] transition-colors"
+                  className="k-card k-card-interactive block group"
                 >
                   <div className="aspect-[4/5] bg-[#FAECE7]">
                     {p.headshot_url ? (

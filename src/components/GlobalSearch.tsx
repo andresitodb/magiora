@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface SearchResult {
-  kind: 'profile' | 'casting_call' | 'event' | 'story';
+  kind: 'profile' | 'project' | 'casting_call' | 'event' | 'story';
   id: string;
   title: string;
   subtitle: string | null;
@@ -14,6 +14,7 @@ interface SearchResult {
 
 const KIND_LABEL: Record<string, string> = {
   profile: 'Person',
+  project: 'Project',
   casting_call: 'Casting',
   event: 'Event',
   story: 'Spotlight',
@@ -21,6 +22,7 @@ const KIND_LABEL: Record<string, string> = {
 
 const KIND_COLOR: Record<string, string> = {
   profile: 'text-stone-700',
+  project: 'text-blue-700',
   casting_call: 'text-[#712B13]',
   event: 'text-amber-700',
   story: 'text-rose-700',
@@ -77,11 +79,10 @@ export default function GlobalSearch() {
   // Debounced fetch
   useEffect(() => {
     if (query.trim().length < 2) {
-      setResults([]);
       return;
     }
-    setLoading(true);
     const t = setTimeout(async () => {
+      setLoading(true);
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`);
         const data = await res.json();
@@ -131,10 +132,17 @@ export default function GlobalSearch() {
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setQuery(value);
+              if (value.trim().length < 2) {
+                setResults([]);
+                setLoading(false);
+              }
+            }}
             onKeyDown={onKeyDown}
-            placeholder="Search people, castings, events..."
-            className="w-72 pl-9 pr-3 py-1.5 border border-stone-300 rounded-md bg-white text-sm focus:outline-none focus:border-[#712B13]"
+            placeholder="Search people, projects, castings..."
+            className="k-control w-72 pl-9 pr-3"
           />
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -171,6 +179,7 @@ export default function GlobalSearch() {
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-stone-400 text-xs font-serif italic">
                           {r.kind === 'profile' && (r.title[0] ?? '?').toUpperCase()}
+                          {r.kind === 'project' && 'P'}
                           {r.kind === 'casting_call' && '🎬'}
                           {r.kind === 'event' && '📅'}
                           {r.kind === 'story' && '📖'}

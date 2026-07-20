@@ -17,7 +17,7 @@ export default function VerifiedBadge({
       className="inline-flex items-center gap-1.5"
     >
       <span
-        className={`${dimensions} inline-flex items-center justify-center bg-[#712B13] text-white rounded-full font-bold`}
+        className={`${dimensions} inline-flex items-center justify-center bg-[#712B13] text-white rounded-full font-bold ring-2 ring-white/80`}
       >
         ✓
       </span>
