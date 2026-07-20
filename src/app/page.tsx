@@ -3,6 +3,11 @@ import Nav from '@/components/Nav';
 import NewsletterSignup from '@/components/NewsletterSignup';
 import VerifiedBadge from '@/components/VerifiedBadge';
 import Link from 'next/link';
+import {
+  getProjectStatusColor,
+  getProjectStatusLabel,
+  getProjectTypeLabel,
+} from '@/lib/projects';
 
 export const revalidate = 60;
 
@@ -34,6 +39,17 @@ type FeaturedProfile = {
   verified: boolean;
 };
 
+type FeaturedProject = {
+  id: string;
+  slug: string;
+  title: string;
+  tagline: string | null;
+  project_type: string | null;
+  status: string | null;
+  year: number | null;
+  poster_url: string | null;
+};
+
 export default async function HomePage() {
   const supabase = createAnonClient();
   const nowIso = new Date().toISOString();
@@ -41,6 +57,7 @@ export default async function HomePage() {
   const [
     { data: stories },
     { data: featuredProfiles },
+    { data: featuredProjects },
     { data: upcomingEvents },
   ] = await Promise.all([
     supabase
@@ -61,6 +78,13 @@ export default async function HomePage() {
       .order('featured_at', { ascending: false })
       .limit(2),
     supabase
+      .from('projects')
+      .select('id, slug, title, tagline, project_type, status, year, poster_url, featured_at')
+      .eq('visible', true)
+      .not('featured_at', 'is', null)
+      .order('featured_at', { ascending: false })
+      .limit(1),
+    supabase
       .from('events')
       .select('id, title, event_date, location_name, cover_image_url')
       .eq('status', 'published')
@@ -70,6 +94,7 @@ export default async function HomePage() {
   ]);
 
   const spotlightStories = (stories ?? []) as SpotlightStory[];
+  const featuredProject = (featuredProjects?.[0] ?? null) as FeaturedProject | null;
 
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
@@ -198,6 +223,69 @@ export default async function HomePage() {
               );
             })}
           </div>
+        </section>
+      )}
+
+      {/* FEATURED PROJECT */}
+      {featuredProject && (
+        <section className="max-w-6xl mx-auto px-6 py-12 border-t border-stone-300">
+          <div className="flex items-baseline justify-between mb-6">
+            <div>
+              <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
+                From the community
+              </p>
+              <h2 className="font-serif text-3xl font-medium">Featured Project</h2>
+            </div>
+            <Link href="/projects" className="font-serif italic text-sm text-[#712B13] hover:underline">
+              Browse projects →
+            </Link>
+          </div>
+
+          <Link
+            href={`/projects/${featuredProject.slug}`}
+            className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 md:gap-10 items-center group"
+          >
+            <div className="aspect-[3/4] rounded-md overflow-hidden bg-[#FAECE7] max-w-[280px] w-full">
+              {featuredProject.poster_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={featuredProject.poster_url}
+                  alt={featuredProject.title}
+                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[#712B13] font-serif italic text-2xl text-center px-4">
+                  {featuredProject.title}
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="font-serif italic text-sm text-[#993C1D] mb-2">
+                {getProjectTypeLabel(featuredProject.project_type)}
+                {featuredProject.year && (
+                  <span className="text-stone-500"> · {featuredProject.year}</span>
+                )}
+              </p>
+              <h3 className="font-serif text-3xl md:text-5xl font-medium leading-tight group-hover:text-[#712B13] transition-colors">
+                {featuredProject.title}
+              </h3>
+              {featuredProject.tagline && (
+                <p className="font-serif italic text-lg text-stone-600 mt-3">
+                  {featuredProject.tagline}
+                </p>
+              )}
+              {featuredProject.status && (
+                <span
+                  className={`inline-block mt-4 text-xs px-2.5 py-1 rounded-full font-serif ${getProjectStatusColor(featuredProject.status)}`}
+                >
+                  {getProjectStatusLabel(featuredProject.status)}
+                </span>
+              )}
+              <p className="font-serif italic text-sm text-[#712B13] mt-5 group-hover:underline">
+                View project →
+              </p>
+            </div>
+          </Link>
         </section>
       )}
 

@@ -8,6 +8,7 @@ import { getLanguageName, LANGUAGES } from '@/lib/languages';
 const PAGE_SIZE = 24;
 
 type DirectoryProfile = {
+  id: string;
   display_name: string;
   slug: string;
   role_category: string | null;
@@ -59,7 +60,7 @@ export default async function DirectoryPage({
   let query = supabase
     .from('profiles')
     .select(
-      'display_name, slug, role_category, role_titles, custom_role_label, location_city, location_state, headshot_url, bio, languages, verified, plan, featured_at',
+      'id, display_name, slug, role_category, role_titles, custom_role_label, location_city, location_state, headshot_url, bio, languages, verified, plan, featured_at',
       { count: 'exact' }
     )
     .eq('visible', true)
@@ -138,6 +139,36 @@ export default async function DirectoryPage({
           }
         : null,
     });
+  }
+
+  const projectCountByProfile = new Map<string, number>();
+  let projectCountsAvailable = false;
+  const profileIds = (profiles ?? []).map((profile) => profile.id);
+  if (!profilesError && profileIds.length > 0) {
+    const { data: creditProjects, error: creditProjectsError } = await supabase
+      .from('project_credits')
+      .select('profile_id, project_id, project:projects!inner(id, visible)')
+      .in('profile_id', profileIds)
+      .eq('project.visible', true);
+
+    if (creditProjectsError) {
+      console.error('[directory] Project counts unavailable', {
+        message: creditProjectsError.message,
+        code: creditProjectsError.code,
+        details: creditProjectsError.details,
+      });
+    } else {
+      projectCountsAvailable = true;
+      const seenProjects = new Map<string, Set<string>>();
+      for (const row of creditProjects ?? []) {
+        const projects = seenProjects.get(row.profile_id) ?? new Set<string>();
+        projects.add(row.project_id);
+        seenProjects.set(row.profile_id, projects);
+      }
+      for (const [profileId, projects] of seenProjects) {
+        projectCountByProfile.set(profileId, projects.size);
+      }
+    }
   }
 
   const knownCities = Array.from(
@@ -289,6 +320,14 @@ export default async function DirectoryPage({
                     {p.languages && p.languages.length > 0 && (
                       <p className="text-xs text-stone-400 italic font-serif mt-2">
                         {p.languages.slice(0, 3).map(getLanguageName).join(' · ')}
+                      </p>
+                    )}
+                    {projectCountsAvailable && (
+                      <p className="text-xs text-stone-400 italic font-serif mt-2">
+                        {projectCountByProfile.get(p.id) ?? 0}{' '}
+                        {(projectCountByProfile.get(p.id) ?? 0) === 1
+                          ? 'project'
+                          : 'projects'}
                       </p>
                     )}
                   </div>

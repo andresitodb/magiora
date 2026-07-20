@@ -8,10 +8,26 @@ import {
   getProjectTypeLabel,
   getProjectStatusLabel,
   getProjectStatusColor,
-  groupCredits,
-  CREDIT_GROUPS,
 } from '@/lib/projects';
 import { getAccent } from '@/lib/profile_themes';
+
+type CreditProfile = {
+  id: string;
+  slug: string;
+  display_name: string;
+  headshot_url: string | null;
+  verified: boolean;
+};
+
+type ProjectCredit = {
+  id: string;
+  role_title: string;
+  role_category: string | null;
+  character_name: string | null;
+  external_name: string | null;
+  position: number | null;
+  profile: CreditProfile | CreditProfile[] | null;
+};
 
 export default async function PublicProjectPage({
   params,
@@ -47,7 +63,13 @@ export default async function PublicProjectPage({
     .eq('project_id', project.id)
     .order('position', { ascending: true });
 
-  const groupedCredits = groupCredits(credits ?? []);
+  const creditsByRole = new Map<string, ProjectCredit[]>();
+  for (const credit of (credits ?? []) as ProjectCredit[]) {
+    const role = credit.role_title?.trim() || 'Other';
+    const group = creditsByRole.get(role) ?? [];
+    group.push(credit);
+    creditsByRole.set(role, group);
+  }
   const accent = getAccent('coral');
   const links = project.links ?? {};
   const gallery: string[] = project.gallery ?? [];
@@ -168,36 +190,22 @@ export default async function PublicProjectPage({
         {/* CREDITS */}
         {credits && credits.length > 0 && (
           <section className="mb-12">
-            <p className="font-serif italic text-sm text-[#993C1D] mb-3">Cast &amp; crew</p>
-            <h2 className="font-serif text-2xl md:text-3xl font-medium mb-6">Credits</h2>
+            <p className="font-serif italic text-sm text-[#993C1D] mb-3">The team</p>
+            <h2 className="font-serif text-2xl md:text-3xl font-medium mb-6">Cast &amp; Crew</h2>
 
             <div className="space-y-10">
-              {CREDIT_GROUPS.map((group) => {
-                const items = groupedCredits[group.id];
-                if (!items || items.length === 0) return null;
-                return (
-                  <div key={group.id}>
-                    <p className="font-serif italic text-xs text-stone-500 uppercase tracking-wider mb-4">
-                      {group.label}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {items.map((c: any) => (
-                        <CreditCard key={c.id} credit={c} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-              {groupedCredits['other'] && groupedCredits['other'].length > 0 && (
-                <div>
-                  <p className="font-serif italic text-xs text-stone-500 uppercase tracking-wider mb-4">Other</p>
+              {Array.from(creditsByRole.entries()).map(([role, items]) => (
+                <div key={role}>
+                  <h3 className="font-serif text-lg font-medium mb-4">
+                    {role}
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {groupedCredits['other'].map((c: any) => (
-                      <CreditCard key={c.id} credit={c} />
+                    {items.map((credit) => (
+                      <CreditCard key={credit.id} credit={credit} />
                     ))}
                   </div>
                 </div>
-              )}
+              ))}
             </div>
           </section>
         )}
@@ -233,9 +241,12 @@ export default async function PublicProjectPage({
   );
 }
 
-function CreditCard({ credit }: { credit: any }) {
-  const linked = credit.profile;
-  const displayName = linked?.display_name ?? credit.external_name;
+function CreditCard({ credit }: { credit: ProjectCredit }) {
+  const linked = Array.isArray(credit.profile)
+    ? credit.profile[0]
+    : credit.profile;
+  const displayName =
+    linked?.display_name ?? credit.external_name ?? 'Unnamed professional';
   const content = (
     <div className="flex items-center gap-3 group">
       {linked?.headshot_url ? (

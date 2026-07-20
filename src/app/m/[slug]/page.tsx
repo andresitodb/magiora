@@ -14,6 +14,27 @@ import { getAccent, getTemplate } from '@/lib/profile_themes';
 
 const FREE_GALLERY_DISPLAY_LIMIT = 3;
 
+type RelatedProfile = {
+  id: string;
+  slug: string;
+  display_name: string;
+  role_category: string | null;
+  role_titles: string[] | null;
+  custom_role_label: string | null;
+  location_city: string | null;
+  headshot_url: string | null;
+  verified: boolean;
+  featured_at: string | null;
+};
+
+function tieBreakValue(seed: string): number {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+  return hash;
+}
+
 // Sort experience by year DESC for display
 function sortByYearDesc(items: any[]): any[] {
   return [...items].sort((a, b) => {
@@ -62,12 +83,71 @@ export default async function PublicProfilePage({
   const template = getTemplate(isMember ? profile.profile_theme : 'editorial');
   const accent = getAccent(isMember ? profile.profile_accent : 'coral');
 
-  const { data: stories } = await supabase
-    .from('interviews')
-    .select('id, slug, title, intro, hero_image_url, published_at')
-    .eq('subject_profile_id', profile.id)
-    .eq('status', 'published')
-    .order('published_at', { ascending: false });
+  const [
+    { data: stories },
+    { data: relatedCandidates },
+    { count: projectCount },
+    { count: creditCount },
+  ] = await Promise.all([
+    supabase
+      .from('interviews')
+      .select('id, slug, title, intro, hero_image_url, published_at')
+      .eq('subject_profile_id', profile.id)
+      .eq('status', 'published')
+      .order('published_at', { ascending: false }),
+    supabase
+      .from('profiles')
+      .select(
+        'id, slug, display_name, role_category, role_titles, custom_role_label, location_city, headshot_url, verified, featured_at'
+      )
+      .eq('visible', true)
+      .eq('approved', true)
+      .neq('id', profile.id)
+      .limit(100),
+    supabase
+      .from('projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', profile.id)
+      .eq('visible', true),
+    supabase
+      .from('project_credits')
+      .select('id', { count: 'exact', head: true })
+      .eq('profile_id', profile.id),
+  ]);
+
+  const relatedProfiles = ((relatedCandidates ?? []) as RelatedProfile[])
+    .map((candidate) => ({
+      candidate,
+      tieBreak: tieBreakValue(`${profile.id}:${candidate.id}`),
+    }))
+    .sort((a, b) => {
+      const aSameRole =
+        Boolean(profile.role_category) &&
+        a.candidate.role_category === profile.role_category;
+      const bSameRole =
+        Boolean(profile.role_category) &&
+        b.candidate.role_category === profile.role_category;
+      if (aSameRole !== bSameRole) return aSameRole ? -1 : 1;
+
+      const profileCity = profile.location_city?.trim().toLowerCase();
+      const aSameCity =
+        Boolean(profileCity) &&
+        a.candidate.location_city?.trim().toLowerCase() === profileCity;
+      const bSameCity =
+        Boolean(profileCity) &&
+        b.candidate.location_city?.trim().toLowerCase() === profileCity;
+      if (aSameCity !== bSameCity) return aSameCity ? -1 : 1;
+
+      if (a.candidate.verified !== b.candidate.verified) {
+        return a.candidate.verified ? -1 : 1;
+      }
+      const aFeatured = Boolean(a.candidate.featured_at);
+      const bFeatured = Boolean(b.candidate.featured_at);
+      if (aFeatured !== bFeatured) return aFeatured ? -1 : 1;
+      return a.tieBreak - b.tieBreak;
+    })
+    .slice(0, 4)
+    .map(({ candidate }) => candidate);
 
   const videoLinks: { label: string; url: string }[] = profile.video_links ?? [];
   const experience: any[] = sortByYearDesc(profile.experience ?? []);
@@ -166,6 +246,49 @@ export default async function PublicProfilePage({
             </h1>
           </div>
         )}
+
+        <section
+          aria-label="Profile statistics"
+          className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8"
+        >
+          <ProfileStat
+            accent={accent}
+            label="Projects"
+            value={String(projectCount ?? 0)}
+          />
+          <ProfileStat
+            accent={accent}
+            label="Credits"
+            value={String(creditCount ?? 0)}
+          />
+          <ProfileStat
+            accent={accent}
+            label="Member since"
+            value={
+              profile.created_at
+                ? new Date(profile.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    year: 'numeric',
+                  })
+                : '—'
+            }
+          />
+          <div
+            className="rounded-md border px-4 py-3"
+            style={{ backgroundColor: accent.card, borderColor: accent.border }}
+          >
+            <p className="font-serif italic text-xs mb-1" style={{ color: accent.textMuted }}>
+              Status
+            </p>
+            {profile.verified ? (
+              <VerifiedBadge size="md" showLabel />
+            ) : (
+              <p className="font-serif font-medium" style={{ color: accent.text }}>
+                Professional
+              </p>
+            )}
+          </div>
+        </section>
 
         <PublicProfileTabs
           accent={accent}
@@ -476,6 +599,82 @@ export default async function PublicProfilePage({
             </div>
           }
         />
+
+        {relatedProfiles.length > 0 && (
+          <section
+            className="mt-12 pt-8 border-t"
+            style={{ borderColor: accent.border }}
+          >
+            <p className="font-serif italic text-sm mb-2" style={{ color: accent.accent }}>
+              Keep exploring
+            </p>
+            <h2 className="font-serif text-2xl md:text-3xl font-medium mb-6">
+              Related Professionals
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {relatedProfiles.map((related) => {
+                const relatedRole =
+                  related.role_titles?.[0] ??
+                  (related.role_category === 'crew_other'
+                    ? related.custom_role_label
+                    : related.role_category?.replace('_', ' '));
+
+                return (
+                  <Link
+                    key={related.id}
+                    href={`/m/${related.slug}`}
+                    className="group block rounded-md border overflow-hidden"
+                    style={{ backgroundColor: accent.card, borderColor: accent.border }}
+                  >
+                    <div
+                      className="aspect-[4/5] overflow-hidden"
+                      style={{ backgroundColor: accent.accentSoft }}
+                    >
+                      {related.headshot_url ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={related.headshot_url}
+                          alt={related.display_name}
+                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
+                          style={{ objectPosition: '50% 25%' }}
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center font-serif italic text-3xl"
+                          style={{ color: accent.accent }}
+                        >
+                          {(related.display_name?.[0] ?? '?').toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <p
+                        className="font-serif italic text-xs capitalize mb-1"
+                        style={{ color: accent.accent }}
+                      >
+                        {relatedRole}
+                      </p>
+                      <p className="font-serif font-medium flex items-center gap-1.5">
+                        <span className="group-hover:opacity-80 transition-opacity">
+                          {related.display_name}
+                        </span>
+                        {related.verified && <VerifiedBadge size="sm" />}
+                      </p>
+                      {related.location_city && (
+                        <p
+                          className="font-serif italic text-xs mt-1"
+                          style={{ color: accent.textMuted }}
+                        >
+                          {related.location_city}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </main>
 
       <footer className="border-t py-8 mt-12" style={{ borderColor: accent.border }}>
@@ -495,5 +694,29 @@ function Detail({ accent, label, value }: { accent: any; label: string; value: s
       <dt className="italic" style={{ color: accent.textMuted }}>{label}</dt>
       <dd style={{ color: accent.text }}>{value}</dd>
     </>
+  );
+}
+
+function ProfileStat({
+  accent,
+  label,
+  value,
+}: {
+  accent: ReturnType<typeof getAccent>;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div
+      className="rounded-md border px-4 py-3"
+      style={{ backgroundColor: accent.card, borderColor: accent.border }}
+    >
+      <p className="font-serif italic text-xs mb-1" style={{ color: accent.textMuted }}>
+        {label}
+      </p>
+      <p className="font-serif text-lg font-medium" style={{ color: accent.text }}>
+        {value}
+      </p>
+    </div>
   );
 }
