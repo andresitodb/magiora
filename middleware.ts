@@ -25,12 +25,24 @@ export async function middleware(request: NextRequest) {
   const host = (request.headers.get('host') ?? '').toLowerCase();
   const hostname = host.split(':')[0]; // strip port
   const parts = hostname.split('.');
+  const configuredHostname = (() => {
+    try {
+      return new URL(
+        process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+      ).hostname.replace(/^www\./, '');
+    } catch {
+      return 'localhost';
+    }
+  })();
 
   let slug: string | null = null;
 
-  // Production: ['andres', 'kinora', 'com']
-  if (parts.length >= 3 && parts[parts.length - 2] === 'kinora') {
-    slug = parts[0];
+  // Production: profile.magiora.com (or the configured custom domain).
+  if (
+    configuredHostname !== 'localhost' &&
+    hostname.endsWith(`.${configuredHostname}`)
+  ) {
+    slug = hostname.slice(0, -(configuredHostname.length + 1)).split('.')[0];
   }
   // Local dev: ['andres', 'localhost']  (works in modern Chrome/Firefox/Safari)
   else if (parts.length === 2 && parts[1] === 'localhost') {
@@ -41,7 +53,7 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
 
     // Only rewrite the root path of the subdomain to the profile page.
-    // Any other path on a subdomain (e.g. andres.kinora.com/dashboard) gets
+    // Any other path on a profile subdomain gets
     // redirected to the apex domain to avoid confusion.
     if (url.pathname === '/' || url.pathname === '') {
       url.pathname = `/m/${slug}`;

@@ -8,7 +8,6 @@ export async function triggerMatchingForCall(callId: string) {
   try {
     const matches = await computeMatchesForCall(callId);
     const result = await notifyMatchedProfiles(callId, matches);
-    console.log(`[matching] call=${callId} matches=${matches.length} notified=${result.notified} emailed=${result.emailed}`);
     return { ok: true, ...result };
   } catch (err: unknown) {
     console.error('[matching] failed:', err);

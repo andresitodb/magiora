@@ -14,13 +14,14 @@ interface SearchResult {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q')?.trim() ?? '';
+  const searchTerm = q.replace(/[,%()]/g, ' ').trim();
 
-  if (q.length < 2) {
+  if (searchTerm.length < 2) {
     return Response.json({ results: [] });
   }
 
   const supabase = createAnonClient();
-  const pattern = `%${q}%`;
+  const pattern = `%${searchTerm}%`;
   const results: SearchResult[] = [];
 
   // 1. Profiles (by name)
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
         project.tagline,
       ]
         .filter(Boolean)
-        .join(' Â· '),
+        .join(' · '),
       href: `/projects/${project.slug}`,
       thumbnail: project.poster_url,
     });
