@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { slugify, PROJECT_TYPES, PROJECT_STATUSES } from '@/lib/projects';
 import { categoryForTitle } from '@/lib/role_titles';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const VALID_TYPES = PROJECT_TYPES.map((t) => t.value) as string[];
 const VALID_STATUSES = PROJECT_STATUSES.map((s) => s.value) as string[];
@@ -26,7 +27,11 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
-async function generateUniqueSlug(supabase: any, baseTitle: string, excludeId?: string): Promise<string> {
+async function generateUniqueSlug(
+  supabase: SupabaseClient,
+  baseTitle: string,
+  excludeId?: string
+): Promise<string> {
   const base = slugify(baseTitle) || 'project';
   let slug = base;
   let n = 1;
@@ -96,23 +101,7 @@ export async function createProject(formData: FormData) {
     redirect('/dashboard/projects/new?error=' + encodeURIComponent(error?.message ?? 'Could not create project'));
   }
 
-  const { error: ownerCreditError } = await supabase.from('project_credits').insert({
-    project_id: created.id,
-    profile_id: user.id,
-    role_title: 'Owner',
-    role_category: null,
-    position: 0,
-    confirmed: true,
-  });
-
   revalidatePath('/dashboard/projects');
-  if (ownerCreditError) {
-    redirect(
-      `/dashboard/projects/${created.id}/edit?error=${encodeURIComponent(
-        'Project created, but its owner credit could not be added.'
-      )}`
-    );
-  }
   redirect(`/dashboard/projects/${created.id}/edit?toast=created`);
 }
 
@@ -283,6 +272,92 @@ export async function addCredit(formData: FormData) {
     }
   }
 
+  const normalizedRole = roleTitle.toLocaleLowerCase();
+  if (profileId) {
+    const { data: existingProfileCredits, error: existingCreditsError } =
+      await supabase
+        .from('project_credits')
+        .select('id, role_title')
+        .eq('project_id', projectId)
+        .eq('profile_id', profileId);
+
+    if (existingCreditsError) {
+      redirect(
+        `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+          existingCreditsError.message
+        )}`
+      );
+    }
+
+    const duplicate = (existingProfileCredits ?? []).find(
+      (credit) =>
+        credit.role_title.trim().toLocaleLowerCase() === normalizedRole
+    );
+    if (duplicate) {
+      redirect(
+        `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+          'That professional already has this role on the project.'
+        )}`
+      );
+    }
+
+    const legacyOwnerCredit = (existingProfileCredits ?? []).find(
+      (credit) => credit.role_title.trim().toLocaleLowerCase() === 'owner'
+    );
+    if (legacyOwnerCredit) {
+      const roleCategory = categoryForTitle(roleTitle) ?? null;
+      const { error: replaceOwnerError } = await supabase
+        .from('project_credits')
+        .update({
+          role_title: roleTitle,
+          role_category: roleCategory,
+          character_name: characterName,
+          external_name: null,
+          confirmed: true,
+        })
+        .eq('id', legacyOwnerCredit.id)
+        .eq('project_id', projectId);
+
+      if (replaceOwnerError) {
+        redirect(
+          `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+            replaceOwnerError.message
+          )}`
+        );
+      }
+
+      revalidatePath(`/dashboard/projects/${projectId}/edit`);
+      revalidatePath('/projects/[slug]', 'page');
+      revalidatePath('/m/[slug]', 'page');
+      redirect(`/dashboard/projects/${projectId}/edit?toast=credit_added`);
+    }
+  } else {
+    const { data: duplicateExternal, error: duplicateExternalError } =
+      await supabase
+        .from('project_credits')
+        .select('id')
+        .eq('project_id', projectId)
+        .ilike('external_name', name)
+        .ilike('role_title', roleTitle)
+        .limit(1)
+        .maybeSingle();
+
+    if (duplicateExternalError) {
+      redirect(
+        `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+          duplicateExternalError.message
+        )}`
+      );
+    }
+    if (duplicateExternal) {
+      redirect(
+        `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+          'That professional already has this role on the project.'
+        )}`
+      );
+    }
+  }
+
   const { data: maxRow } = await supabase
     .from('project_credits')
     .select('position')
@@ -309,6 +384,8 @@ export async function addCredit(formData: FormData) {
   }
 
   revalidatePath(`/dashboard/projects/${projectId}/edit`);
+  revalidatePath('/projects/[slug]', 'page');
+  revalidatePath('/m/[slug]', 'page');
   redirect(`/dashboard/projects/${projectId}/edit?toast=credit_added`);
 }
 

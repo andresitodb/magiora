@@ -38,3 +38,46 @@ export async function unfeatureProfile(formData: FormData) {
   revalidatePath('/');
   redirect('/admin/featured?saved=unfeatured');
 }
+
+export async function featureProject(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = formData.get('project_id') as string;
+  if (!projectId) redirect('/admin/featured');
+
+  const { error } = await supabase
+    .from('projects')
+    .update({ featured_at: new Date().toISOString() })
+    .eq('id', projectId)
+    .eq('visible', true);
+
+  if (error) {
+    redirect(
+      `/admin/featured?error=${encodeURIComponent(error.message)}`
+    );
+  }
+
+  revalidatePath('/admin/featured');
+  revalidatePath('/');
+  redirect('/admin/featured?saved=project_featured');
+}
+
+export async function unfeatureProject(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = formData.get('project_id') as string;
+  if (!projectId) redirect('/admin/featured');
+
+  const { error } = await supabase
+    .from('projects')
+    .update({ featured_at: null })
+    .eq('id', projectId);
+
+  if (error) {
+    redirect(
+      `/admin/featured?error=${encodeURIComponent(error.message)}`
+    );
+  }
+
+  revalidatePath('/admin/featured');
+  revalidatePath('/');
+  redirect('/admin/featured?saved=project_unfeatured');
+}
