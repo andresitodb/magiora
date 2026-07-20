@@ -336,6 +336,26 @@ export default async function PublicProfilePage({
           </div>
         )}
 
+        {!isOwner && (profile.contact_email || profile.website_url) && (
+          <div className="mb-8">
+            <a
+              href={
+                profile.contact_email
+                  ? `mailto:${profile.contact_email}`
+                  : profile.website_url
+              }
+              target={profile.contact_email ? undefined : '_blank'}
+              rel={profile.contact_email ? undefined : 'noopener noreferrer'}
+              className="inline-flex items-center justify-center rounded-md px-5 py-2.5 font-serif text-sm font-medium transition-opacity hover:opacity-85"
+              style={{ backgroundColor: accent.accent, color: accent.card }}
+            >
+              {profile.contact_email
+                ? `Contact ${profile.display_name}`
+                : 'Visit professional website ↗'}
+            </a>
+          </div>
+        )}
+
         <section
           aria-label="Profile statistics"
           className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8"
@@ -378,26 +398,6 @@ export default async function PublicProfilePage({
             )}
           </div>
         </section>
-
-        {!isOwner && (profile.contact_email || profile.website_url) && (
-          <div className="mb-8">
-            <a
-              href={
-                profile.contact_email
-                  ? `mailto:${profile.contact_email}`
-                  : profile.website_url
-              }
-              target={profile.contact_email ? undefined : '_blank'}
-              rel={profile.contact_email ? undefined : 'noopener noreferrer'}
-              className="inline-flex items-center justify-center rounded-md px-5 py-2.5 font-serif text-sm font-medium transition-opacity hover:opacity-85"
-              style={{ backgroundColor: accent.accent, color: accent.card }}
-            >
-              {profile.contact_email
-                ? `Contact ${profile.display_name}`
-                : 'Visit professional website ↗'}
-            </a>
-          </div>
-        )}
 
         <PublicProfileTabs
           accent={accent}

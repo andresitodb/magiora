@@ -231,14 +231,6 @@ export default async function DirectoryPage({
         </p>
 
         <DirectoryFilters
-          key={[
-            params.q,
-            params.role,
-            params.city,
-            params.lang,
-            params.verified,
-            sort,
-          ].join(':')}
           roleFilters={ROLE_FILTERS}
           knownCities={knownCities}
           currentRole={params.role ?? ''}

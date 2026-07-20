@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useMemo, useRef } from 'react';
 import { LANGUAGES } from '@/lib/languages';
 import RoleAutocomplete from '@/components/RoleAutocomplete';
 import CityAutocomplete from '@/components/CityAutocomplete';
@@ -32,8 +32,12 @@ export default function DirectoryFilters({
   const [, startTransition] = useTransition();
 
   const [q, setQ] = useState(currentQuery);
+  const lastRequestedQuery = useRef(currentQuery);
 
-  function pushFilter(updates: Record<string, string | null>) {
+  function pushFilter(
+    updates: Record<string, string | null>,
+    history: 'push' | 'replace' = 'push'
+  ) {
     const next = new URLSearchParams(searchParams.toString());
     next.delete('page');
     for (const [k, v] of Object.entries(updates)) {
@@ -41,28 +45,45 @@ export default function DirectoryFilters({
       else next.set(k, v);
     }
     startTransition(() => {
-      router.push(`/directory?${next.toString()}`);
+      const href = next.size > 0 ? `/directory?${next.toString()}` : '/directory';
+      if (history === 'replace') router.replace(href, { scroll: false });
+      else router.push(href, { scroll: false });
     });
   }
 
   useEffect(() => {
     const t = setTimeout(() => {
-      if (q !== currentQuery) pushFilter({ q: q || null });
+      if (q !== currentQuery) {
+        lastRequestedQuery.current = q;
+        pushFilter({ q: q || null }, 'replace');
+      }
     }, 400);
     return () => clearTimeout(t);
   }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sort roles alphabetically by label
-  const sortedRoles = [...roleFilters].sort((a, b) => a.label.localeCompare(b.label));
+  useEffect(() => {
+    if (currentQuery !== lastRequestedQuery.current) {
+      setQ(currentQuery);
+    }
+  }, [currentQuery]);
 
-  const sortedLangs = [
-    ...PINNED_LANGS.map((c) => LANGUAGES.find((l) => l.code === c)).filter(
-      (language): language is (typeof LANGUAGES)[number] => language !== undefined
-    ),
-    ...[...LANGUAGES]
-      .filter((l) => !PINNED_LANGS.includes(l.code))
-      .sort((a, b) => a.name.localeCompare(b.name)),
-  ];
+  // Sort roles alphabetically by label
+  const sortedRoles = useMemo(
+    () => [...roleFilters].sort((a, b) => a.label.localeCompare(b.label)),
+    [roleFilters]
+  );
+
+  const sortedLangs = useMemo(
+    () => [
+      ...PINNED_LANGS.map((c) => LANGUAGES.find((l) => l.code === c)).filter(
+        (language): language is (typeof LANGUAGES)[number] => language !== undefined
+      ),
+      ...[...LANGUAGES]
+        .filter((l) => !PINNED_LANGS.includes(l.code))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    ],
+    []
+  );
 
   const activeFilters = [
     currentQuery && { key: 'q', label: `Search: ${currentQuery}` },
@@ -102,6 +123,7 @@ export default function DirectoryFilters({
             Role
           </label>
           <RoleAutocomplete
+            key={currentRole}
             options={sortedRoles}
             currentValue={currentRole}
             onChange={(value) => pushFilter({ role: value || null })}
@@ -115,7 +137,9 @@ export default function DirectoryFilters({
           <CityAutocomplete
             defaultValue={currentCity}
             knownCities={knownCities}
-            onChange={(value) => pushFilter({ city: value || null })}
+            onChange={(value, history = 'push') =>
+              pushFilter({ city: value || null }, history)
+            }
           />
         </div>
 

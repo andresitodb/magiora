@@ -237,28 +237,6 @@ export default async function PublicProjectPage({
                 </span>
               )}
             </div>
-            {project.owner && (
-              <div className="pt-4 flex items-center gap-3">
-                <p className="font-serif italic text-xs text-stone-500">A project by</p>
-                <Link href={`/m/${project.owner.slug}`} className="flex items-center gap-2 group">
-                  {project.owner.headshot_url ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={project.owner.headshot_url}
-                      alt={project.owner.display_name}
-                      className="w-6 h-6 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="w-6 h-6 rounded-full bg-[#FAECE7] flex items-center justify-center text-[#712B13] text-xs">
-                      {(project.owner.display_name?.[0] ?? '?').toUpperCase()}
-                    </span>
-                  )}
-                  <span className="font-serif text-sm font-medium group-hover:text-[#712B13]">
-                    {project.owner.display_name}
-                  </span>
-                </Link>
-              </div>
-            )}
           </div>
         </div>
 
@@ -288,6 +266,60 @@ export default async function PublicProjectPage({
           </section>
         )}
 
+        {linkEntries.length > 0 && (
+          <section className="mb-10">
+            <a
+              href={linkEntries[0][1]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded-md bg-[#712B13] px-5 py-2.5 text-sm font-serif font-medium text-white hover:bg-[#4A1B0C]"
+            >
+              Visit {linkEntries[0][0]} ↗
+            </a>
+            {linkEntries.length > 1 && (
+              <ul className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
+                {linkEntries.slice(1).map(([key, value]) => (
+                  <li key={key}>
+                    <a
+                      href={value}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm italic font-serif text-[#712B13] hover:underline capitalize"
+                    >
+                      {key} ↗
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {project.owner && (
+          <section className="mb-12 pt-6 border-t border-stone-200">
+            <p className="font-serif italic text-xs text-stone-500 mb-3">
+              Project owner
+            </p>
+            <Link href={`/m/${project.owner.slug}`} className="inline-flex items-center gap-3 group">
+              {project.owner.headshot_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={project.owner.headshot_url}
+                  alt={project.owner.display_name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <span className="w-10 h-10 rounded-full bg-[#FAECE7] flex items-center justify-center text-[#712B13] font-serif">
+                  {(project.owner.display_name?.[0] ?? '?').toUpperCase()}
+                </span>
+              )}
+              <span className="font-serif font-medium group-hover:text-[#712B13]">
+                {project.owner.display_name}
+              </span>
+            </Link>
+          </section>
+        )}
+
         {/* CREDITS */}
         {credits && credits.length > 0 && (
           <section className="mb-12">
@@ -308,22 +340,6 @@ export default async function PublicProjectPage({
                 </div>
               ))}
             </div>
-          </section>
-        )}
-
-        {linkEntries.length > 0 && (
-          <section className="mb-12">
-            <p className="font-serif italic text-sm text-[#993C1D] mb-3">Links</p>
-            <ul className="space-y-2">
-              {linkEntries.map(([key, value]) => (
-                <li key={key} className="font-serif">
-                  <span className="text-stone-500 italic capitalize">{key}: </span>
-                  <a href={value} target="_blank" rel="noopener noreferrer" className="text-[#712B13] hover:underline">
-                    {value} ↗
-                  </a>
-                </li>
-              ))}
-            </ul>
           </section>
         )}
 

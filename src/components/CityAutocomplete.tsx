@@ -9,14 +9,17 @@ export default function CityAutocomplete({
 }: {
   defaultValue: string;
   knownCities: string[];
-  onChange: (city: string) => void;
+  onChange: (city: string, history?: 'push' | 'replace') => void;
 }) {
   const [input, setInput] = useState(defaultValue);
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const lastRequestedCity = useRef(defaultValue);
 
   useEffect(() => {
-    setInput(defaultValue);
+    if (defaultValue !== lastRequestedCity.current) {
+      setInput(defaultValue);
+    }
   }, [defaultValue]);
 
   useEffect(() => {
@@ -32,7 +35,10 @@ export default function CityAutocomplete({
   // Debounce: update URL when input changes
   useEffect(() => {
     const t = setTimeout(() => {
-      if (input !== defaultValue) onChange(input);
+      if (input !== defaultValue) {
+        lastRequestedCity.current = input;
+        onChange(input, 'replace');
+      }
     }, 400);
     return () => clearTimeout(t);
   }, [input]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -45,6 +51,7 @@ export default function CityAutocomplete({
 
   function pick(city: string) {
     setInput(city);
+    lastRequestedCity.current = city;
     onChange(city);
     setOpen(false);
   }
@@ -68,6 +75,7 @@ export default function CityAutocomplete({
           type="button"
           onClick={() => {
             setInput('');
+            lastRequestedCity.current = '';
             onChange('');
           }}
           aria-label="Clear"

@@ -23,10 +23,6 @@ export default function RoleAutocomplete({
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setInput(currentValue ? options.find((o) => o.value === currentValue)?.label ?? '' : '');
-  }, [currentValue, options]);
-
-  useEffect(() => {
     function onClick(e: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setOpen(false);
