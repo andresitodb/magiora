@@ -12,6 +12,9 @@ import Link from 'next/link';
 import { getLanguageName } from '@/lib/languages';
 import { getAccent, getTemplate, type Accent } from '@/lib/profile_themes';
 import { applyPublicBrand } from '@/lib/publicBrand';
+import type { Metadata } from 'next';
+import { entityMetadata, metadataText, unavailableMetadata } from '@/lib/metadata';
+import { getProfileEntity } from '@/lib/publicEntityLoaders';
 
 const FREE_GALLERY_DISPLAY_LIMIT = 3;
 
@@ -78,6 +81,41 @@ function sortByYearDesc(items: ExperienceItem[]): ExperienceItem[] {
   });
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const { data: profile, error } = await getProfileEntity(slug);
+  const pathname = `/m/${encodeURIComponent(slug)}`;
+
+  if (error || !profile || profile.visible !== true || profile.approved !== true) {
+    return unavailableMetadata(pathname);
+  }
+
+  const role =
+    profile.role_titles?.[0] ??
+    profile.custom_role_label ??
+    profile.role_category?.replace(/_/g, ' ');
+  const location = [profile.location_city, profile.location_state]
+    .filter(Boolean)
+    .join(', ');
+  const roleLocation = [role, location].filter(Boolean).join(' in ');
+  const description = metadataText(
+    profile.bio || roleLocation,
+    'Professional profile on Magiora.'
+  );
+
+  return entityMetadata({
+    title: profile.display_name || profile.slug || 'Magiora',
+    description,
+    pathname,
+    image: profile.headshot_url,
+    type: 'profile',
+  });
+}
+
 export default async function PublicProfilePage({
   params,
 }: {
@@ -86,11 +124,7 @@ export default async function PublicProfilePage({
   const { slug } = await params;
   const supabase = await createClient();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('slug', slug)
-    .maybeSingle();
+  const { data: profile } = await getProfileEntity(slug);
 
   if (!profile) notFound();
 

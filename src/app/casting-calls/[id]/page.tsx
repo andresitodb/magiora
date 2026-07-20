@@ -4,8 +4,45 @@ import Nav from '@/components/Nav';
 import BackLink from '@/components/BackLink';
 import Link from 'next/link';
 import { applyCastingCall } from '@/app/dashboard/casting-calls/actions';
+import type { Metadata } from 'next';
+import { entityMetadata, metadataText, unavailableMetadata } from '@/lib/metadata';
+import { getCastingEntity } from '@/lib/publicEntityLoaders';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const { data: call, error } = await getCastingEntity(id);
+  const pathname = `/casting-calls/${encodeURIComponent(id)}`;
+
+  if (error || !call || call.status !== 'open') {
+    return unavailableMetadata(pathname);
+  }
+
+  const location = [call.location_city, call.location_state]
+    .filter(Boolean)
+    .join(', ');
+  const summary = [
+    call.role_name && `Casting ${call.role_name}`,
+    call.project_title && `for ${call.project_title}`,
+    location && `in ${location}`,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return entityMetadata({
+    title: call.role_name || call.project_title || 'Magiora',
+    description: metadataText(
+      call.role_description || call.project_description || summary,
+      'A public casting call on Magiora.'
+    ),
+    pathname,
+  });
+}
 
 export default async function CastingCallDetailPage({
   params,
@@ -23,11 +60,7 @@ export default async function CastingCallDetailPage({
   } = await supabase.auth.getUser();
 
   // REQUIRE LOGIN — non-logged users get redirected to login with next=
-  const { data: call } = await supabase
-    .from('casting_calls')
-    .select('*, poster:profiles!casting_calls_posted_by_fkey(display_name, slug, headshot_url)')
-    .eq('id', id)
-    .maybeSingle();
+  const { data: call } = await getCastingEntity(id);
 
   if (!call) notFound();
 

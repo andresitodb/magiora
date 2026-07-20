@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { getSiteUrl } from "@/lib/metadata";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,20 +14,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ),
+  metadataBase: getSiteUrl(),
   title: {
     default: "Magiora",
     template: "%s | Magiora",
   },
   description: "Where ideas become productions.",
   applicationName: "Magiora",
+  alternates: {
+    canonical: "/",
+  },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website",
     siteName: "Magiora",
     title: "Magiora",
     description: "Where ideas become productions.",
+    url: "/",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",

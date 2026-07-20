@@ -10,6 +10,9 @@ import {
   getProjectStatusColor,
 } from '@/lib/projects';
 import { getAccent } from '@/lib/profile_themes';
+import type { Metadata } from 'next';
+import { entityMetadata, metadataText, unavailableMetadata } from '@/lib/metadata';
+import { getProjectEntity } from '@/lib/publicEntityLoaders';
 
 type CreditProfile = {
   id: string;
@@ -42,6 +45,38 @@ type RelatedProject = {
   created_at: string;
 };
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const { data: project, error } = await getProjectEntity(slug);
+  const pathname = `/projects/${encodeURIComponent(slug)}`;
+
+  if (error || !project || project.visible !== true) {
+    return unavailableMetadata(pathname);
+  }
+
+  const typeStatus = [
+    getProjectTypeLabel(project.project_type),
+    getProjectStatusLabel(project.status),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const gallery = Array.isArray(project.gallery) ? project.gallery : [];
+
+  return entityMetadata({
+    title: project.title || 'Magiora',
+    description: metadataText(
+      project.tagline || project.description || typeStatus,
+      'A public film project on Magiora.'
+    ),
+    pathname,
+    image: project.poster_url || gallery[0],
+  });
+}
+
 export default async function PublicProjectPage({
   params,
 }: {
@@ -50,13 +85,7 @@ export default async function PublicProjectPage({
   const { slug } = await params;
   const supabase = await createClient();
 
-  const { data: project } = await supabase
-    .from('projects')
-    .select(
-      `*, owner:profiles!projects_owner_id_fkey(id, slug, display_name, headshot_url, role_titles, verified)`
-    )
-    .eq('slug', slug)
-    .maybeSingle();
+  const { data: project } = await getProjectEntity(slug);
 
   if (!project) notFound();
 

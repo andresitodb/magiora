@@ -1,9 +1,44 @@
 import { notFound } from 'next/navigation';
-import { createAnonClient } from '@/lib/supabase/anon';
 import Nav from '@/components/Nav';
 import BackLink from '@/components/BackLink';
 import Link from 'next/link';
 import { applyPublicBrand } from '@/lib/publicBrand';
+import type { Metadata } from 'next';
+import { entityMetadata, metadataText, unavailableMetadata } from '@/lib/metadata';
+import { getSpotlightEntity } from '@/lib/publicEntityLoaders';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const { data: interview, error } = await getSpotlightEntity(slug);
+  const pathname = `/stories/${encodeURIComponent(slug)}`;
+
+  if (error || !interview) return unavailableMetadata(pathname);
+
+  const subject = Array.isArray(interview.subject)
+    ? interview.subject[0]
+    : interview.subject;
+  const title = applyPublicBrand(
+    interview.title || subject?.display_name || 'Magiora'
+  );
+  const description = metadataText(
+    applyPublicBrand(interview.intro),
+    subject?.display_name
+      ? `A Spotlight interview with ${subject.display_name}.`
+      : 'A Spotlight interview from Magiora.'
+  );
+
+  return entityMetadata({
+    title,
+    description,
+    pathname,
+    image: interview.hero_image_url || subject?.headshot_url,
+    type: 'article',
+  });
+}
 
 export default async function StoryDetailPage({
   params,
@@ -11,19 +46,7 @@ export default async function StoryDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = createAnonClient();
-
-  const { data: interview } = await supabase
-    .from('interviews')
-    .select(
-      `*, subject:profiles!interviews_subject_profile_id_fkey (
-        id, display_name, slug, headshot_url, bio, role_category, custom_role_label,
-        location_city, location_state, demo_reel_url
-      )`
-    )
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
+  const { data: interview } = await getSpotlightEntity(slug);
 
   if (!interview) notFound();
 

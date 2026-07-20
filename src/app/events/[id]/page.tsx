@@ -1,10 +1,46 @@
 import { notFound } from 'next/navigation';
-import { createAnonClient } from '@/lib/supabase/anon';
 import { createClient } from '@/lib/supabase/server';
 import { rsvpToEvent } from '@/app/dashboard/events/actions';
 import Nav from '@/components/Nav';
 import BackLink from '@/components/BackLink';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { entityMetadata, metadataText, unavailableMetadata } from '@/lib/metadata';
+import { getEventEntity } from '@/lib/publicEntityLoaders';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const { data: event, error } = await getEventEntity(id);
+  const pathname = `/events/${encodeURIComponent(id)}`;
+
+  if (error || !event) return unavailableMetadata(pathname);
+
+  const eventDate = new Date(event.event_date);
+  const dateLabel = Number.isNaN(eventDate.getTime())
+    ? ''
+    : eventDate.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+  const dateLocation = [dateLabel, event.location_name]
+    .filter(Boolean)
+    .join(' · ');
+
+  return entityMetadata({
+    title: event.title || 'Magiora',
+    description: metadataText(
+      event.description || dateLocation,
+      'A public event on Magiora.'
+    ),
+    pathname,
+    image: event.cover_image_url,
+  });
+}
 
 export default async function EventDetailPage({
   params,
@@ -15,16 +51,7 @@ export default async function EventDetailPage({
 }) {
   const { id } = await params;
   const sp = await searchParams;
-  const anon = createAnonClient();
-
-  const { data: event } = await anon
-    .from('events')
-    .select(
-      `*, posted_by_profile:profiles!events_posted_by_fkey ( id, display_name, slug, headshot_url )`
-    )
-    .eq('id', id)
-    .eq('status', 'published')
-    .single();
+  const { data: event } = await getEventEntity(id);
 
   if (!event) notFound();
 
