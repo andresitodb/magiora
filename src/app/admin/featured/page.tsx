@@ -4,8 +4,10 @@ import Link from 'next/link';
 import {
   featureProfile,
   featureProject,
+  featureInterview,
   unfeatureProfile,
   unfeatureProject,
+  unfeatureInterview,
 } from './actions';
 import AdminFeaturedSearch from '@/components/admin/AdminFeaturedSearch';
 
@@ -60,10 +62,26 @@ export default async function AdminFeaturedPage({
     .order('featured_at', { ascending: false })
     .order('id', { ascending: true });
 
+  const { data: featuredInterviews } = await supabase
+    .from('interviews')
+    .select(
+      `id, title, slug, status, featured_at, hero_image_url,
+       subject:profiles!interviews_subject_profile_id_fkey ( display_name, headshot_url )`
+    )
+    .not('featured_at', 'is', null)
+    .order('featured_at', { ascending: false })
+    .order('id', { ascending: true });
+
   const eligibleFeatured = (featured ?? []).filter(
     (profile) => profile.visible && profile.approved
   );
   const homeProfileIds = new Set(eligibleFeatured.slice(0, 2).map((profile) => profile.id));
+  const homeInterviewIds = new Set(
+    (featuredInterviews ?? [])
+      .filter((interview) => interview.status === 'published')
+      .slice(0, 2)
+      .map((interview) => interview.id)
+  );
 
   return (
     <div className="max-w-4xl">
@@ -80,6 +98,10 @@ export default async function AdminFeaturedPage({
           {sp.saved === 'unfeatured' && 'Artist removed from the home page.'}
           {sp.saved === 'project_featured' && 'Project added to the home page.'}
           {sp.saved === 'project_unfeatured' && 'Project removed from the home page.'}
+          {sp.saved === 'spotlight_featured' &&
+            `${sp.name || 'Interview'} is now Featured on Home.`}
+          {sp.saved === 'spotlight_unfeatured' &&
+            'Interview removed from Featured on Home.'}
         </div>
       )}
 
@@ -194,15 +216,69 @@ export default async function AdminFeaturedPage({
       <section className="pt-8 mt-12 border-t border-stone-200">
         <p className="k-eyebrow mb-2">Home page</p>
         <h2 className="font-serif text-2xl font-medium mb-2">Featured Spotlight</h2>
-        <div className="k-card p-5">
-          <p className="font-serif text-sm text-stone-700">
-            Spotlight is currently selected automatically.
+        <p className="text-sm text-stone-600 italic font-serif mb-6">
+          Home displays the two most recently featured published interviews.
+        </p>
+        <div className="mb-8">
+          <p className="font-serif italic text-sm text-[#993C1D] mb-3">
+            Add a published interview
           </p>
-          <p className="mt-1 text-sm italic font-serif text-stone-500">
-            Home displays the two most recently published interviews. The current interview
-            schema has no featured field, so individual Spotlight curation cannot be changed
-            safely from Admin without a database migration.
-          </p>
+          <AdminFeaturedSearch type="spotlight" action={featureInterview} />
+        </div>
+
+        <p className="font-serif italic text-sm text-[#993C1D] mb-3">
+          Current Featured interviews
+        </p>
+        <div className="space-y-3 mb-8">
+          {(featuredInterviews ?? []).length === 0 ? (
+            <div className="k-card p-6 text-center">
+              <p className="font-serif italic text-stone-500">
+                No Spotlight interviews are featured.
+              </p>
+              <p className="font-serif italic text-sm text-stone-500 mt-1">
+                Search for a published interview above to add it to Home.
+              </p>
+            </div>
+          ) : (
+            (featuredInterviews ?? []).map((interview) => {
+              const subject = interview.subject[0];
+              const thumbnail = interview.hero_image_url ?? subject?.headshot_url;
+              const eligible = interview.status === 'published';
+              return (
+                <div key={interview.id} className="k-card p-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+                  {thumbnail ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={thumbnail} alt="" className="h-14 w-20 rounded object-cover bg-stone-100" />
+                  ) : (
+                    <div className="h-14 w-20 rounded bg-[#FAECE7] flex items-center justify-center font-serif text-[#712B13]">
+                      {(subject?.display_name?.[0] ?? interview.title?.[0] ?? '?').toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/admin/stories/${interview.id}`} className="font-serif font-medium hover:text-[#712B13]">
+                      {interview.title ?? 'Untitled interview'}
+                    </Link>
+                    <p className="text-xs italic font-serif text-stone-500">
+                      {subject?.display_name ?? 'No interviewee'} · {interview.status.replace('_', ' ')}
+                    </p>
+                    <p className={`text-xs italic font-serif mt-1 ${eligible && homeInterviewIds.has(interview.id) ? 'text-[#712B13]' : 'text-amber-700'}`}>
+                      {eligible
+                        ? homeInterviewIds.has(interview.id)
+                          ? '★ Showing on Home'
+                          : 'Featured, outside the Home limit'
+                        : 'Stored Featured state; not publicly eligible'}
+                    </p>
+                  </div>
+                  <form action={unfeatureInterview}>
+                    <input type="hidden" name="interview_id" value={interview.id} />
+                    <button type="submit" className="text-xs italic font-serif text-stone-500 hover:text-red-700">
+                      Remove Featured
+                    </button>
+                  </form>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
 

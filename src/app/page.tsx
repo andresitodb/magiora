@@ -21,9 +21,11 @@ type SpotlightStory = {
   subject:
     | {
         display_name: string;
+        headshot_url: string | null;
       }
     | {
         display_name: string;
+        headshot_url: string | null;
       }[]
     | null;
 };
@@ -64,11 +66,13 @@ export default async function HomePage() {
     supabase
       .from('interviews')
       .select(
-        `id, slug, title, intro, hero_image_url, published_at,
+        `id, slug, title, intro, hero_image_url, published_at, featured_at,
          subject:profiles!interviews_subject_profile_id_fkey ( display_name, slug, role_titles, role_category, custom_role_label, headshot_url, verified )`
       )
       .eq('status', 'published')
-      .order('published_at', { ascending: false })
+      .not('featured_at', 'is', null)
+      .order('featured_at', { ascending: false })
+      .order('id', { ascending: true })
       .limit(2),
     supabase
       .from('profiles')
@@ -135,15 +139,17 @@ export default async function HomePage() {
               return (
                 <Link key={story.id} href={`/stories/${story.slug}`} className="k-card k-card-interactive group flex flex-col">
                     <div className="aspect-[16/10] overflow-hidden bg-stone-100">
-                      {story.hero_image_url ? (
+                      {story.hero_image_url || subject?.headshot_url ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
-                          src={story.hero_image_url}
+                          src={story.hero_image_url ?? subject?.headshot_url ?? ''}
                           alt={applyPublicBrand(story.title)}
                           className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-[#FAECE7] to-[#FBEAF0]" />
+                        <div className="w-full h-full bg-gradient-to-br from-[#FAECE7] to-[#FBEAF0] flex items-center justify-center font-serif italic text-4xl text-[#712B13]">
+                          {(subject?.display_name?.[0] ?? story.title?.[0] ?? '?').toUpperCase()}
+                        </div>
                       )}
                     </div>
                     <div className="p-5 flex flex-1 flex-col">

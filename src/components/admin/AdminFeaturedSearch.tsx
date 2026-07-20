@@ -13,7 +13,7 @@ export default function AdminFeaturedSearch({
   type,
   action,
 }: {
-  type: 'profile' | 'project';
+  type: 'profile' | 'project' | 'spotlight';
   action: (formData: FormData) => void | Promise<void>;
 }) {
   const [query, setQuery] = useState('');
@@ -73,7 +73,11 @@ export default function AdminFeaturedSearch({
   return (
     <div ref={wrapperRef} className="relative">
       <label className="block text-xs font-medium text-stone-600 italic font-serif">
-        Search {type === 'profile' ? 'approved, public professionals' : 'public projects'}
+        Search {type === 'profile'
+          ? 'approved, public professionals'
+          : type === 'spotlight'
+            ? 'published Spotlight interviews'
+            : 'public projects'}
         <input
           value={query}
           onChange={(event) => {
@@ -100,7 +104,13 @@ export default function AdminFeaturedSearch({
               choose(results[active]);
             }
           }}
-          placeholder={type === 'profile' ? 'Type a name or slug…' : 'Type a project title…'}
+          placeholder={
+            type === 'profile'
+              ? 'Type a name or slug…'
+              : type === 'spotlight'
+                ? 'Type an interview title…'
+                : 'Type a project title…'
+          }
           className="k-control mt-1"
           role="combobox"
           aria-expanded={results.length > 0}
@@ -141,14 +151,24 @@ export default function AdminFeaturedSearch({
 
       {selected && (
         <form action={action} className="k-card mt-3 p-3 flex items-center gap-3">
-          <input type="hidden" name={type === 'profile' ? 'profile_id' : 'project_id'} value={selected.id} />
+          <input
+            type="hidden"
+            name={
+              type === 'profile'
+                ? 'profile_id'
+                : type === 'spotlight'
+                  ? 'interview_id'
+                  : 'project_id'
+            }
+            value={selected.id}
+          />
           <ResultImage result={selected} type={type} />
           <div className="min-w-0 flex-1">
             <p className="truncate font-serif text-sm font-medium">{selected.title}</p>
             {selected.subtitle && <p className="truncate text-xs italic text-stone-500 capitalize">{selected.subtitle}</p>}
           </div>
           <button type="submit" className="k-button k-button-primary min-h-0 py-1.5 text-xs">
-            Feature
+            {type === 'spotlight' ? 'Add to Featured' : 'Feature'}
           </button>
         </form>
       )}
@@ -156,9 +176,21 @@ export default function AdminFeaturedSearch({
   );
 }
 
-function ResultImage({ result, type }: { result: Result; type: 'profile' | 'project' }) {
+function ResultImage({
+  result,
+  type,
+}: {
+  result: Result;
+  type: 'profile' | 'project' | 'spotlight';
+}) {
   return (
-    <span className={`${type === 'profile' ? 'h-10 w-10 rounded-full' : 'h-12 w-9 rounded'} flex-shrink-0 overflow-hidden bg-[#FAECE7]`}>
+    <span className={`${
+      type === 'profile'
+        ? 'h-10 w-10 rounded-full'
+        : type === 'spotlight'
+          ? 'h-12 w-16 rounded'
+          : 'h-12 w-9 rounded'
+    } flex-shrink-0 overflow-hidden bg-[#FAECE7]`}>
       {result.image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={result.image} alt="" className="h-full w-full object-cover object-top" />

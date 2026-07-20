@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('q')?.trim() ?? '';
   const searchTerm = query.replace(/[,%()]/g, ' ').trim();
   const type = request.nextUrl.searchParams.get('type');
-  if (searchTerm.length < 2 || !['profile', 'project'].includes(type ?? '')) {
+  if (searchTerm.length < 2 || !['profile', 'project', 'spotlight'].includes(type ?? '')) {
     return NextResponse.json({ results: [] });
   }
 
@@ -45,6 +45,33 @@ export async function GET(request: NextRequest) {
         subtitle: item.role_titles?.[0] ?? item.role_category,
         image: item.headshot_url,
       })),
+    });
+  }
+
+  if (type === 'spotlight') {
+    const { data, error } = await supabase
+      .from('interviews')
+      .select(
+        `id, title, hero_image_url,
+         subject:profiles!interviews_subject_profile_id_fkey ( display_name, headshot_url )`
+      )
+      .eq('status', 'published')
+      .is('featured_at', null)
+      .ilike('title', `%${searchTerm}%`)
+      .order('published_at', { ascending: false })
+      .limit(8);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({
+      results: (data ?? []).map((item) => {
+        const subject = item.subject[0];
+        return {
+          id: item.id,
+          title: item.title ?? 'Untitled interview',
+          subtitle: subject?.display_name ?? 'No interviewee',
+          image: item.hero_image_url ?? subject?.headshot_url ?? null,
+        };
+      }),
     });
   }
 

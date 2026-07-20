@@ -99,7 +99,7 @@ export default async function PublicProfilePage({
   } = await supabase.auth.getUser();
   const isOwner = user?.id === profile.id;
 
-  if (!profile.visible && !isOwner) notFound();
+  if ((!profile.visible || profile.approved !== true) && !isOwner) notFound();
 
   const isMember = profile.plan === 'member';
   const roleTitles: string[] = profile.role_titles ?? [];
@@ -284,15 +284,15 @@ export default async function PublicProfilePage({
       </header>
 
       <main className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-10">
-        {isOwner && !profile.visible && (
+        {isOwner && (!profile.visible || profile.approved !== true) && (
           <div
             className="border rounded-md p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-sm"
             style={{ backgroundColor: '#fef3c7', borderColor: '#fcd34d', color: '#78350f' }}
           >
             <div>
-              <p className="font-serif font-medium">Preview — your profile is hidden</p>
+              <p className="font-serif font-medium">Preview — your profile is not publicly listed</p>
               <p className="text-xs italic font-serif mt-1">
-                Only you can see this page. Toggle &quot;Public&quot; in your editor to make it visible.
+                Only you can see this page until the profile is public and approved.
               </p>
             </div>
             <Link

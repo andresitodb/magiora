@@ -7,7 +7,7 @@ export default async function AdminStoriesPage() {
   const { data: interviews } = await supabase
     .from('interviews')
     .select(
-      `id, title, slug, status, created_at, published_at, request_note, hero_image_url,
+      `id, title, slug, status, created_at, published_at, request_note, hero_image_url, featured_at,
        subject:profiles!interviews_subject_profile_id_fkey ( display_name, slug, role_category, headshot_url )`
     )
     .order('created_at', { ascending: false });
@@ -63,14 +63,25 @@ export default async function AdminStoriesPage() {
                   {i.title ?? <span className="text-stone-400 italic">— untitled —</span>}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-1 rounded-full font-serif italic capitalize ${
-                    i.status === 'published' ? 'bg-[#FAECE7] text-[#712B13]' :
-                    i.status === 'in_progress' ? 'bg-amber-100 text-amber-800' :
-                    i.status === 'requested' ? 'bg-stone-100 text-stone-700' :
-                    'bg-stone-100 text-stone-500'
-                  }`}>
-                    {i.status.replace('_', ' ')}
-                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className={`text-xs px-2 py-1 rounded-full font-serif italic capitalize ${
+                      i.status === 'published' ? 'bg-[#FAECE7] text-[#712B13]' :
+                      i.status === 'in_progress' ? 'bg-amber-100 text-amber-800' :
+                      i.status === 'requested' ? 'bg-stone-100 text-stone-700' :
+                      'bg-stone-100 text-stone-500'
+                    }`}>
+                      {i.status.replace('_', ' ')}
+                    </span>
+                    {i.featured_at && (
+                      <span className={`text-xs px-2 py-1 rounded-full font-serif italic ${
+                        i.status === 'published'
+                          ? 'bg-green-50 text-green-800'
+                          : 'bg-amber-50 text-amber-800'
+                      }`}>
+                        {i.status === 'published' ? 'Featured' : 'Featured · not eligible'}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-stone-500 text-xs">
                   {new Date(i.created_at).toLocaleDateString()}

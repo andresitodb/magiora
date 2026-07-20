@@ -228,3 +228,114 @@ export async function unfeatureProject(formData: FormData) {
   revalidatePath('/');
   redirect('/admin/featured?saved=project_unfeatured');
 }
+
+export async function featureInterview(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const submittedId = formData.get('interview_id');
+  const interviewId = typeof submittedId === 'string' ? submittedId.trim() : '';
+  const returnTo =
+    formData.get('return_to') === 'editor' && interviewId
+      ? `/admin/stories/${interviewId}`
+      : '/admin/featured';
+  if (!interviewId) {
+    redirect(`${returnTo}?error=${encodeURIComponent('Interview ID was not submitted.')}`);
+  }
+
+  const { data: interview, error: lookupError } = await supabase
+    .from('interviews')
+    .select('id, title, slug, status, featured_at')
+    .eq('id', interviewId)
+    .maybeSingle();
+  if (lookupError) {
+    redirect(`${returnTo}?error=${encodeURIComponent(`Interview lookup failed: ${lookupError.message}`)}`);
+  }
+  if (!interview) {
+    redirect(`${returnTo}?error=${encodeURIComponent('Interview was not found.')}`);
+  }
+  if (interview.status !== 'published') {
+    redirect(`${returnTo}?error=${encodeURIComponent('Only published interviews can be Featured on Home.')}`);
+  }
+
+  const featuredAt = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from('interviews')
+    .update({ featured_at: featuredAt })
+    .eq('id', interviewId);
+  if (updateError) {
+    redirect(`${returnTo}?error=${encodeURIComponent(`Interview update failed: ${updateError.message}`)}`);
+  }
+
+  const { data: confirmed, error: confirmationError } = await supabase
+    .from('interviews')
+    .select('id, title, slug, status, featured_at')
+    .eq('id', interviewId)
+    .maybeSingle();
+  if (confirmationError) {
+    redirect(`${returnTo}?error=${encodeURIComponent(`Interview confirmation failed: ${confirmationError.message}`)}`);
+  }
+  if (!confirmed || !sameTimestamp(confirmed.featured_at, featuredAt)) {
+    redirect(`${returnTo}?error=${encodeURIComponent('Interview was eligible but no row was updated.')}`);
+  }
+
+  revalidateSpotlightPaths(interviewId, confirmed.slug);
+  if (returnTo.startsWith('/admin/stories/')) redirect(`${returnTo}?featured=on`);
+  redirect(`${returnTo}?saved=spotlight_featured&name=${encodeURIComponent(confirmed.title ?? 'Interview')}`);
+}
+
+export async function unfeatureInterview(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const submittedId = formData.get('interview_id');
+  const interviewId = typeof submittedId === 'string' ? submittedId.trim() : '';
+  const returnTo =
+    formData.get('return_to') === 'editor' && interviewId
+      ? `/admin/stories/${interviewId}`
+      : '/admin/featured';
+  if (!interviewId) {
+    redirect(`${returnTo}?error=${encodeURIComponent('Interview ID was not submitted.')}`);
+  }
+
+  const { data: interview, error: lookupError } = await supabase
+    .from('interviews')
+    .select('id, title, slug, featured_at')
+    .eq('id', interviewId)
+    .maybeSingle();
+  if (lookupError) {
+    redirect(`${returnTo}?error=${encodeURIComponent(`Interview lookup failed: ${lookupError.message}`)}`);
+  }
+  if (!interview) {
+    redirect(`${returnTo}?error=${encodeURIComponent('Interview was not found.')}`);
+  }
+
+  const { error: updateError } = await supabase
+    .from('interviews')
+    .update({ featured_at: null })
+    .eq('id', interviewId);
+  if (updateError) {
+    redirect(`${returnTo}?error=${encodeURIComponent(`Interview update failed: ${updateError.message}`)}`);
+  }
+
+  const { data: confirmed, error: confirmationError } = await supabase
+    .from('interviews')
+    .select('id, slug, featured_at')
+    .eq('id', interviewId)
+    .maybeSingle();
+  if (confirmationError || !confirmed) {
+    redirect(`${returnTo}?error=${encodeURIComponent(confirmationError?.message ?? 'Interview could not be confirmed.')}`);
+  }
+  if (confirmed.featured_at !== null) {
+    redirect(`${returnTo}?error=${encodeURIComponent('Interview remained Featured after the update.')}`);
+  }
+
+  revalidateSpotlightPaths(interviewId, confirmed.slug);
+  if (returnTo.startsWith('/admin/stories/')) redirect(`${returnTo}?featured=off`);
+  redirect(`${returnTo}?saved=spotlight_unfeatured`);
+}
+
+function revalidateSpotlightPaths(interviewId: string, slug: string | null) {
+  revalidatePath('/');
+  revalidatePath('/stories');
+  if (slug) revalidatePath(`/stories/${slug}`);
+  revalidatePath('/admin/stories');
+  revalidatePath(`/admin/stories/${interviewId}`);
+  revalidatePath('/admin/featured');
+}
