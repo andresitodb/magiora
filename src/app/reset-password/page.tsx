@@ -34,17 +34,17 @@ export default async function ResetPasswordPage({
   return (
     <div className="min-h-screen bg-[#f5f3ee] flex flex-col">
       <header>
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="k-container py-4 flex items-center justify-between">
           <Link href="/" className="font-serif text-2xl font-medium">Magiora</Link>
           <LocaleSwitcher currentLocale={locale} />
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="bg-white border border-stone-200 rounded-lg p-10 w-full max-w-md shadow-sm">
-          <p className="font-serif italic text-sm text-[#993C1D] text-center mb-2">{t.kicker}</p>
-          <h1 className="font-serif text-3xl font-medium text-center mb-2">{t.title}</h1>
-          <p className="font-serif italic text-sm text-stone-500 text-center mb-8">{t.subtitle}</p>
+      <main className="flex-1 flex items-center justify-center px-4 py-10 md:py-16">
+        <div className="k-card p-6 md:p-10 w-full max-w-md">
+          <p className="k-eyebrow text-center mb-2">{t.kicker}</p>
+          <h1 className="k-section-title text-center mb-2">{t.title}</h1>
+          <p className="k-body-muted text-center mb-8">{t.subtitle}</p>
 
           {params.error && (
             <div className="bg-red-50 border border-red-200 text-red-800 text-sm rounded-md p-3 mb-6">
@@ -60,7 +60,7 @@ export default async function ResetPasswordPage({
                 name="password"
                 required
                 minLength={6}
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
 
@@ -71,13 +71,13 @@ export default async function ResetPasswordPage({
                 name="confirm_password"
                 required
                 minLength={6}
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-[#712B13] text-white py-2.5 rounded-md font-medium hover:bg-[#4A1B0C] cursor-pointer"
+              className="k-button k-button-primary w-full"
             >
               {t.submit}
             </button>

@@ -37,10 +37,10 @@ export default async function StoryDetailPage({
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
       <Nav />
-      <main className="max-w-3xl mx-auto px-6 py-12">
+      <main className="k-container k-section max-w-3xl">
         <BackLink href="/stories" label="Back to Spotlight" />
 
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2 capitalize">
+        <p className="k-eyebrow mb-2 capitalize">
           {roleLabel} ·{' '}
           {interview.published_at &&
             new Date(interview.published_at).toLocaleDateString('en-US', {
@@ -49,7 +49,7 @@ export default async function StoryDetailPage({
               year: 'numeric',
             })}
         </p>
-        <h1 className="font-serif text-5xl font-medium mb-4 leading-tight">
+        <h1 className="k-page-title mb-4">
           {applyPublicBrand(interview.title)}
         </h1>
         <p className="font-serif italic text-xl text-stone-600 mb-8">
@@ -57,7 +57,7 @@ export default async function StoryDetailPage({
         </p>
 
         {interview.hero_image_url && (
-          <div className="rounded-lg overflow-hidden mb-10 aspect-[16/10] bg-stone-100">
+          <div className="k-card mb-10 aspect-[16/10] bg-stone-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={interview.hero_image_url}
@@ -68,7 +68,7 @@ export default async function StoryDetailPage({
         )}
 
         {interview.intro && (
-          <div className="font-serif text-xl leading-[1.7] text-stone-800 mb-12 italic border-l-4 border-[#712B13] pl-6">
+          <div className="font-serif text-lg md:text-xl leading-[1.7] text-stone-800 mb-12 italic border-l-4 border-[#712B13] pl-4 md:pl-6">
             {applyPublicBrand(interview.intro)}
           </div>
         )}
@@ -79,7 +79,7 @@ export default async function StoryDetailPage({
               <p className="font-serif font-medium text-[#4A1B0C] mb-3 text-lg">
                 {applyPublicBrand(item.question)}
               </p>
-              <p className="font-serif text-lg leading-relaxed text-stone-800 whitespace-pre-line">
+              <p className="k-body text-base md:text-lg whitespace-pre-line">
                 {applyPublicBrand(item.answer)}
               </p>
             </div>

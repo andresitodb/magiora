@@ -58,7 +58,7 @@ export default async function Nav({
     { href: '/', label: tr('nav.home', 'Home') },
     { href: '/directory', label: tr('nav.directory', 'Directory') },
     { href: '/projects', label: 'Projects' },
-    { href: '/casting-calls', label: 'Castings' },
+    { href: '/casting-calls', label: 'Casting Calls' },
     { href: '/events', label: tr('nav.events', 'Events') },
     { href: '/stories', label: 'Spotlight' },
     { href: '/pricing', label: tr('nav.pricing', 'Pricing') },
@@ -104,7 +104,7 @@ export default async function Nav({
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0">
+        <div className="hidden lg:flex items-center gap-2 lg:gap-3 shrink-0">
           {!isAdmin && <GlobalSearch />}
           {user && !isAdmin && <NotificationsBell unreadCount={unreadCount} />}
           <LocaleSwitcher currentLocale={locale} />
@@ -135,7 +135,7 @@ export default async function Nav({
               {!isAdmin && (
                 <Link
                   href="/dashboard"
-                  className="bg-[#712B13] text-white px-3 lg:px-4 py-1.5 lg:py-2 rounded-md text-sm font-medium hover:bg-[#4A1B0C] whitespace-nowrap"
+                  className="k-button k-button-primary min-h-0 px-3 lg:px-4 py-1.5 lg:py-2 whitespace-nowrap"
                 >
                   {tr('nav.dashboard', 'Dashboard')}
                 </Link>
@@ -175,7 +175,7 @@ export default async function Nav({
               </Link>
               <Link
                 href="/signup"
-                className="bg-[#712B13] text-white px-3 lg:px-4 py-1.5 lg:py-2 rounded-md text-sm font-medium hover:bg-[#4A1B0C] whitespace-nowrap"
+                className="k-button k-button-primary min-h-0 px-3 lg:px-4 py-1.5 lg:py-2 whitespace-nowrap"
               >
                 {tr('nav.sign_up', 'Join')}
               </Link>

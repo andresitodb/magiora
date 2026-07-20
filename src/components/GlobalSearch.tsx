@@ -119,7 +119,7 @@ export default function GlobalSearch() {
           type="button"
           onClick={() => setExpanded(true)}
           aria-label="Search"
-          className="p-2 rounded-md hover:bg-stone-100 text-stone-700 cursor-pointer"
+          className="min-w-11 min-h-11 p-2 rounded-md hover:bg-stone-100 text-stone-700 cursor-pointer"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.75" />
@@ -142,7 +142,11 @@ export default function GlobalSearch() {
             }}
             onKeyDown={onKeyDown}
             placeholder="Search people, projects, castings..."
-            className="k-control w-72 pl-9 pr-3"
+            className="k-control w-[min(18rem,calc(100vw-2rem))] pl-9 pr-3"
+            role="combobox"
+            aria-expanded={query.trim().length >= 2}
+            aria-controls="global-search-results"
+            aria-autocomplete="list"
           />
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -152,7 +156,11 @@ export default function GlobalSearch() {
           </span>
 
           {query.trim().length >= 2 && (
-            <div className="absolute z-20 left-0 right-0 mt-1 max-h-96 overflow-y-auto border border-stone-200 rounded-md bg-white shadow-lg">
+            <div
+              id="global-search-results"
+              role="listbox"
+              className="k-card absolute z-20 left-0 right-0 mt-1 max-h-96 overflow-y-auto shadow-lg"
+            >
               {loading && (
                 <p className="px-3 py-3 text-sm text-stone-400 italic font-serif">Searching...</p>
               )}
@@ -164,6 +172,8 @@ export default function GlobalSearch() {
                   <a
                     key={`${r.kind}-${r.id}`}
                     href={r.href}
+                    role="option"
+                    aria-selected={i === active}
                     onClick={() => {
                       setExpanded(false);
                       setQuery('');

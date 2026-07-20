@@ -112,7 +112,7 @@ export default async function HomePage() {
       {/* SPOTLIGHT */}
       {spotlightStories.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 py-12">
-          <div className="flex items-baseline justify-between mb-8">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-8">
             <div>
               <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
                 In conversation
@@ -171,7 +171,7 @@ export default async function HomePage() {
       {/* FEATURED PROFESSIONALS — 2 columns, larger cards */}
       {featuredProfiles && featuredProfiles.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 py-12 border-t border-stone-300">
-          <div className="flex items-baseline justify-between mb-6">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-6">
             <div>
               <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
                 On our radar
@@ -228,7 +228,7 @@ export default async function HomePage() {
       {/* FEATURED PROJECT */}
       {featuredProject && (
         <section className="max-w-6xl mx-auto px-6 py-12 border-t border-stone-300">
-          <div className="flex items-baseline justify-between mb-6">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-6">
             <div>
               <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
                 From the community
@@ -291,7 +291,7 @@ export default async function HomePage() {
       {/* UPCOMING EVENTS */}
       {upcomingEvents && upcomingEvents.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 py-12 border-t border-stone-300">
-          <div className="flex items-baseline justify-between mb-6">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-6">
             <div>
               <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
                 The calendar
@@ -303,7 +303,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {upcomingEvents.map((event) => {
               const start = new Date(event.event_date);
               return (

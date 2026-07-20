@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import LocaleSwitcher from '@/components/LocaleSwitcher';
 
@@ -32,6 +32,15 @@ export default function NavMobileMenu({
 }) {
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [open]);
+
   const linkClass = isAdmin
     ? 'block py-2.5 text-stone-300 hover:text-white font-serif'
     : 'block py-2.5 text-stone-700 hover:text-[#712B13] font-serif';
@@ -42,7 +51,7 @@ export default function NavMobileMenu({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open menu"
-        className={`md:hidden p-2 rounded-md cursor-pointer ${isAdmin ? 'text-stone-300 hover:bg-stone-800' : 'text-stone-700 hover:bg-stone-100'}`}
+        className={`lg:hidden min-w-11 min-h-11 p-2 rounded-md cursor-pointer ${isAdmin ? 'text-stone-300 hover:bg-stone-800' : 'text-stone-700 hover:bg-stone-100'}`}
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <line x1="3" y1="6" x2="17" y2="6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -53,11 +62,13 @@ export default function NavMobileMenu({
 
       {open && (
         <>
-          <div
-            className="md:hidden fixed inset-0 bg-black/40 z-40"
+          <button
+            type="button"
+            aria-label="Close menu"
+            className="lg:hidden fixed inset-0 bg-black/40 z-40"
             onClick={() => setOpen(false)}
           />
-          <div className={`md:hidden fixed top-0 right-0 bottom-0 w-72 z-50 overflow-y-auto ${isAdmin ? 'bg-stone-900' : 'bg-white'}`}>
+          <div className={`lg:hidden fixed top-0 right-0 bottom-0 w-[min(18rem,100vw)] z-50 overflow-y-auto ${isAdmin ? 'bg-stone-900' : 'bg-white'}`}>
             <div className="p-4">
               <div className="flex items-center justify-between mb-6">
                 <p className={`font-serif text-lg font-medium ${isAdmin ? 'text-white' : 'text-stone-900'}`}>
@@ -67,7 +78,7 @@ export default function NavMobileMenu({
                   type="button"
                   onClick={() => setOpen(false)}
                   aria-label="Close menu"
-                  className={`p-1.5 rounded cursor-pointer ${isAdmin ? 'text-stone-300 hover:bg-stone-800' : 'text-stone-700 hover:bg-stone-100'}`}
+                  className={`min-w-11 min-h-11 p-1.5 rounded cursor-pointer ${isAdmin ? 'text-stone-300 hover:bg-stone-800' : 'text-stone-700 hover:bg-stone-100'}`}
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <line x1="4" y1="4" x2="14" y2="14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -80,7 +91,7 @@ export default function NavMobileMenu({
                 <Link
                   href="/dashboard"
                   onClick={() => setOpen(false)}
-                  className="block bg-[#712B13] text-white text-center py-2.5 px-4 rounded-md font-medium mb-4 hover:bg-[#4A1B0C]"
+                  className="k-button k-button-primary w-full mb-4"
                 >
                   Dashboard
                 </Link>
@@ -127,14 +138,14 @@ export default function NavMobileMenu({
                       <Link
                         href="/login"
                         onClick={() => setOpen(false)}
-                        className="block text-center py-2.5 border border-[#712B13] text-[#712B13] rounded-md font-medium"
+                        className="k-button k-button-secondary w-full"
                       >
                         {signInLabel}
                       </Link>
                       <Link
                         href="/signup"
                         onClick={() => setOpen(false)}
-                        className="block bg-[#712B13] text-white text-center py-2.5 px-4 rounded-md font-medium"
+                        className="k-button k-button-primary w-full"
                       >
                         {signUpLabel}
                       </Link>

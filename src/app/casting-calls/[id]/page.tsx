@@ -65,7 +65,7 @@ export default async function CastingCallDetailPage({
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
       <Nav />
-      <main className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-12">
+      <main className="k-container k-section max-w-3xl">
         <BackLink href="/casting-calls" label="Casting Calls" />
 
         {call.status !== 'open' && (
@@ -85,10 +85,10 @@ export default async function CastingCallDetailPage({
         )}
 
         <div className="mb-8">
-          <p className="font-serif italic text-sm text-[#993C1D] mb-2 capitalize">
+          <p className="k-eyebrow mb-2 capitalize">
             {call.project_type?.replace('_', ' ')} · {call.role_size?.replace('_', ' ')}
           </p>
-          <h1 className="font-serif text-3xl md:text-4xl font-medium leading-tight mb-2">
+          <h1 className="k-page-title mb-2">
             {call.role_name}
           </h1>
           <p className="font-serif italic text-lg text-stone-600">
@@ -204,7 +204,7 @@ export default async function CastingCallDetailPage({
               </p>
               <Link
                 href={`/login?next=${encodeURIComponent(`/casting-calls/${call.id}`)}`}
-                className="inline-block bg-[#712B13] text-white py-2 px-6 rounded-md font-medium hover:bg-[#4A1B0C]"
+                className="k-button k-button-primary"
               >
                 Sign in
               </Link>
@@ -220,20 +220,20 @@ export default async function CastingCallDetailPage({
               </p>
               <Link
                 href="/pricing"
-                className="inline-block bg-[#712B13] text-white py-2 px-6 rounded-md font-medium hover:bg-[#4A1B0C]"
+                className="k-button k-button-primary"
               >
                 See Member benefits →
               </Link>
             </div>
           ) : (
-            <form action={applyCastingCall} className="bg-white border border-stone-200 rounded-md p-5 space-y-4">
+            <form action={applyCastingCall} className="k-card p-5 space-y-4">
               <input type="hidden" name="casting_call_id" value={call.id} />
               <div>
                 <label className="block text-sm font-medium mb-1">Cover note (optional)</label>
                 <textarea
                   name="cover_note"
                   rows={4}
-                  className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white font-serif"
+                  className="k-control font-serif"
                 />
               </div>
               <div>
@@ -241,7 +241,7 @@ export default async function CastingCallDetailPage({
                 <input
                   type="url"
                   name="self_tape_url"
-                  className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                  className="k-control"
                 />
               </div>
               <label className="flex items-center gap-2 text-sm font-serif">
@@ -250,7 +250,7 @@ export default async function CastingCallDetailPage({
               </label>
               <button
                 type="submit"
-                className="w-full bg-[#712B13] text-white text-center py-3 px-6 rounded-md font-medium hover:bg-[#4A1B0C] font-serif text-lg cursor-pointer"
+                className="k-button k-button-primary w-full font-serif text-base"
               >
                 Apply for this role →
               </button>

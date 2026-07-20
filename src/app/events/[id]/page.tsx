@@ -33,7 +33,7 @@ export default async function EventDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  let rsvp: any = null;
+  let rsvp: { id: string; status: string } | null = null;
   let isMember = false;
   if (user) {
     const { data: profile } = await supabase
@@ -58,23 +58,23 @@ export default async function EventDetailPage({
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
       <Nav />
-      <main className="max-w-3xl mx-auto px-6 py-12">
+      <main className="k-container k-section max-w-3xl">
         <BackLink href="/events" label="All events" />
 
         {sp.rsvped && (
           <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-md p-4 mb-6">
-            You're going. See you there.
+            You&apos;re going. See you there.
           </div>
         )}
 
         {event.cover_image_url && (
-          <div className="rounded-lg overflow-hidden mb-8 aspect-[16/9] bg-stone-100">
+          <div className="k-card mb-8 aspect-[16/9] bg-stone-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />
           </div>
         )}
 
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">
+        <p className="k-eyebrow mb-2">
           {start.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'long',
@@ -82,7 +82,7 @@ export default async function EventDetailPage({
             year: 'numeric',
           })}
         </p>
-        <h1 className="font-serif text-4xl font-medium mb-2">{event.title}</h1>
+        <h1 className="k-page-title mb-2">{event.title}</h1>
         <p className="font-serif italic text-lg text-stone-600 mb-8">
           {start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
           {end && ` – ${end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
@@ -95,9 +95,9 @@ export default async function EventDetailPage({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4 p-4 bg-[#FAECE7] rounded-md mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-[#FAECE7] rounded-md mb-8">
           {event.location_address && (
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <p className="font-serif italic text-xs text-[#993C1D] mb-1">Where</p>
               <p className="font-serif font-medium text-[#4A1B0C]">
                 {event.location_name}
@@ -106,9 +106,9 @@ export default async function EventDetailPage({
             </div>
           )}
           {event.online_link && (
-            <div className="col-span-2">
+            <div className="sm:col-span-2 min-w-0">
               <p className="font-serif italic text-xs text-[#993C1D] mb-1">Online link</p>
-              <a href={event.online_link} target="_blank" rel="noopener" className="text-[#712B13] text-sm hover:underline">
+              <a href={event.online_link} target="_blank" rel="noopener" className="k-link block break-all">
                 {event.online_link}
               </a>
             </div>
@@ -158,27 +158,27 @@ export default async function EventDetailPage({
         )}
 
         {event.rsvp_required && (
-          <div className="bg-white border border-stone-200 rounded-lg p-6">
+          <div className="k-card p-6">
             <h2 className="font-serif text-xl font-medium mb-4">RSVP</h2>
             {!user ? (
               <Link
                 href="/login"
-                className="inline-block bg-[#712B13] text-white py-2 px-6 rounded-md font-medium"
+                className="k-button k-button-primary"
               >
                 Sign in to RSVP
               </Link>
             ) : rsvp ? (
               <p className="text-sm text-stone-600 italic font-serif">
-                You're {rsvp.status}.
+                You&apos;re {rsvp.status}.
               </p>
             ) : (
               <form action={rsvpToEvent}>
                 <input type="hidden" name="event_id" value={event.id} />
                 <button
                   type="submit"
-                  className="bg-[#712B13] text-white py-2 px-6 rounded-md font-medium hover:bg-[#4A1B0C] cursor-pointer"
+                  className="k-button k-button-primary"
                 >
-                  I'm going
+                  I&apos;m going
                 </button>
               </form>
             )}

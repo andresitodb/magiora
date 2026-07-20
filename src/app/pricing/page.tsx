@@ -32,25 +32,25 @@ export default async function PricingPage({
     <div className="min-h-screen bg-[#f5f3ee]">
       <Nav />
 
-      <main className="max-w-5xl mx-auto px-4 md:px-6 py-10 md:py-16">
+      <main className="k-container k-section max-w-5xl">
         {params.error && (
           <div className="max-w-2xl mx-auto mb-8 bg-red-50 border border-red-200 text-red-800 text-sm rounded-md p-3 text-center">
             {params.error}
           </div>
         )}
         <div className="text-center mb-12 md:mb-16">
-          <p className="font-serif italic text-sm text-[#993C1D] mb-2">Pricing</p>
-          <h1 className="font-serif text-4xl md:text-6xl font-medium mb-4 tracking-tight">
+          <p className="k-eyebrow mb-2">Pricing</p>
+          <h1 className="k-page-title mb-4">
             Two ways to be on Magiora
           </h1>
-          <p className="font-serif italic text-base md:text-lg text-stone-600 max-w-2xl mx-auto">
+          <p className="k-body-muted text-base md:text-lg max-w-2xl mx-auto">
             Get listed for free. Upgrade when you&apos;re ready to apply, get matched, and stand out.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
           {/* FREE */}
-          <div className="bg-white border border-stone-200 rounded-md p-6 md:p-8 flex flex-col">
+          <div className="k-card p-6 md:p-8 flex flex-col">
             <p className="font-serif italic text-xs text-stone-500 uppercase tracking-widest mb-2">Free</p>
             <h2 className="font-serif text-2xl font-medium mb-1">Listed</h2>
             <p className="font-serif italic text-sm text-stone-500 mb-6">For getting started.</p>
@@ -68,7 +68,7 @@ export default async function PricingPage({
             </ul>
 
             {!user ? (
-              <Link href="/signup" className="block text-center mt-8 py-2.5 border border-stone-300 rounded-md font-medium hover:bg-stone-50">
+              <Link href="/signup" className="k-button k-button-secondary mt-8 w-full">
                 Start free
               </Link>
             ) : isOnMember ? (
@@ -79,8 +79,8 @@ export default async function PricingPage({
           </div>
 
           {/* MEMBER */}
-          <div className="bg-[#FAECE7] border-2 border-[#712B13] rounded-md p-6 md:p-8 flex flex-col relative">
-            <span className="absolute -top-3 right-6 bg-[#712B13] text-white text-xs px-3 py-1 rounded-full font-medium">
+          <div className="k-card bg-[#FAECE7] border-2 border-[#712B13] p-6 md:p-8 flex flex-col relative overflow-visible">
+            <span className="k-badge absolute -top-3 right-6 bg-[#712B13] text-white">
               Recommended
             </span>
             <p className="font-serif italic text-xs text-[#712B13] uppercase tracking-widest mb-2">Paid</p>
@@ -106,13 +106,13 @@ export default async function PricingPage({
               <div className="mt-8 grid grid-cols-2 gap-2">
                 <Link
                   href="/signup?plan=member&next=%2Fpricing%3Fplan%3Dmonthly"
-                  className="block text-center bg-[#712B13] text-white py-2.5 rounded-md font-medium hover:bg-[#4A1B0C]"
+                  className="k-button k-button-primary w-full"
                 >
                   Monthly
                 </Link>
                 <Link
                   href="/signup?plan=member&next=%2Fpricing%3Fplan%3Dannual"
-                  className="block text-center bg-stone-800 text-white py-2.5 rounded-md font-medium hover:bg-stone-900"
+                  className="k-button bg-stone-800 text-white hover:bg-stone-900 w-full"
                 >
                   Annual
                 </Link>
@@ -125,7 +125,7 @@ export default async function PricingPage({
                   <input type="hidden" name="plan" value="monthly" />
                   <button
                     type="submit"
-                    className="w-full bg-[#712B13] text-white py-2.5 rounded-md font-medium hover:bg-[#4A1B0C] cursor-pointer"
+                    className="k-button k-button-primary w-full"
                   >
                     Monthly
                   </button>
@@ -134,7 +134,7 @@ export default async function PricingPage({
                   <input type="hidden" name="plan" value="annual" />
                   <button
                     type="submit"
-                    className="w-full bg-stone-800 text-white py-2.5 rounded-md font-medium hover:bg-stone-900 cursor-pointer"
+                    className="k-button bg-stone-800 text-white hover:bg-stone-900 w-full"
                   >
                     Annual
                   </button>
