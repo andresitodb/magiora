@@ -21,8 +21,8 @@ async function fetchBrand(): Promise<BrandConfig> {
   if (error || !data) {
     return {
       name: 'Kinora',
-      taglineEn: 'A magazine and directory for indie cinema',
-      taglineEs: 'Una revista y directorio para el cine indie',
+      taglineEn: 'A professional community for independent film',
+      taglineEs: 'Una comunidad profesional para el cine independiente',
       volume: 'Vol. 01',
       year: '2026',
       contactEmail: 'hello@example.com',

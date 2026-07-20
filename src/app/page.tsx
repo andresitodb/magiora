@@ -1,5 +1,4 @@
 import { createAnonClient } from '@/lib/supabase/anon';
-import { getLocale } from '@/lib/i18n';
 import Nav from '@/components/Nav';
 import NewsletterSignup from '@/components/NewsletterSignup';
 import VerifiedBadge from '@/components/VerifiedBadge';
@@ -9,13 +8,10 @@ export const revalidate = 60;
 
 export default async function HomePage() {
   const supabase = createAnonClient();
-  const locale = await getLocale();
-  const isES = locale === 'es';
   const nowIso = new Date().toISOString();
 
   const [
     { data: stories },
-    { data: craftArticles },
     { data: featuredProfiles },
     { data: upcomingEvents },
   ] = await Promise.all([
@@ -28,13 +24,6 @@ export default async function HomePage() {
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(4),
-    supabase
-      .from('craft_articles')
-      .select('id, slug, title_en, title_es, intro_en, intro_es, category, reading_minutes, cover_image_url, publish_at')
-      .eq('status', 'published')
-      .lte('publish_at', nowIso)
-      .order('publish_at', { ascending: false })
-      .limit(3),
     supabase
       .from('profiles')
       .select('display_name, slug, role_titles, role_category, custom_role_label, location_city, location_state, headshot_url, bio, verified')
@@ -104,58 +93,6 @@ export default async function HomePage() {
               </div>
             </div>
           </Link>
-        </section>
-      )}
-
-      {/* THE CRAFT */}
-      {craftArticles && craftArticles.length > 0 && (
-        <section className="max-w-6xl mx-auto px-6 py-12 border-t border-stone-300">
-          <div className="flex items-baseline justify-between mb-6">
-            <div>
-              <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
-                {isES ? 'Notas del oficio' : 'Notes from the craft'}
-              </p>
-              <h2 className="font-serif text-3xl font-medium">The Craft</h2>
-            </div>
-            <Link href="/craft" className="font-serif italic text-sm text-[#712B13] hover:underline">
-              {isES ? 'Todas las notas →' : 'All articles →'}
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-3 gap-8">
-            {craftArticles.map((article: any) => {
-              const title = isES ? article.title_es : article.title_en;
-              const intro = isES ? article.intro_es : article.intro_en;
-              return (
-                <Link key={article.id} href={`/craft/${article.slug}`} className="group block">
-                  <div className="aspect-[5/3] bg-stone-200 mb-4 overflow-hidden rounded-md">
-                    {article.cover_image_url ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={article.cover_image_url}
-                        alt={title}
-                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-[#FAECE7] to-[#FBEAF0]" />
-                    )}
-                  </div>
-                  <p className="font-serif italic text-xs text-[#993C1D] mb-2 capitalize">
-                    {article.category}
-                    <span className="text-stone-400"> · {article.reading_minutes} {isES ? 'min de lectura' : 'min read'}</span>
-                  </p>
-                  <h3 className="font-serif text-xl font-medium leading-tight mb-2 group-hover:text-[#712B13] transition-colors">
-                    {title}
-                  </h3>
-                  {intro && (
-                    <p className="font-serif text-sm text-stone-600 line-clamp-2">
-                      {intro}
-                    </p>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
         </section>
       )}
 

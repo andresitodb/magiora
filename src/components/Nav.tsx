@@ -46,7 +46,6 @@ export default async function Nav({
 
   const publicLinks = [
     { href: '/', label: tr('nav.home', 'Home') },
-    { href: '/craft', label: tr('nav.craft', 'The Craft') },
     { href: '/directory', label: tr('nav.directory', 'Directory') },
     { href: '/projects', label: 'Projects' },
     { href: '/casting-calls', label: tr('nav.casting_calls', 'Casting Calls') },
