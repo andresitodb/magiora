@@ -2,15 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface SearchResult {
-  kind: 'profile' | 'project' | 'casting_call' | 'event' | 'story';
-  id: string;
-  title: string;
-  subtitle: string | null;
-  href: string;
-  thumbnail: string | null;
-}
+import {
+  MIN_SEARCH_LENGTH,
+  isAbortError,
+  isLatestSearchRequest,
+  type SearchErrorResponse,
+  type SearchResult,
+  type SearchSuccessResponse,
+} from '@/lib/search';
 
 const KIND_LABEL: Record<string, string> = {
   profile: 'Person',
@@ -34,9 +33,13 @@ export default function GlobalSearch() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(0);
+  const [partial, setPartial] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryVersion, setRetryVersion] = useState(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const requestIdRef = useRef(0);
   const router = useRouter();
 
   // Focus input when expanded
@@ -78,24 +81,54 @@ export default function GlobalSearch() {
 
   // Debounced fetch
   useEffect(() => {
-    if (query.trim().length < 2) {
+    if (query.trim().length < MIN_SEARCH_LENGTH) {
+      requestIdRef.current += 1;
       return;
     }
+    const controller = new AbortController();
+    const requestId = ++requestIdRef.current;
     const t = setTimeout(async () => {
       setLoading(true);
+      setError(null);
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`);
-        const data = await res.json();
+        const res = await fetch(
+          `/api/search?q=${encodeURIComponent(query.trim())}`,
+          { signal: controller.signal }
+        );
+        const data = (await res.json()) as
+          | SearchSuccessResponse
+          | SearchErrorResponse;
+        if (!isLatestSearchRequest(requestId, requestIdRef.current)) return;
+        if (!res.ok || 'error' in data) {
+          setResults([]);
+          setPartial(false);
+          setError(
+            'error' in data
+              ? data.error.message
+              : 'Search is temporarily unavailable. Please try again.'
+          );
+          return;
+        }
         setResults(data.results ?? []);
+        setPartial(data.partial);
         setActive(0);
-      } catch {
+      } catch (requestError: unknown) {
+        if (isAbortError(requestError)) return;
+        if (!isLatestSearchRequest(requestId, requestIdRef.current)) return;
         setResults([]);
+        setPartial(false);
+        setError('Search is temporarily unavailable. Please try again.');
       } finally {
-        setLoading(false);
+        if (isLatestSearchRequest(requestId, requestIdRef.current)) {
+          setLoading(false);
+        }
       }
     }, 250);
-    return () => clearTimeout(t);
-  }, [query]);
+    return () => {
+      clearTimeout(t);
+      controller.abort();
+    };
+  }, [query, retryVersion]);
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'ArrowDown') {
@@ -138,6 +171,8 @@ export default function GlobalSearch() {
               if (value.trim().length < 2) {
                 setResults([]);
                 setLoading(false);
+                setPartial(false);
+                setError(null);
               }
             }}
             onKeyDown={onKeyDown}
@@ -164,10 +199,27 @@ export default function GlobalSearch() {
               {loading && (
                 <p className="px-3 py-3 text-sm text-stone-400 italic font-serif">Searching...</p>
               )}
-              {!loading && results.length === 0 && (
+              {!loading && error && (
+                <div className="px-3 py-3 text-sm text-red-700 font-serif">
+                  <p>{error}</p>
+                  <button
+                    type="button"
+                    onClick={() => setRetryVersion((version) => version + 1)}
+                    className="mt-2 text-xs italic underline cursor-pointer"
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
+              {!loading && !error && partial && (
+                <p className="px-3 py-2 text-xs text-amber-800 bg-amber-50 italic font-serif">
+                  Some search results are temporarily unavailable.
+                </p>
+              )}
+              {!loading && !error && results.length === 0 && (
                 <p className="px-3 py-3 text-sm text-stone-400 italic font-serif">No results.</p>
               )}
-              {!loading &&
+              {!loading && !error &&
                 results.map((r, i) => (
                   <a
                     key={`${r.kind}-${r.id}`}
