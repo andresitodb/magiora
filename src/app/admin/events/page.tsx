@@ -2,7 +2,12 @@ import { createClient } from '@/lib/supabase/server';
 import { approveEvent, rejectEvent } from './actions';
 import Link from 'next/link';
 
-export default async function AdminEventsPage() {
+export default async function AdminEventsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const sp = await searchParams;
   const supabase = await createClient();
 
   const { data: pending } = await supabase
@@ -29,15 +34,21 @@ export default async function AdminEventsPage() {
         {pending?.length ?? 0} pending review
       </p>
 
+      {sp.error && (
+        <div role="alert" className="mb-6 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          {decodeURIComponent(sp.error)}
+        </div>
+      )}
+
       <section className="mb-12">
         <h2 className="font-serif text-xl font-medium mb-4">Pending review</h2>
         {!pending || pending.length === 0 ? (
           <p className="text-stone-500 italic font-serif">Inbox zero.</p>
         ) : (
           <div className="space-y-4">
-            {pending.map((event: any) => (
-              <div key={event.id} className="bg-white border border-stone-200 rounded-lg p-5">
-                <div className="flex justify-between items-start mb-3">
+            {pending.map((event) => (
+              <div key={event.id} className="k-card p-5">
+                <div className="flex flex-col items-start gap-2 mb-3 sm:flex-row sm:justify-between">
                   <div>
                     <span className="text-xs px-2 py-1 rounded-full bg-[#FAECE7] text-[#712B13] font-serif italic mb-2 inline-block">
                       Event
@@ -66,7 +77,7 @@ export default async function AdminEventsPage() {
                   </span>
                 </p>
 
-                <div className="flex gap-2 pt-3 border-t border-stone-100">
+                <div className="flex flex-col gap-2 pt-3 border-t border-stone-100 sm:flex-row">
                   <form action={approveEvent} className="flex-1">
                     <input type="hidden" name="id" value={event.id} />
                     <button
@@ -94,8 +105,8 @@ export default async function AdminEventsPage() {
 
       <section>
         <h2 className="font-serif text-xl font-medium mb-4">All events</h2>
-        <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="k-card overflow-x-auto">
+          <table className="w-full min-w-[42rem] text-sm">
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Title</th>
@@ -105,7 +116,7 @@ export default async function AdminEventsPage() {
               </tr>
             </thead>
             <tbody>
-              {(all ?? []).map((e: any) => (
+              {(all ?? []).map((e) => (
                 <tr key={e.id} className="border-b border-stone-100 hover:bg-stone-50">
                   <td className="px-4 py-3">
                     <Link href={`/events/${e.id}`} className="font-serif font-medium hover:text-[#712B13]">
@@ -116,7 +127,7 @@ export default async function AdminEventsPage() {
                     {new Date(e.event_date).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 font-serif italic text-[#712B13]">
-                    {e.posted_by_profile?.display_name}
+                    {e.posted_by_profile?.[0]?.display_name}
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-xs px-2 py-1 rounded-full bg-stone-100 font-serif italic capitalize">

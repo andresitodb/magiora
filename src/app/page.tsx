@@ -77,6 +77,7 @@ export default async function HomePage() {
       .eq('approved', true)
       .not('featured_at', 'is', null)
       .order('featured_at', { ascending: false })
+      .order('id', { ascending: true })
       .limit(2),
     supabase
       .from('projects')
@@ -84,6 +85,7 @@ export default async function HomePage() {
       .eq('visible', true)
       .not('featured_at', 'is', null)
       .order('featured_at', { ascending: false })
+      .order('id', { ascending: true })
       .limit(1),
     supabase
       .from('events')

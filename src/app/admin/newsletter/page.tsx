@@ -59,7 +59,8 @@ export default async function AdminNewsletterPage() {
           No signups yet.
         </p>
       ) : (
-        <table className="w-full text-sm border-collapse">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[36rem] text-sm border-collapse">
           <thead>
             <tr className="text-left border-b border-stone-700">
               <th className="py-2 font-medium">Email</th>
@@ -83,6 +84,7 @@ export default async function AdminNewsletterPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

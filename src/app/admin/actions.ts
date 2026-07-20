@@ -64,8 +64,11 @@ export async function rejectCastingCall(formData: FormData) {
     .update({ status: 'rejected' })
     .eq('id', id);
 
-  if (error) console.error(error);
+  if (error) {
+    redirect(`/admin?error=${encodeURIComponent(error.message)}`);
+  }
 
   revalidatePath('/admin');
+  revalidatePath('/casting-calls');
   redirect('/admin');
 }

@@ -7,6 +7,7 @@ import {
   unfeatureProfile,
   unfeatureProject,
 } from './actions';
+import AdminFeaturedSearch from '@/components/admin/AdminFeaturedSearch';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,12 +22,14 @@ type FeaturedProfile = {
   headshot_url: string | null;
   verified: boolean | null;
   featured_at: string | null;
+  visible: boolean | null;
+  approved: boolean | null;
 };
 
 export default async function AdminFeaturedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; name?: string }>;
 }) {
   const sp = await searchParams;
   const supabase = await createClient();
@@ -45,52 +48,35 @@ export default async function AdminFeaturedPage({
   // Currently featured (where featured_at is not null)
   const { data: featured } = await supabase
     .from('profiles')
-    .select('id, display_name, slug, role_titles, role_category, custom_role_label, location_city, headshot_url, verified, featured_at')
+    .select('id, display_name, slug, role_titles, role_category, custom_role_label, location_city, headshot_url, verified, featured_at, visible, approved')
     .not('featured_at', 'is', null)
-    .order('featured_at', { ascending: false });
+    .order('featured_at', { ascending: false })
+    .order('id', { ascending: true });
 
-  // Search results for adding new ones
-  const search = (sp.q ?? '').trim();
-  let candidates: FeaturedProfile[] = [];
-  if (search) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, display_name, slug, role_titles, role_category, custom_role_label, location_city, headshot_url, verified, featured_at')
-      .eq('visible', true)
-      .eq('approved', true)
-      .is('featured_at', null)
-      .or(`display_name.ilike.%${search}%,slug.ilike.%${search}%`)
-      .limit(15);
-    candidates = data ?? [];
-  }
+  const { data: featuredProjects } = await supabase
+    .from('projects')
+    .select('id, title, slug, project_type, status, year, poster_url, featured_at')
+    .not('featured_at', 'is', null)
+    .order('featured_at', { ascending: false })
+    .order('id', { ascending: true });
 
-  const [{ data: featuredProjects }, { data: projectCandidates }] =
-    await Promise.all([
-      supabase
-        .from('projects')
-        .select('id, title, slug, project_type, status, year, poster_url, featured_at')
-        .not('featured_at', 'is', null)
-        .order('featured_at', { ascending: false }),
-      supabase
-        .from('projects')
-        .select('id, title, slug, project_type, status, year, poster_url, featured_at')
-        .eq('visible', true)
-        .is('featured_at', null)
-        .order('created_at', { ascending: false })
-        .limit(20),
-    ]);
+  const eligibleFeatured = (featured ?? []).filter(
+    (profile) => profile.visible && profile.approved
+  );
+  const homeProfileIds = new Set(eligibleFeatured.slice(0, 2).map((profile) => profile.id));
 
   return (
     <div className="max-w-4xl">
-      <p className="font-serif italic text-sm text-[#993C1D] mb-2">Home page</p>
-      <h1 className="font-serif text-3xl md:text-4xl font-medium mb-2">Artists this week</h1>
+      <p className="k-eyebrow mb-2">Home page</p>
+      <h1 className="k-section-title mb-2">Featured Professionals</h1>
       <p className="text-sm text-stone-600 italic font-serif mb-8 max-w-2xl">
-        Choose up to 2 artists to highlight on the home page. They appear in the &quot;On our radar&quot; section.
+        The two most recently featured approved, public profiles appear on Home.
       </p>
 
       {sp.saved && (
         <div className="bg-[#FAECE7] border border-[#712B13] text-[#712B13] text-sm rounded-md p-3 mb-6 font-serif italic">
-          {sp.saved === 'featured' && 'Artist added to the home page.'}
+          {sp.saved === 'featured' &&
+            `${sp.name || 'Professional'} is now Featured on Home.`}
           {sp.saved === 'unfeatured' && 'Artist removed from the home page.'}
           {sp.saved === 'project_featured' && 'Project added to the home page.'}
           {sp.saved === 'project_unfeatured' && 'Project removed from the home page.'}
@@ -120,15 +106,16 @@ export default async function AdminFeaturedPage({
           </div>
         ) : (
           <div className="space-y-3">
-            {featured.map((p: FeaturedProfile, i: number) => {
+            {featured.map((p: FeaturedProfile) => {
               const roleTitle =
                 (p.role_titles ?? [])[0] ??
                 (p.role_category === 'crew_other' ? p.custom_role_label : p.role_category?.replace('_', ' '));
-              const showsOnHome = i < 2;
+              const showsOnHome = homeProfileIds.has(p.id);
+              const isEligible = p.visible && p.approved;
               return (
                 <div
                   key={p.id}
-                  className="bg-white border border-stone-200 rounded-md p-4 flex items-center gap-4"
+                  className="k-card p-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center"
                 >
                   {p.headshot_url ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
@@ -160,7 +147,11 @@ export default async function AdminFeaturedPage({
                       {roleTitle}
                       {p.location_city && <span> · {p.location_city}</span>}
                     </p>
-                    {showsOnHome ? (
+                    {!isEligible ? (
+                      <p className="text-xs italic font-serif text-amber-700 mt-1">
+                        Not eligible: profile must be approved and public
+                      </p>
+                    ) : showsOnHome ? (
                       <p className="text-xs italic font-serif text-[#712B13] mt-1">
                         ★ Showing on home
                       </p>
@@ -191,96 +182,32 @@ export default async function AdminFeaturedPage({
       <section className="pt-8 border-t border-stone-200">
         <p className="font-serif italic text-sm text-[#993C1D] mb-3">Add an artist</p>
 
-        <form action="/admin/featured" method="get" className="mb-6">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              name="q"
-              defaultValue={search}
-              placeholder="Search by name or slug..."
-              className="flex-1 px-3 py-2 bg-white border border-stone-300 rounded-md text-stone-900 focus:outline-none focus:border-[#712B13]"
-              autoCapitalize="none"
-            />
-            <button
-              type="submit"
-              className="bg-stone-800 text-white text-sm py-2 px-5 rounded-md font-medium hover:bg-stone-900 cursor-pointer whitespace-nowrap"
-            >
-              Search
-            </button>
-          </div>
-        </form>
+        <div className="mb-6">
+          <AdminFeaturedSearch type="profile" action={featureProfile} />
+        </div>
 
-        {search && (
-          <>
-            {candidates.length === 0 ? (
-              <p className="font-serif italic text-stone-500 text-sm">
-                No matching artists found. They must be public + approved + not already featured.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {candidates.map((p: FeaturedProfile) => {
-                  const roleTitle =
-                    (p.role_titles ?? [])[0] ??
-                    (p.role_category === 'crew_other' ? p.custom_role_label : p.role_category?.replace('_', ' '));
-                  return (
-                    <div
-                      key={p.id}
-                      className="bg-white border border-stone-200 rounded-md p-3 flex items-center gap-3"
-                    >
-                      {p.headshot_url ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={p.headshot_url}
-                          alt={p.display_name ?? ''}
-                          className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-[#FAECE7] flex items-center justify-center text-[#712B13] text-sm font-medium flex-shrink-0">
-                          {(p.display_name?.[0] ?? '?').toUpperCase()}
-                        </div>
-                      )}
-
-                      <div className="flex-1 min-w-0">
-                        <p className="font-serif font-medium text-sm flex items-center gap-1.5">
-                          {p.display_name}
-                          {p.verified && (
-                            <span className="inline-flex w-3.5 h-3.5 bg-[#712B13] text-white rounded-full items-center justify-center text-[9px] font-bold">
-                              ✓
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-xs italic font-serif text-stone-500 capitalize">
-                          {roleTitle}
-                          {p.location_city && <span> · {p.location_city}</span>}
-                        </p>
-                      </div>
-
-                      <form action={featureProfile}>
-                        <input type="hidden" name="profile_id" value={p.id} />
-                        <button
-                          type="submit"
-                          className="bg-[#712B13] text-white text-xs py-1.5 px-3 rounded-md hover:bg-[#4A1B0C] cursor-pointer whitespace-nowrap"
-                        >
-                          Feature ★
-                        </button>
-                      </form>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        )}
-
-        {!search && (
-          <p className="font-serif italic text-sm text-stone-500">
-            Type a name above to find artists to feature.
-          </p>
-        )}
+        <p className="font-serif italic text-sm text-stone-500">
+          Suggestions begin after two characters.
+        </p>
       </section>
 
       <section className="pt-8 mt-12 border-t border-stone-200">
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Home page</p>
+        <p className="k-eyebrow mb-2">Home page</p>
+        <h2 className="font-serif text-2xl font-medium mb-2">Featured Spotlight</h2>
+        <div className="k-card p-5">
+          <p className="font-serif text-sm text-stone-700">
+            Spotlight is currently selected automatically.
+          </p>
+          <p className="mt-1 text-sm italic font-serif text-stone-500">
+            Home displays the two most recently published interviews. The current interview
+            schema has no featured field, so individual Spotlight curation cannot be changed
+            safely from Admin without a database migration.
+          </p>
+        </div>
+      </section>
+
+      <section className="pt-8 mt-12 border-t border-stone-200">
+        <p className="k-eyebrow mb-2">Home page</p>
         <h2 className="font-serif text-2xl font-medium mb-2">Featured Project</h2>
         <p className="text-sm text-stone-600 italic font-serif mb-6 max-w-2xl">
           The most recently featured public project appears on the home page.
@@ -297,7 +224,7 @@ export default async function AdminFeaturedPage({
             (featuredProjects ?? []).map((project, index) => (
               <div
                 key={project.id}
-                className="bg-white border border-stone-200 rounded-md p-4 flex items-center gap-4"
+                className="k-card p-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center"
               >
                 {project.poster_url ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
@@ -343,38 +270,7 @@ export default async function AdminFeaturedPage({
         <p className="font-serif italic text-sm text-[#993C1D] mb-3">
           Add a public project
         </p>
-        {(projectCandidates ?? []).length === 0 ? (
-          <p className="font-serif italic text-stone-500 text-sm">
-            No other public projects are available.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {(projectCandidates ?? []).map((project) => (
-              <div
-                key={project.id}
-                className="bg-white border border-stone-200 rounded-md p-3 flex items-center gap-3"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-serif font-medium text-sm">{project.title}</p>
-                  <p className="text-xs italic font-serif text-stone-500 capitalize">
-                    {project.project_type?.replaceAll('_', ' ')}
-                    {project.year && <span> · {project.year}</span>}
-                    {project.status && <span> · {project.status.replaceAll('_', ' ')}</span>}
-                  </p>
-                </div>
-                <form action={featureProject}>
-                  <input type="hidden" name="project_id" value={project.id} />
-                  <button
-                    type="submit"
-                    className="bg-[#712B13] text-white text-xs py-1.5 px-3 rounded-md hover:bg-[#4A1B0C] cursor-pointer whitespace-nowrap"
-                  >
-                    Feature ★
-                  </button>
-                </form>
-              </div>
-            ))}
-          </div>
-        )}
+        <AdminFeaturedSearch type="project" action={featureProject} />
       </section>
     </div>
   );

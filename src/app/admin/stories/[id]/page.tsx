@@ -33,7 +33,7 @@ export default async function AdminStoryEditPage({
 
   return (
     <div>
-      <BackLink href="/admin/stories" label="All stories" />
+      <BackLink href="/admin/stories" label="All Spotlight interviews" />
 
       {sp.saved && (
         <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-md p-3 mb-6">
@@ -46,9 +46,9 @@ export default async function AdminStoryEditPage({
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Sidebar: subject info */}
-        <div className="col-span-1">
+        <div className="lg:col-span-1">
           <div className="bg-white border border-stone-200 rounded-lg p-4 sticky top-4">
             <p className="font-serif italic text-xs text-[#993C1D] mb-2">Subject</p>
             {subject.headshot_url ? (
@@ -94,7 +94,7 @@ export default async function AdminStoryEditPage({
               <div className="mt-4 pt-4 border-t border-stone-200">
                 <p className="font-serif italic text-xs text-[#993C1D] mb-1">Request note</p>
                 <p className="text-xs text-stone-700 font-serif leading-relaxed italic">
-                  "{interview.request_note}"
+                  &ldquo;{interview.request_note}&rdquo;
                 </p>
               </div>
             )}
@@ -102,7 +102,7 @@ export default async function AdminStoryEditPage({
         </div>
 
         {/* Editor */}
-        <div className="col-span-2">
+        <div className="lg:col-span-2">
           <p className="font-serif italic text-sm text-[#993C1D] mb-2">Edit interview</p>
           <h1 className="font-serif text-3xl font-medium mb-8">
             {interview.title ?? 'Untitled interview'}
@@ -118,20 +118,20 @@ export default async function AdminStoryEditPage({
                 name="title"
                 defaultValue={interview.title ?? ''}
                 placeholder="On directing in Miami"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white font-serif text-lg"
+                className="k-control font-serif text-lg"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1">
-                Intro <span className="text-xs text-stone-500 italic font-serif font-normal">— the editor's note above the Q&amp;A</span>
+                Intro <span className="text-xs text-stone-500 italic font-serif font-normal">— the editor&apos;s note above the Q&amp;A</span>
               </label>
               <textarea
                 name="intro"
                 rows={5}
                 defaultValue={interview.intro ?? ''}
                 placeholder="A short editor's intro placing the subject and the conversation in context."
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white font-serif"
+                className="k-control font-serif"
               />
             </div>
 
@@ -142,7 +142,7 @@ export default async function AdminStoryEditPage({
                 name="hero_image_url"
                 defaultValue={interview.hero_image_url ?? ''}
                 placeholder="https://..."
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white text-sm"
+                className="k-control"
               />
             </div>
 
@@ -156,7 +156,7 @@ export default async function AdminStoryEditPage({
               <select
                 name="status"
                 defaultValue={interview.status}
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white cursor-pointer"
+                className="k-control cursor-pointer"
               >
                 <option value="requested">Requested</option>
                 <option value="in_progress">In progress</option>
@@ -164,13 +164,13 @@ export default async function AdminStoryEditPage({
                 <option value="archived">Archived</option>
               </select>
               <p className="text-xs text-stone-500 italic font-serif mt-1">
-                Status "published" makes the interview public at /stories/{interview.slug ?? '...'}
+                Status &ldquo;published&rdquo; makes the interview public at /stories/{interview.slug ?? '...'}
               </p>
             </div>
 
             <button
               type="submit"
-              className="bg-[#712B13] text-white py-2 px-6 rounded-md font-medium hover:bg-[#4A1B0C] cursor-pointer"
+              className="k-button k-button-primary"
             >
               Save interview
             </button>

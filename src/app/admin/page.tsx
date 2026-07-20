@@ -1,7 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { approveCastingCall, rejectCastingCall } from './actions';
 
-export default async function AdminHomePage() {
+export default async function AdminHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const sp = await searchParams;
   const supabase = await createClient();
 
   const { data: pendingCalls } = await supabase
@@ -27,12 +32,18 @@ export default async function AdminHomePage() {
 
   return (
     <div>
-      <p className="font-serif italic text-sm text-[#993C1D] mb-2">Editor's desk</p>
+      <p className="font-serif italic text-sm text-[#993C1D] mb-2">Editor&apos;s desk</p>
       <h1 className="font-serif text-4xl font-medium mb-2">Good morning</h1>
       <p className="text-stone-600 mb-12">
         {pendingCalls?.length ?? 0} items waiting for review · {memberCount} active
         members · {openCallsCount} open calls
       </p>
+
+      {sp.error && (
+        <div role="alert" className="mb-6 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          {decodeURIComponent(sp.error)}
+        </div>
+      )}
 
       <h2 className="font-serif text-2xl font-medium mb-6">Pending review</h2>
 
@@ -42,10 +53,10 @@ export default async function AdminHomePage() {
         </p>
       ) : (
         <div className="space-y-4">
-          {pendingCalls.map((call: any) => (
+          {pendingCalls.map((call) => (
             <div
               key={call.id}
-              className="bg-white border border-stone-200 rounded-lg p-5"
+              className="k-card p-5"
             >
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div>
@@ -96,7 +107,7 @@ export default async function AdminHomePage() {
                 </p>
               </div>
 
-              <div className="flex gap-2 pt-3 border-t border-stone-100">
+              <div className="flex flex-col gap-2 pt-3 border-t border-stone-100 sm:flex-row">
                 <form action={approveCastingCall} className="flex-1">
                   <input type="hidden" name="id" value={call.id} />
                   <button

@@ -23,9 +23,19 @@ export default async function AdminLayout({
   if (!profile?.is_admin) redirect('/dashboard');
 
   return (
-    <div className="min-h-screen bg-[#f5f3ee]">
+    <div className="min-h-screen bg-[#efeae2]">
       <Nav variant="admin" />
-      <main className="max-w-6xl mx-auto px-6 py-12">{children}</main>
+      <div className="border-b border-stone-300 bg-[#e6ded2]">
+        <div className="k-container max-w-6xl py-2 flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-700">
+            Magiora Admin
+          </p>
+          <p className="hidden text-xs italic font-serif text-stone-500 sm:block">
+            Moderation and curation workspace
+          </p>
+        </div>
+      </div>
+      <main className="k-container k-section max-w-6xl">{children}</main>
     </div>
   );
 }

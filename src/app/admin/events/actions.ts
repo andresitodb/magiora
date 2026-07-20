@@ -28,10 +28,13 @@ export async function approveEvent(formData: FormData) {
     .update({ status: 'published', published_at: new Date().toISOString() })
     .eq('id', id);
 
-  if (error) console.error(error);
+  if (error) {
+    redirect(`/admin/events?error=${encodeURIComponent(error.message)}`);
+  }
 
   revalidatePath('/admin/events');
   revalidatePath('/events');
+  revalidatePath('/');
   redirect('/admin/events');
 }
 
@@ -40,8 +43,12 @@ export async function rejectEvent(formData: FormData) {
   const id = formData.get('id') as string;
 
   const { error } = await supabase.from('events').update({ status: 'rejected' }).eq('id', id);
-  if (error) console.error(error);
+  if (error) {
+    redirect(`/admin/events?error=${encodeURIComponent(error.message)}`);
+  }
 
   revalidatePath('/admin/events');
+  revalidatePath('/events');
+  revalidatePath('/');
   redirect('/admin/events');
 }

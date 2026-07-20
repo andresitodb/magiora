@@ -65,13 +65,12 @@ export default async function Nav({
   ];
 
   const adminLinks = [
-    { href: '/admin', label: 'Pending' },
+    { href: '/admin', label: 'Overview' },
     { href: '/admin/featured', label: 'Featured' },
     { href: '/admin/members', label: 'Members' },
     { href: '/admin/casting-calls', label: 'Calls' },
     { href: '/admin/events', label: 'Events' },
-    { href: '/admin/stories', label: 'Stories' },
-    { href: '/admin/craft', label: 'Craft' },
+    { href: '/admin/stories', label: 'Spotlight' },
     { href: '/admin/newsletter', label: 'Newsletter' },
   ];
 

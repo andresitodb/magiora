@@ -55,14 +55,20 @@ export async function updateInterview(formData: FormData) {
   const status = formData.get('status') as string;
 
   // Parse Q&A as JSON
-  let qa: any[] = [];
+  let qa: { question: string; answer: string }[] = [];
   try {
     qa = JSON.parse((formData.get('qa') as string) || '[]');
   } catch {
     qa = [];
   }
 
-  const updates: any = {
+  const updates: {
+    title: string | null;
+    intro: string | null;
+    hero_image_url: string | null;
+    qa: { question: string; answer: string }[];
+    status: string;
+  } = {
     title: (formData.get('title') as string) || null,
     intro: (formData.get('intro') as string) || null,
     hero_image_url: (formData.get('hero_image_url') as string) || null,
@@ -76,6 +82,9 @@ export async function updateInterview(formData: FormData) {
   }
 
   revalidatePath('/admin/stories');
+  revalidatePath(`/admin/stories/${id}`);
   revalidatePath('/stories');
+  revalidatePath('/stories/[slug]', 'page');
+  revalidatePath('/');
   redirect(`/admin/stories/${id}?saved=true`);
 }

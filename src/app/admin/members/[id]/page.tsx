@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { toggleVerified, inviteForInterview, toggleFeatured } from './actions';
+import { toggleApproved, toggleVerified, inviteForInterview, toggleFeatured } from './actions';
 import { getLanguageName } from '@/lib/languages';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +11,13 @@ export default async function AdminMemberDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string; error?: string; invited?: string; featured?: string }>;
+  searchParams: Promise<{
+    saved?: string;
+    error?: string;
+    invited?: string;
+    featured?: string;
+    name?: string;
+  }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -51,39 +57,39 @@ export default async function AdminMemberDetailPage({
   const isFeatured = !!profile.featured_at;
 
   return (
-    <div className="max-w-3xl text-stone-200">
+    <div className="max-w-3xl text-stone-900">
       <Link
         href="/admin/members"
-        className="text-sm text-stone-400 italic font-serif hover:text-white mb-6 inline-block"
+        className="text-sm text-stone-600 italic font-serif hover:text-[#712B13] mb-6 inline-block"
       >
         ← All members
       </Link>
 
       {sp.saved && (
-        <div className="bg-green-900/40 border border-green-700 text-green-100 text-sm rounded-md p-3 mb-6 font-serif">
+        <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-md p-3 mb-6 font-serif">
           Saved.
         </div>
       )}
       {sp.invited && (
-        <div className="bg-blue-900/40 border border-blue-700 text-blue-100 text-sm rounded-md p-3 mb-6 font-serif">
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-md p-3 mb-6 font-serif">
           {profile.display_name} has been invited for an interview. They&apos;ll see it in their dashboard.
         </div>
       )}
       {sp.featured && (
-        <div className="bg-amber-900/40 border border-amber-700 text-amber-100 text-sm rounded-md p-3 mb-6 font-serif">
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-md p-3 mb-6 font-serif">
           {sp.featured === 'on'
-            ? `${profile.display_name} is now featured on the home page.`
+            ? `${sp.name || profile.display_name} is now Featured on Home.`
             : `${profile.display_name} is no longer featured.`}
         </div>
       )}
       {sp.error && (
-        <div className="bg-red-900/40 border border-red-700 text-red-100 text-sm rounded-md p-3 mb-6">
+        <div className="bg-red-50 border border-red-200 text-red-800 text-sm rounded-md p-3 mb-6">
           {decodeURIComponent(sp.error)}
         </div>
       )}
 
       <div className="grid grid-cols-[120px_1fr] gap-6 mb-8">
-        <div className="aspect-[4/5] bg-stone-800 rounded-md overflow-hidden">
+        <div className="aspect-[4/5] bg-stone-100 rounded-md overflow-hidden">
           {profile.headshot_url ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img src={profile.headshot_url} alt={profile.display_name} className="w-full h-full object-cover" />
@@ -94,7 +100,7 @@ export default async function AdminMemberDetailPage({
           )}
         </div>
         <div>
-          <p className="font-serif italic text-xs text-amber-400 mb-1 capitalize">
+          <p className="k-eyebrow mb-1 capitalize">
             {(profile.role_titles ?? []).join(' · ') ||
               profile.role_category?.replace('_', ' ')}
           </p>
@@ -114,7 +120,7 @@ export default async function AdminMemberDetailPage({
               </span>
             )}
           </h1>
-          <p className="text-sm text-stone-400 italic font-serif">
+          <p className="text-sm text-stone-600 italic font-serif">
             {profile.location_city}
             {profile.location_state && `, ${profile.location_state}`}
             {' · '}
@@ -128,7 +134,7 @@ export default async function AdminMemberDetailPage({
           <Link
             href={`/m/${profile.slug}`}
             target="_blank"
-            className="text-xs text-amber-400 italic font-serif hover:underline mt-2 inline-block"
+            className="text-xs text-[#712B13] italic font-serif hover:underline mt-2 inline-block"
           >
             View public profile ↗
           </Link>
@@ -137,8 +143,8 @@ export default async function AdminMemberDetailPage({
 
       {profile.bio && (
         <div className="mb-8">
-          <p className="font-serif italic text-xs text-amber-400 mb-2">Bio</p>
-          <p className="font-serif text-stone-300 leading-relaxed whitespace-pre-line text-sm">
+          <p className="k-eyebrow mb-2">Bio</p>
+          <p className="font-serif text-stone-700 leading-relaxed whitespace-pre-line text-sm">
             {profile.bio}
           </p>
         </div>
@@ -146,23 +152,44 @@ export default async function AdminMemberDetailPage({
 
       {profile.languages?.length > 0 && (
         <div className="mb-8 text-sm">
-          <p className="font-serif italic text-xs text-amber-400 mb-2">Languages</p>
-          <p className="font-serif text-stone-300">
+          <p className="k-eyebrow mb-2">Languages</p>
+          <p className="font-serif text-stone-700">
             {profile.languages.map(getLanguageName).join(' · ')}
           </p>
         </div>
       )}
 
       {/* Admin actions */}
-      <div className="border-t border-stone-700 pt-6 mb-8 space-y-4">
-        <p className="font-serif italic text-xs text-amber-400">Admin actions</p>
+      <div className="border-t border-stone-300 pt-6 mb-8 space-y-4">
+        <p className="k-eyebrow">Admin actions</p>
 
-        <form action={toggleVerified} className="flex items-center justify-between bg-stone-800/40 border border-stone-700 rounded-md p-4">
+        <form action={toggleApproved} className="k-card flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <input type="hidden" name="member_id" value={profile.id} />
+          <input type="hidden" name="new_value" value={profile.approved ? 'false' : 'true'} />
+          <div>
+            <p className="font-serif">Directory approval</p>
+            <p className="text-xs italic text-stone-500 font-serif">
+              Approved profiles can appear in Directory and become eligible for Home.
+            </p>
+          </div>
+          <button
+            type="submit"
+            className={`py-2 px-4 rounded-md text-sm font-medium cursor-pointer ${
+              profile.approved
+                ? 'bg-stone-200 text-stone-800 hover:bg-stone-300'
+                : 'bg-[#712B13] text-white hover:bg-[#5d230f]'
+            }`}
+          >
+            {profile.approved ? 'Move to pending' : 'Approve profile'}
+          </button>
+        </form>
+
+        <form action={toggleVerified} className="k-card flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <input type="hidden" name="member_id" value={profile.id} />
           <input type="hidden" name="new_value" value={profile.verified ? 'false' : 'true'} />
           <div>
             <p className="font-serif">Verified badge</p>
-            <p className="text-xs italic text-stone-400 font-serif">
+            <p className="text-xs italic text-stone-500 font-serif">
               Shows a ✓ next to their name across the site.
             </p>
           </div>
@@ -170,21 +197,24 @@ export default async function AdminMemberDetailPage({
             type="submit"
             className={`py-2 px-4 rounded-md text-sm font-medium cursor-pointer ${
               profile.verified
-                ? 'bg-stone-700 text-stone-200 hover:bg-stone-600'
-                : 'bg-amber-400 text-stone-900 hover:bg-amber-300'
+                ? 'bg-stone-200 text-stone-800 hover:bg-stone-300'
+                : 'bg-[#712B13] text-white hover:bg-[#5d230f]'
             }`}
           >
             {profile.verified ? 'Remove verified' : 'Mark as verified'}
           </button>
         </form>
 
-        <form action={toggleFeatured} className="flex items-center justify-between bg-stone-800/40 border border-stone-700 rounded-md p-4">
+        <form action={toggleFeatured} className="k-card flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <input type="hidden" name="profile_id" value={profile.id} />
           <input type="hidden" name="action" value={isFeatured ? 'unfeature' : 'feature'} />
           <div>
             <p className="font-serif">Featured on home</p>
-            <p className="text-xs italic text-stone-400 font-serif">
-              Show this profile in the &ldquo;Featured this week&rdquo; section.
+            <p className="text-xs italic text-stone-500 font-serif">
+              Show this profile in Featured Professionals.
+              {!isFeatured && (!profile.visible || !profile.approved) && (
+                <> The profile must be approved and public first.</>
+              )}
               {isFeatured && profile.featured_at && (
                 <> Featured since {new Date(profile.featured_at).toLocaleDateString()}.</>
               )}
@@ -192,10 +222,11 @@ export default async function AdminMemberDetailPage({
           </div>
           <button
             type="submit"
+            disabled={!isFeatured && (!profile.visible || !profile.approved)}
             className={`py-2 px-4 rounded-md text-sm font-medium cursor-pointer ${
               isFeatured
-                ? 'bg-stone-700 text-stone-200 hover:bg-stone-600'
-                : 'bg-[#FAC775] text-stone-900 hover:bg-[#f0b85e]'
+                ? 'bg-stone-200 text-stone-800 hover:bg-stone-300'
+                : 'bg-[#FAC775] text-stone-900 hover:bg-[#f0b85e] disabled:cursor-not-allowed disabled:opacity-50'
             }`}
           >
             {isFeatured ? '★ Featured — remove' : '☆ Feature on home'}
@@ -204,13 +235,13 @@ export default async function AdminMemberDetailPage({
 
         <form
           action={inviteForInterview}
-          className="bg-stone-800/40 border border-stone-700 rounded-md p-4 space-y-3"
+          className="k-card p-4 space-y-3"
         >
           <input type="hidden" name="member_id" value={profile.id} />
           <div className="flex items-center justify-between">
             <div>
               <p className="font-serif">Invite for an interview</p>
-              <p className="text-xs italic text-stone-400 font-serif">
+              <p className="text-xs italic text-stone-500 font-serif">
                 Creates a draft. They&apos;ll fill out the Q&amp;A from their dashboard.
               </p>
             </div>
@@ -226,7 +257,7 @@ export default async function AdminMemberDetailPage({
               name="working_title"
               required
               placeholder="Working title (e.g. 'On the slow road to first features')"
-              className="px-3 py-2 bg-stone-900 border border-stone-700 rounded-md text-sm text-stone-200"
+              className="k-control"
             />
             <button
               type="submit"
@@ -240,19 +271,19 @@ export default async function AdminMemberDetailPage({
 
       {/* Existing interviews */}
       {interviews && interviews.length > 0 && (
-        <div className="border-t border-stone-700 pt-6">
-          <p className="font-serif italic text-xs text-amber-400 mb-3">
+        <div className="border-t border-stone-300 pt-6">
+          <p className="k-eyebrow mb-3">
             Interview history
           </p>
           <div className="space-y-2">
             {interviews.map((i) => (
               <div
                 key={i.id}
-                className="flex items-center justify-between bg-stone-800/40 border border-stone-700 rounded-md p-3"
+                className="k-card flex items-center justify-between p-3"
               >
                 <div>
                   <p className="font-serif text-sm">{i.title ?? 'Untitled'}</p>
-                  <p className="text-xs italic text-stone-400 font-serif">
+                  <p className="text-xs italic text-stone-500 font-serif">
                     {i.invited_by_admin && 'Admin-invited · '}
                     Status: <span className="capitalize">{i.status.replace('_', ' ')}</span>
                     {i.published_at &&
@@ -263,14 +294,14 @@ export default async function AdminMemberDetailPage({
                   <Link
                     href={`/stories/${i.slug}`}
                     target="_blank"
-                    className="text-xs text-amber-400 italic font-serif hover:underline whitespace-nowrap"
+                    className="text-xs text-[#712B13] italic font-serif hover:underline whitespace-nowrap"
                   >
                     View ↗
                   </Link>
                 ) : (
                   <Link
                     href={`/admin/stories/${i.id}`}
-                    className="text-xs text-amber-400 italic font-serif hover:underline whitespace-nowrap"
+                    className="text-xs text-[#712B13] italic font-serif hover:underline whitespace-nowrap"
                   >
                     Edit →
                   </Link>
