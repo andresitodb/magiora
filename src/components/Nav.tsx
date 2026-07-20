@@ -48,9 +48,9 @@ export default async function Nav({
     { href: '/', label: tr('nav.home', 'Home') },
     { href: '/directory', label: tr('nav.directory', 'Directory') },
     { href: '/projects', label: 'Projects' },
-    { href: '/casting-calls', label: tr('nav.casting_calls', 'Casting Calls') },
+    { href: '/casting-calls', label: 'Castings' },
     { href: '/events', label: tr('nav.events', 'Events') },
-    { href: '/stories', label: tr('nav.stories', 'Stories') },
+    { href: '/stories', label: 'Spotlight' },
     { href: '/pricing', label: tr('nav.pricing', 'Pricing') },
   ];
 

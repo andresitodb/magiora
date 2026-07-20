@@ -37,7 +37,7 @@ export default async function StoryDetailPage({
     <div className="min-h-screen bg-[#f5f3ee]">
       <Nav />
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <BackLink href="/stories" label="All stories" />
+        <BackLink href="/stories" label="Back to Spotlight" />
 
         <p className="font-serif italic text-sm text-[#993C1D] mb-2 capitalize">
           {roleLabel} ·{' '}

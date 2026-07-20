@@ -27,7 +27,7 @@ export default function NewsletterSignup() {
         The Kinora dispatch
       </p>
       <p className="font-serif text-base text-stone-700 mb-4">
-        A monthly note on the artists, stories, and films we're tracking.
+        A monthly note on the professionals, projects, and films we&apos;re tracking.
       </p>
 
       <form onSubmit={handleSubmit} className="flex gap-2">

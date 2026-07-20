@@ -16,7 +16,7 @@ const KIND_LABEL: Record<string, string> = {
   profile: 'Person',
   casting_call: 'Casting',
   event: 'Event',
-  story: 'Story',
+  story: 'Spotlight',
 };
 
 const KIND_COLOR: Record<string, string> = {
@@ -133,7 +133,7 @@ export default function GlobalSearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search people, calls, events..."
+            placeholder="Search people, castings, events..."
             className="w-72 pl-9 pr-3 py-1.5 border border-stone-300 rounded-md bg-white text-sm focus:outline-none focus:border-[#712B13]"
           />
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">

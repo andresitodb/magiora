@@ -62,7 +62,7 @@ export default async function PricingPage({
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Up to 5 skills</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Up to 3 gallery photos</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Demo reel link</li>
-              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Browse all casting calls, events, and stories</li>
+              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Browse all castings, events, and Spotlight interviews</li>
               <li className="flex gap-2 text-stone-400"><span>—</span> No applying to casting calls</li>
               <li className="flex gap-2 text-stone-400"><span>—</span> No profile customization</li>
             </ul>

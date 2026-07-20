@@ -295,7 +295,7 @@ export default async function PublicProfilePage({
 
               {stories && stories.length > 0 && (
                 <div className="pt-6 border-t" style={{ borderColor: accent.border }}>
-                  <p className="font-serif italic text-sm mb-3" style={{ color: accent.accent }}>Featured stories</p>
+                  <p className="font-serif italic text-sm mb-3" style={{ color: accent.accent }}>Spotlight</p>
                   <div className="space-y-4">
                     {stories.map((story) => (
                       <Link key={story.id} href={`/stories/${story.slug}`} className="block group">

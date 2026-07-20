@@ -6,6 +6,34 @@ import Link from 'next/link';
 
 export const revalidate = 60;
 
+type SpotlightStory = {
+  id: string;
+  slug: string;
+  title: string;
+  intro: string | null;
+  hero_image_url: string | null;
+  subject:
+    | {
+        display_name: string;
+      }
+    | {
+        display_name: string;
+      }[]
+    | null;
+};
+
+type FeaturedProfile = {
+  display_name: string;
+  slug: string;
+  role_titles: string[] | null;
+  role_category: string | null;
+  custom_role_label: string | null;
+  location_city: string | null;
+  headshot_url: string | null;
+  bio: string | null;
+  verified: boolean;
+};
+
 export default async function HomePage() {
   const supabase = createAnonClient();
   const nowIso = new Date().toISOString();
@@ -23,7 +51,7 @@ export default async function HomePage() {
       )
       .eq('status', 'published')
       .order('published_at', { ascending: false })
-      .limit(4),
+      .limit(2),
     supabase
       .from('profiles')
       .select('display_name, slug, role_titles, role_category, custom_role_label, location_city, location_state, headshot_url, bio, verified')
@@ -41,7 +69,7 @@ export default async function HomePage() {
       .limit(4),
   ]);
 
-  const [topStory] = stories ?? [];
+  const spotlightStories = (stories ?? []) as SpotlightStory[];
 
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
@@ -58,45 +86,68 @@ export default async function HomePage() {
         </p>
       </section>
 
-      {/* TOP STORY */}
-      {topStory && (
+      {/* SPOTLIGHT */}
+      {spotlightStories.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 py-12">
-          <Link href={`/stories/${topStory.slug}`} className="group block">
-            <div className="grid grid-cols-2 gap-12 items-center">
-              <div className="aspect-[4/5] rounded-lg overflow-hidden bg-stone-100">
-                {topStory.hero_image_url ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={topStory.hero_image_url}
-                    alt={topStory.title}
-                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#FAECE7] to-[#FBEAF0]" />
-                )}
-              </div>
-              <div>
-                <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-3">
-                  The cover · On {(topStory as any).subject?.display_name}
-                </p>
-                <h2 className="font-serif text-5xl font-medium mb-5 group-hover:text-[#712B13] transition-colors leading-[1.05]">
-                  {topStory.title}
-                </h2>
-                {topStory.intro && (
-                  <p className="font-serif text-lg leading-relaxed text-stone-700 line-clamp-5">
-                    {topStory.intro}
-                  </p>
-                )}
-                <p className="font-serif italic text-sm text-[#712B13] mt-5 group-hover:underline">
-                  Read the interview →
-                </p>
-              </div>
+          <div className="flex items-baseline justify-between mb-8">
+            <div>
+              <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
+                In conversation
+              </p>
+              <h2 className="font-serif text-3xl font-medium">Spotlight</h2>
             </div>
-          </Link>
+            <Link href="/stories" className="font-serif italic text-sm text-[#712B13] hover:underline">
+              Explore Spotlight →
+            </Link>
+          </div>
+
+          <div className="space-y-12">
+            {spotlightStories.map((story) => {
+              const subject = Array.isArray(story.subject)
+                ? story.subject[0]
+                : story.subject;
+
+              return (
+                <Link key={story.id} href={`/stories/${story.slug}`} className="group block">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+                    <div className="aspect-[4/5] rounded-lg overflow-hidden bg-stone-100">
+                      {story.hero_image_url ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={story.hero_image_url}
+                          alt={story.title}
+                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#FAECE7] to-[#FBEAF0]" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-3">
+                        Spotlight
+                        {subject?.display_name && ` · On ${subject.display_name}`}
+                      </p>
+                      <h3 className="font-serif text-3xl md:text-5xl font-medium mb-5 group-hover:text-[#712B13] transition-colors leading-[1.05]">
+                        {story.title}
+                      </h3>
+                      {story.intro && (
+                        <p className="font-serif text-lg leading-relaxed text-stone-700 line-clamp-5">
+                          {story.intro}
+                        </p>
+                      )}
+                      <p className="font-serif italic text-sm text-[#712B13] mt-5 group-hover:underline">
+                        Read the interview →
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </section>
       )}
 
-      {/* FEATURED ARTISTS — 2 columns, larger cards */}
+      {/* FEATURED PROFESSIONALS — 2 columns, larger cards */}
       {featuredProfiles && featuredProfiles.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 py-12 border-t border-stone-300">
           <div className="flex items-baseline justify-between mb-6">
@@ -104,15 +155,15 @@ export default async function HomePage() {
               <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
                 On our radar
               </p>
-              <h2 className="font-serif text-3xl font-medium">Artists this week</h2>
+              <h2 className="font-serif text-3xl font-medium">Featured Professionals</h2>
             </div>
             <Link href="/directory" className="font-serif italic text-sm text-[#712B13] hover:underline">
               Browse all →
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-10">
-            {featuredProfiles.map((p: any) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {(featuredProfiles as FeaturedProfile[]).map((p) => {
               const roleTitle =
                 (p.role_titles ?? [])[0] ??
                 (p.role_category === 'crew_other' ? p.custom_role_label : p.role_category?.replace('_', ' '));

@@ -19,8 +19,8 @@ export default async function StoriesListPage() {
     <div className="min-h-screen bg-[#f5f3ee]">
       <Nav />
       <main className="max-w-5xl mx-auto px-6 py-12">
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Featured interviews</p>
-        <h1 className="font-serif text-5xl font-medium mb-2">Stories &amp; interviews</h1>
+        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Spotlight</p>
+        <h1 className="font-serif text-5xl font-medium mb-2">Featured interviews</h1>
         <p className="font-serif italic text-lg text-stone-600 mb-12 max-w-2xl">
           Long-form conversations with the directors, actors, and crew shaping indie cinema today.
         </p>
@@ -28,11 +28,11 @@ export default async function StoriesListPage() {
         {!interviews || interviews.length === 0 ? (
           <div className="text-center py-16">
             <p className="font-serif italic text-stone-500">
-              First issue coming soon. Become a member to be considered for a feature.
+              The first Spotlight interview is coming soon. Become a member to be considered for a feature.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {interviews.map((interview: any) => (
               <StoryCard key={interview.id} interview={interview} />
             ))}
