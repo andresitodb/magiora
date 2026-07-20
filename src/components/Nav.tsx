@@ -6,6 +6,16 @@ import NavMobileMenu from '@/components/NavMobileMenu';
 import NotificationsBell from '@/components/NotificationsBell';
 import Link from 'next/link';
 
+type NavProfile = {
+  display_name: string;
+  slug: string | null;
+  plan: string | null;
+  is_admin: boolean;
+  headshot_url: string | null;
+  verified: boolean | null;
+  role_category: string | null;
+};
+
 export default async function Nav({
   variant = 'public',
 }: {
@@ -16,7 +26,7 @@ export default async function Nav({
     data: { user },
   } = await supabase.auth.getUser();
 
-  let profile: any = null;
+  let profile: NavProfile | null = null;
   let unreadCount = 0;
   if (user) {
     const { data } = await supabase
@@ -80,7 +90,7 @@ export default async function Nav({
           href={logoHref}
           className={`font-serif text-xl md:text-2xl font-medium shrink-0 ${isAdmin ? 'text-white' : 'text-stone-900'}`}
         >
-          Kinora
+          Magiora
           {isAdmin && (
             <span className="text-stone-400 italic text-xs md:text-sm ml-2 hidden sm:inline">editor&apos;s desk</span>
           )}
@@ -111,7 +121,7 @@ export default async function Nav({
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={profile.headshot_url}
-                      alt={profile.display_name}
+                      alt={profile.display_name ?? ''}
                       className="w-8 h-8 rounded-full object-cover border border-stone-200"
                     />
                   ) : (

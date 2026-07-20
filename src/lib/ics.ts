@@ -96,10 +96,10 @@ export function buildIcsFile(events: EventForIcs[], siteUrl: string, calendarNam
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Kinora//Indie Cinema//EN',
+    'PRODID:-//Magiora//Independent Film//EN',
     'CALSCALE:GREGORIAN',
     `X-WR-CALNAME:${escapeIcs(calendarName)}`,
-    `X-WR-CALDESC:${escapeIcs('Kinora events — indie cinema community')}`,
+    `X-WR-CALDESC:${escapeIcs('Magiora events — where ideas become productions')}`,
   ];
 
   for (const event of events) {

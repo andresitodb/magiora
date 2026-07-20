@@ -259,7 +259,7 @@ export default async function ProfileEditPage() {
             <div className="bg-[#FAEEDA] border border-[#FAC775] rounded-md p-4 text-sm">
               <p className="font-serif italic text-[#993C1D] mb-1">🔒 Members only</p>
               <p className="font-serif text-stone-700">
-                Get a custom URL like <strong className="font-mono not-italic">yourname.kinora.com</strong> and choose a template &amp; color palette for your profile.
+                Get a custom URL like <strong className="font-mono not-italic">yourname.magiora.com</strong> and choose a template &amp; color palette for your profile.
               </p>
               <Link
                 href="/pricing"

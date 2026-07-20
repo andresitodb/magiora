@@ -24,7 +24,7 @@ export default function NewsletterSignup() {
   return (
     <div className="max-w-md mx-auto text-center">
       <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-2">
-        The Kinora dispatch
+        The Magiora dispatch
       </p>
       <p className="font-serif text-base text-stone-700 mb-4">
         A monthly note on the professionals, projects, and films we&apos;re tracking.

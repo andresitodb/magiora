@@ -25,7 +25,7 @@
   },
   "auth": {
     "sign_in_title": "Welcome back",
-    "sign_up_title": "Join Kinora",
+    "sign_up_title": "Join Magiora",
     "email": "Email",
     "password": "Password",
     "display_name": "Display name",
@@ -42,7 +42,7 @@
   },
   "pricing": {
     "label": "Membership",
-    "title": "Join Kinora",
+    "title": "Join Magiora",
     "subtitle": "A working directory for indie cinema's actors, directors, and crew.",
     "listed_plan": "Listed",
     "listed_price_unit": "Forever",

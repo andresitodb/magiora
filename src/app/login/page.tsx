@@ -42,7 +42,7 @@ export default async function LoginPage({
       <header className="w-full">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="font-serif text-2xl font-medium">
-            Kinora
+            Magiora
           </Link>
           <LocaleSwitcher currentLocale={locale} />
         </div>

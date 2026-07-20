@@ -2,7 +2,7 @@
 //
 // Environment variables required:
 //   RESEND_API_KEY        — from resend.com
-//   EMAIL_FROM            — e.g. "Kinora <hello@kinora.com>"
+//   EMAIL_FROM            — e.g. "Magiora <hello@magiora.com>"
 //   NEXT_PUBLIC_SITE_URL  — for links inside emails
 //
 // If RESEND_API_KEY is missing, emails are logged but skipped (dev mode).
@@ -10,7 +10,7 @@
 import { createServiceClient } from '@/lib/supabase/service';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const EMAIL_FROM = process.env.EMAIL_FROM ?? 'Kinora <onboarding@resend.dev>';
+const EMAIL_FROM = process.env.EMAIL_FROM ?? 'Magiora <onboarding@resend.dev>';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 interface SendOptions {
@@ -96,7 +96,7 @@ export async function sendEmail(opts: SendOptions): Promise<{ status: 'sent' | '
       sent_at: new Date().toISOString(),
     });
     return { status: 'sent' };
-  } catch (err: any) {
+  } catch (err: unknown) {
     await supabase.from('email_log').insert({
       to_email: opts.to,
       template: opts.template,
@@ -132,14 +132,14 @@ const baseStyles = `
 
 export function welcomeEmail(displayName: string): { subject: string; html: string } {
   return {
-    subject: 'Welcome to Kinora',
+    subject: 'Welcome to Magiora',
     html: `
       ${baseStyles}
       <body>
         <div class="wrap">
           <p class="kicker">Welcome to the community</p>
           <h1>Hello, ${escapeHtml(displayName.split(' ')[0])}</h1>
-          <p>You've joined Kinora — a small, growing community of independent filmmakers, actors, and crew building work outside the studio system.</p>
+          <p>You've joined Magiora — a small, growing community of independent filmmakers, actors, and crew building work outside the studio system.</p>
           <p>Three quick things to do next:</p>
           <p>
             1. <strong>Complete your profile.</strong> Add a bio, headshot, and your roles so producers can find you.<br>
@@ -150,7 +150,7 @@ export function welcomeEmail(displayName: string): { subject: string; html: stri
             <a class="button" href="${SITE_URL}/dashboard/profile">Complete your profile →</a>
           </p>
           <div class="footer">
-            <p>Kinora — the community of indie cinema.<br>
+            <p>Magiora — where ideas become productions.<br>
             <a href="${SITE_URL}">${SITE_URL.replace(/^https?:\/\//, '')}</a></p>
           </div>
         </div>
@@ -172,7 +172,7 @@ export function interviewInvitedEmail(
         <div class="wrap">
           <p class="kicker">You've been invited</p>
           <h1>${escapeHtml(displayName.split(' ')[0])}, want to be featured?</h1>
-          <p>The Kinora editor has selected you for an upcoming story. The working title:</p>
+          <p>The Magiora editor has selected you for an upcoming story. The working title:</p>
           <p style="font-style: italic; font-size: 18px; color: #712B13; border-left: 3px solid #712B13; padding-left: 16px;">${escapeHtml(workingTitle)}</p>
           <p>The interview is a written Q&amp;A. We've seeded a few questions to get you started — you can add, edit, or remove anything. Take your time, save as you go, and submit when you're happy with it.</p>
           <p>We edit lightly for clarity before publishing.</p>
@@ -181,7 +181,7 @@ export function interviewInvitedEmail(
           </p>
           <div class="footer">
             <p>If you'd rather pass, no problem — just ignore this email.<br>
-            <a href="${SITE_URL}">Kinora</a></p>
+            <a href="${SITE_URL}">Magiora</a></p>
           </div>
         </div>
       </body>
@@ -234,7 +234,7 @@ export function applicationStatusEmail(
             <a href="${SITE_URL}/dashboard/applications" style="color: #712B13;">See all your applications</a>
           </p>
           <div class="footer">
-            <p><a href="${SITE_URL}">Kinora</a></p>
+            <p><a href="${SITE_URL}">Magiora</a></p>
           </div>
         </div>
       </body>
@@ -278,7 +278,7 @@ export function castingMatchEmail(
           </p>
           <div class="footer">
             <p>You're receiving this because your profile matched the role criteria.<br>
-            <a href="${SITE_URL}/dashboard">Manage notifications</a> · <a href="${SITE_URL}">Kinora</a></p>
+            <a href="${SITE_URL}/dashboard">Manage notifications</a> · <a href="${SITE_URL}">Magiora</a></p>
           </div>
         </div>
       </body>

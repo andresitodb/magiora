@@ -64,7 +64,7 @@ export default async function RequestFeaturePage({
       ) : (
         <>
           <p className="font-serif text-base text-stone-700 leading-relaxed mb-8">
-            Kinora features long-form interviews with members shaping indie cinema today. If you have a story to tell — a recent project, a creative breakthrough, a perspective on the industry — we'd love to hear it.
+            Magiora features long-form interviews with members shaping indie cinema today. If you have a story to tell — a recent project, a creative breakthrough, a perspective on the industry — we'd love to hear it.
           </p>
 
           <form action={requestFeature} className="space-y-4">

@@ -64,7 +64,7 @@ export async function approveVerified(formData: FormData) {
     type: 'verification_approved',
     payload: {
       title: 'You are now verified ✓',
-      body: 'A blue check now appears next to your name across Kinora.',
+      body: 'A blue check now appears next to your name across Magiora.',
     },
   });
 

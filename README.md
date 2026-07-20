@@ -1,4 +1,4 @@
-# Kinora — Batch 4 (Fixes round)
+# Magiora — Batch 4 (Fixes round)
 
 ## ⚠️ Hay un crash que SÍ tenés que arreglar primero
 

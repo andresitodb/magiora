@@ -394,7 +394,7 @@ export default async function PublicProjectPage({
       <footer className="border-t border-stone-200 py-8 mt-12">
         <div className="max-w-5xl mx-auto px-4 md:px-6 text-center">
           <Link href="/" className="font-serif text-sm italic text-stone-500 hover:opacity-80">
-            Project hosted on Kinora
+            Project hosted on Magiora
           </Link>
         </div>
       </footer>

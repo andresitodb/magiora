@@ -15,12 +15,12 @@ export async function GET() {
     .limit(200);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-  const ics = buildIcsFile(events ?? [], siteUrl, 'Kinora — upcoming events');
+  const ics = buildIcsFile(events ?? [], siteUrl, 'Magiora — upcoming events');
 
   return new Response(ics, {
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="kinora-events.ics"',
+      'Content-Disposition': 'attachment; filename="magiora-events.ics"',
       'Cache-Control': 'public, max-age=300',
     },
   });

@@ -28,7 +28,7 @@ export default async function NewCastingCallPage({
       <p className="font-serif italic text-sm text-[#993C1D] mb-2">For producers</p>
       <h1 className="font-serif text-3xl font-medium mb-2">Post a casting call</h1>
       <p className="text-sm text-stone-600 italic font-serif mb-8">
-        Reviewed by the Kinora editorial team within 24 hours. Members matching
+        Reviewed by the Magiora editorial team within 24 hours. Members matching
         your targeting will be notified when it goes live.
       </p>
 

@@ -41,7 +41,7 @@ export default async function PricingPage({
         <div className="text-center mb-12 md:mb-16">
           <p className="font-serif italic text-sm text-[#993C1D] mb-2">Pricing</p>
           <h1 className="font-serif text-4xl md:text-6xl font-medium mb-4 tracking-tight">
-            Two ways to be on Kinora
+            Two ways to be on Magiora
           </h1>
           <p className="font-serif italic text-base md:text-lg text-stone-600 max-w-2xl mx-auto">
             Get listed for free. Upgrade when you&apos;re ready to apply, get matched, and stand out.
@@ -96,7 +96,7 @@ export default async function PricingPage({
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Apply to casting calls</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Get matched automatically</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Unlimited skills &amp; gallery</li>
-              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Custom profile URL (yourname.kinora.com)</li>
+              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Custom profile URL (yourname.magiora.com)</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Profile templates &amp; colors</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Multiple video links with custom labels</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Priority support</li>
@@ -152,7 +152,7 @@ export default async function PricingPage({
       <footer className="border-t border-stone-200 py-8 mt-12">
         <div className="max-w-5xl mx-auto px-4 md:px-6 text-center">
           <Link href="/" className="font-serif text-sm italic text-stone-500 hover:opacity-80">
-            Kinora
+            Magiora
           </Link>
         </div>
       </footer>

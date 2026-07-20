@@ -232,7 +232,7 @@ export default async function EditProjectPage({
 
         <div className="flex items-center justify-between pt-6 border-t border-stone-200">
           <p className="text-xs text-stone-500 italic font-serif max-w-xs">
-            Public projects appear on Kinora and on contributors&apos; profiles.
+            Public projects appear on Magiora and on contributors&apos; profiles.
           </p>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -268,7 +268,7 @@ export default async function EditProjectPage({
           </p>
         </div>
         <p className="text-sm text-stone-600 italic font-serif mb-6 max-w-xl">
-          Drag-and-drop or use ▲▼ to reorder. Linked profiles ↗ go to the person&apos;s Kinora page.
+          Drag-and-drop or use ▲▼ to reorder. Linked profiles ↗ go to the person&apos;s Magiora page.
         </p>
 
         <CreditsReorderManager
@@ -307,7 +307,7 @@ export default async function EditProjectPage({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1">
-                Kinora slug <span className="text-stone-500 italic font-normal">— optional</span>
+                Magiora slug <span className="text-stone-500 italic font-normal">— optional</span>
               </label>
               <input
                 type="text"

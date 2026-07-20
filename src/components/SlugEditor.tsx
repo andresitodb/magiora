@@ -18,8 +18,8 @@ export default function SlugEditor({
   const [, startTransition] = useTransition();
 
   // HYDRATION FIX: defer the baseUrl until after mount so server and client agree.
-  // Server render: shows generic "kinora.com/m/". Client: replaces with actual origin.
-  const [baseUrl, setBaseUrl] = useState('kinora.com/m/');
+  // Server render: shows the public brand domain. Client: replaces with actual origin.
+  const [baseUrl, setBaseUrl] = useState('magiora.com/m/');
   useEffect(() => {
     setBaseUrl(`${window.location.host}/m/`);
   }, []);

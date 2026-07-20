@@ -37,7 +37,7 @@ stripe prices retrieve $env:STRIPE_PRICE_ID_MONTHLY
 stripe prices retrieve $env:STRIPE_PRICE_ID_ANNUAL
 ```
 
-For a complete local test, open Kinora's pricing page with a test account and
+For a complete local test, open Magiora's pricing page with a test account and
 finish Checkout using Stripe's test card `4242 4242 4242 4242`, any future
 expiry date, and any CVC. Do not use a real card.
 

@@ -20,7 +20,7 @@ async function fetchBrand(): Promise<BrandConfig> {
 
   if (error || !data) {
     return {
-      name: 'Kinora',
+      name: 'Magiora',
       taglineEn: 'A professional community for independent film',
       taglineEs: 'Una comunidad profesional para el cine independiente',
       volume: 'Vol. 01',
@@ -35,7 +35,7 @@ async function fetchBrand(): Promise<BrandConfig> {
   const s = Object.fromEntries(data.map(({ key, value }) => [key, value]));
 
   return {
-    name: s.brand_name ?? 'Kinora',
+    name: s.brand_name ?? 'Magiora',
     taglineEn: s.brand_tagline_en ?? '',
     taglineEs: s.brand_tagline_es ?? '',
     volume: s.brand_volume ?? 'Vol. 01',

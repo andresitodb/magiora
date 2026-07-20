@@ -41,7 +41,7 @@ export async function GET() {
   return new Response(lines.join('\n'), {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="kinora-newsletter-${today}.csv"`,
+      'Content-Disposition': `attachment; filename="magiora-newsletter-${today}.csv"`,
     },
   });
 }

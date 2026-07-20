@@ -266,7 +266,7 @@ export async function addCredit(formData: FormData) {
     } else {
       redirect(
         `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
-          'No Kinora profile was found for that profile link.'
+          'No Magiora profile was found for that profile link.'
         )}`
       );
     }

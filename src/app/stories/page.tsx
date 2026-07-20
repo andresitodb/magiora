@@ -3,6 +3,7 @@ import Nav from '@/components/Nav';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import SpotlightSearch from '@/components/SpotlightSearch';
+import { applyPublicBrand } from '@/lib/publicBrand';
 
 const PAGE_SIZE = 20;
 
@@ -150,7 +151,7 @@ function StoryCard({ interview }: { interview: Story }) {
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={interview.hero_image_url}
-            alt={interview.title}
+            alt={applyPublicBrand(interview.title)}
             className="w-full h-full object-cover group-hover:scale-[1.02]"
           />
         ) : (
@@ -169,11 +170,11 @@ function StoryCard({ interview }: { interview: Story }) {
             })}
         </p>
         <h2 className="font-serif text-2xl font-medium mb-2 group-hover:text-[#712B13] line-clamp-2">
-          {interview.title}
+          {applyPublicBrand(interview.title)}
         </h2>
         {interview.intro && (
           <p className="font-serif text-sm text-stone-700 line-clamp-3 mb-3">
-            {interview.intro}
+            {applyPublicBrand(interview.intro)}
           </p>
         )}
         {subject?.display_name && (

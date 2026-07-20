@@ -8,6 +8,7 @@ import {
   getProjectStatusLabel,
   getProjectTypeLabel,
 } from '@/lib/projects';
+import { applyPublicBrand } from '@/lib/publicBrand';
 
 export const revalidate = 60;
 
@@ -102,9 +103,9 @@ export default async function HomePage() {
 
       {/* Masthead */}
       <section className="max-w-6xl mx-auto px-6 pt-10 pb-8 text-center border-b border-stone-300">
-        <h1 className="k-page-title text-5xl md:text-7xl">Kinora</h1>
+        <h1 className="k-page-title text-5xl md:text-7xl">Magiora</h1>
         <p className="font-serif italic text-base text-stone-500 mt-3">
-          The community of indie cinema — the people, projects, and conversations
+          Where ideas become productions.
         </p>
       </section>
 
@@ -136,7 +137,7 @@ export default async function HomePage() {
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={story.hero_image_url}
-                          alt={story.title}
+                          alt={applyPublicBrand(story.title)}
                           className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
                         />
                       ) : (
@@ -149,11 +150,11 @@ export default async function HomePage() {
                         {subject?.display_name && ` · On ${subject.display_name}`}
                       </p>
                       <h3 className="font-serif text-xl md:text-2xl font-medium mb-3 group-hover:text-[#712B13] transition-colors leading-tight line-clamp-2 min-h-[3.5rem]">
-                        {story.title}
+                        {applyPublicBrand(story.title)}
                       </h3>
                       {story.intro && (
                         <p className="font-serif text-sm leading-relaxed text-stone-700 line-clamp-3">
-                          {story.intro}
+                          {applyPublicBrand(story.intro)}
                         </p>
                       )}
                       <p className="font-serif italic text-sm text-[#712B13] mt-auto pt-4 group-hover:underline">
@@ -335,9 +336,11 @@ export default async function HomePage() {
       </section>
 
       <footer className="border-t border-stone-300 py-12 text-center">
-        <p className="font-serif text-3xl font-medium text-stone-900">Kinora</p>
-        <p className="font-serif italic text-sm text-stone-500 mt-2">
-          {new Date().getFullYear()}
+        <p className="font-serif text-sm text-stone-700">
+          © {new Date().getFullYear()} Magiora
+        </p>
+        <p className="font-serif italic text-sm text-stone-500 mt-1">
+          Where ideas become productions.
         </p>
       </footer>
     </div>

@@ -11,6 +11,7 @@ import ProfileProjectsList from '@/components/ProfileProjectsList';
 import Link from 'next/link';
 import { getLanguageName } from '@/lib/languages';
 import { getAccent, getTemplate, type Accent } from '@/lib/profile_themes';
+import { applyPublicBrand } from '@/lib/publicBrand';
 
 const FREE_GALLERY_DISPLAY_LIMIT = 3;
 
@@ -269,7 +270,7 @@ export default async function PublicProfilePage({
               className="font-serif italic text-sm hover:opacity-80"
               style={{ color: accent.textMuted }}
             >
-              ← Kinora
+              ← Magiora
             </Link>
           )}
           <Link
@@ -277,7 +278,7 @@ export default async function PublicProfilePage({
             className="font-serif text-sm italic hover:opacity-80"
             style={{ color: accent.textMuted }}
           >
-            Kinora
+            Magiora
           </Link>
         </div>
       </header>
@@ -544,11 +545,11 @@ export default async function PublicProfilePage({
                           className="font-serif text-xl font-medium group-hover:opacity-80 transition-opacity"
                           style={{ color: accent.text }}
                         >
-                          {story.title}
+                          {applyPublicBrand(story.title)}
                         </h3>
                         {story.intro && (
                           <p className="text-sm line-clamp-2 mt-1 font-serif italic" style={{ color: accent.textMuted }}>
-                            {story.intro}
+                            {applyPublicBrand(story.intro)}
                           </p>
                         )}
                       </Link>
@@ -789,7 +790,7 @@ export default async function PublicProfilePage({
       <footer className="border-t py-8 mt-12" style={{ borderColor: accent.border }}>
         <div className="max-w-5xl mx-auto px-4 md:px-6 text-center">
           <Link href="/" className="font-serif text-sm italic hover:opacity-80" style={{ color: accent.textMuted }}>
-            Profile hosted on Kinora
+            Profile hosted on Magiora
           </Link>
         </div>
       </footer>

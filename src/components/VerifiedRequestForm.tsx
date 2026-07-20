@@ -96,7 +96,7 @@ export default function VerifiedRequestForm({
           <div>
             <p className="font-serif font-medium text-[#712B13]">You&apos;re verified</p>
             <p className="text-xs italic text-stone-600 font-serif">
-              The ✓ badge shows next to your name across Kinora.
+              The ✓ badge shows next to your name across Magiora.
             </p>
           </div>
         </div>
@@ -154,7 +154,7 @@ export default function VerifiedRequestForm({
                   Apply for verified ✓
                 </p>
                 <p className="text-xs italic text-stone-500 font-serif leading-snug">
-                  Confirm you&apos;re a real working artist with an IMDb link, a couple of credit URLs, and a photo of your government ID. A Kinora editor will review.
+                  Confirm you&apos;re a real working artist with an IMDb link, a couple of credit URLs, and a photo of your government ID. A Magiora editor will review.
                 </p>
               </div>
               <span className="text-stone-400 group-hover:text-[#712B13] text-lg">→</span>
@@ -238,7 +238,7 @@ export default function VerifiedRequestForm({
           Government ID photo <span className="text-red-700">*</span>
         </label>
         <p className="text-xs italic text-stone-500 font-serif mb-2">
-          Clear photo of the front of your ID, with your name visible. Stored privately, visible only to Kinora editors during review. Max 5MB.
+          Clear photo of the front of your ID, with your name visible. Stored privately, visible only to Magiora editors during review. Max 5MB.
         </p>
 
         <input
@@ -310,7 +310,7 @@ export default function VerifiedRequestForm({
 
       <div className="pt-2 border-t border-stone-200 flex items-center justify-between gap-3">
         <p className="text-xs italic text-stone-500 font-serif">
-          By submitting, you allow Kinora to verify your identity.
+          By submitting, you allow Magiora to verify your identity.
         </p>
         <button
           type="submit"

@@ -45,7 +45,7 @@ export default async function SignupPage({
     <div className="min-h-screen bg-[#f5f3ee] flex flex-col">
       <header>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="font-serif text-2xl font-medium">Kinora</Link>
+          <Link href="/" className="font-serif text-2xl font-medium">Magiora</Link>
           <LocaleSwitcher currentLocale={locale} />
         </div>
       </header>

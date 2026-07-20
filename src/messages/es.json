@@ -25,7 +25,7 @@
   },
   "auth": {
     "sign_in_title": "Bienvenido de vuelta",
-    "sign_up_title": "Sumate a Kinora",
+    "sign_up_title": "Sumate a Magiora",
     "email": "Email",
     "password": "Contraseña",
     "display_name": "Nombre visible",
@@ -42,7 +42,7 @@
   },
   "pricing": {
     "label": "Membresía",
-    "title": "Sumate a Kinora",
+    "title": "Sumate a Magiora",
     "subtitle": "Un directorio activo para actores, directores y crew del cine independiente.",
     "listed_plan": "Listado",
     "listed_price_unit": "Para siempre",

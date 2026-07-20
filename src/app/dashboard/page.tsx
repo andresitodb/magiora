@@ -88,7 +88,7 @@ export default async function DashboardPage() {
       {hasNoActivity && (
         <section className="bg-white border border-stone-200 rounded-md p-5 mb-10">
           <p className="font-serif italic text-sm text-[#993C1D] mb-1">
-            Start building your Kinora presence
+            Start building your Magiora presence
           </p>
           <p className="text-sm text-stone-600 font-serif mb-4">
             Complete your profile, add a project, or browse open work.
@@ -168,7 +168,7 @@ export default async function DashboardPage() {
             title="My story"
             description={
               hasStory?.status === 'published'
-                ? 'Your published feature on Kinora.'
+                ? 'Your published feature on Magiora.'
                 : "Continue the interview you've been invited to."
             }
             icon={DashboardIcons.story}

@@ -3,6 +3,7 @@ import { createAnonClient } from '@/lib/supabase/anon';
 import Nav from '@/components/Nav';
 import BackLink from '@/components/BackLink';
 import Link from 'next/link';
+import { applyPublicBrand } from '@/lib/publicBrand';
 
 export default async function StoryDetailPage({
   params,
@@ -49,7 +50,7 @@ export default async function StoryDetailPage({
             })}
         </p>
         <h1 className="font-serif text-5xl font-medium mb-4 leading-tight">
-          {interview.title}
+          {applyPublicBrand(interview.title)}
         </h1>
         <p className="font-serif italic text-xl text-stone-600 mb-8">
           On {subject.display_name}
@@ -60,7 +61,7 @@ export default async function StoryDetailPage({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={interview.hero_image_url}
-              alt={interview.title}
+              alt={applyPublicBrand(interview.title)}
               className="w-full h-full object-cover"
             />
           </div>
@@ -68,7 +69,7 @@ export default async function StoryDetailPage({
 
         {interview.intro && (
           <div className="font-serif text-xl leading-[1.7] text-stone-800 mb-12 italic border-l-4 border-[#712B13] pl-6">
-            {interview.intro}
+            {applyPublicBrand(interview.intro)}
           </div>
         )}
 
@@ -76,10 +77,10 @@ export default async function StoryDetailPage({
           {qa.map((item, i) => (
             <div key={i}>
               <p className="font-serif font-medium text-[#4A1B0C] mb-3 text-lg">
-                {item.question}
+                {applyPublicBrand(item.question)}
               </p>
               <p className="font-serif text-lg leading-relaxed text-stone-800 whitespace-pre-line">
-                {item.answer}
+                {applyPublicBrand(item.answer)}
               </p>
             </div>
           ))}
