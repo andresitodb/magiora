@@ -26,8 +26,8 @@ export default async function NewEventPage({
     <div className="max-w-2xl">
       <BackLink href="/dashboard/events" label="My events" />
 
-      <p className="font-serif italic text-sm text-[#993C1D] mb-2">For members</p>
-      <h1 className="font-serif text-3xl font-medium mb-2">Post an event</h1>
+      <p className="k-eyebrow mb-2">For members</p>
+      <h1 className="k-section-title mb-2">Post an event</h1>
       <p className="text-sm text-stone-600 italic font-serif mb-8">
         Screenings, premieres, panels, workshops, networking nights. Reviewed by our editorial team within 24 hours.
       </p>
@@ -46,7 +46,7 @@ export default async function NewEventPage({
             name="title"
             required
             placeholder="The Performance — premiere screening"
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+            className="k-control"
           />
         </div>
 
@@ -66,7 +66,7 @@ export default async function NewEventPage({
               type="date"
               name="event_date"
               required
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
           <div>
@@ -76,7 +76,7 @@ export default async function NewEventPage({
               name="event_time"
               required
               defaultValue="19:00"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
         </div>
@@ -89,7 +89,7 @@ export default async function NewEventPage({
             <input
               type="date"
               name="end_date"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
           <div>
@@ -99,7 +99,7 @@ export default async function NewEventPage({
             <input
               type="time"
               name="end_time"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
         </div>
@@ -110,7 +110,7 @@ export default async function NewEventPage({
             type="text"
             name="location_name"
             placeholder="Coral Gables Art Cinema"
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+            className="k-control"
           />
         </div>
 
@@ -120,7 +120,7 @@ export default async function NewEventPage({
             type="text"
             name="location_address"
             placeholder="260 Aragon Ave, Coral Gables, FL"
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+            className="k-control"
           />
         </div>
 
@@ -132,7 +132,7 @@ export default async function NewEventPage({
             type="url"
             name="online_link"
             placeholder="https://zoom.us/..."
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+            className="k-control"
           />
         </div>
 
@@ -144,7 +144,7 @@ export default async function NewEventPage({
             type="url"
             name="cover_image_url"
             placeholder="https://..."
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+            className="k-control"
           />
         </div>
 
@@ -158,7 +158,7 @@ export default async function NewEventPage({
               name="price_public"
               step="0.01"
               defaultValue="0"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
           <div>
@@ -169,7 +169,7 @@ export default async function NewEventPage({
               type="number"
               name="price_member"
               step="0.01"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
           <div>
@@ -179,7 +179,7 @@ export default async function NewEventPage({
             <input
               type="number"
               name="max_capacity"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
         </div>
@@ -189,12 +189,12 @@ export default async function NewEventPage({
           <span className="text-sm">RSVP required for attendance</span>
         </label>
 
-        <div className="flex gap-3 pt-4">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
           <button
             type="submit"
             name="submit_action"
             value="draft"
-            className="bg-stone-700 text-white py-2 px-6 rounded-md font-medium hover:bg-stone-800 cursor-pointer"
+            className="k-button k-button-secondary"
           >
             Save draft
           </button>
@@ -202,7 +202,7 @@ export default async function NewEventPage({
             type="submit"
             name="submit_action"
             value="submit"
-            className="bg-[#712B13] text-white py-2 px-6 rounded-md font-medium hover:bg-[#4A1B0C] cursor-pointer"
+            className="k-button k-button-primary"
           >
             Submit for review
           </button>

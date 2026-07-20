@@ -66,14 +66,14 @@ export default async function DashboardPage() {
 
       {/* Welcome header */}
       <div className="mb-8">
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Welcome back</p>
-        <h1 className="font-serif text-3xl md:text-4xl font-medium">
+        <p className="k-eyebrow mb-2">Welcome back</p>
+        <h1 className="k-page-title">
           {profile.display_name?.split(' ')[0] ?? 'Hi'}
         </h1>
         {profile.slug && (
           <Link
             href={`/m/${profile.slug}`}
-            className="inline-block mt-2 text-sm text-[#712B13] italic font-serif hover:underline"
+            className="k-link inline-block mt-2"
           >
             View your public profile →
           </Link>
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
       </div>
 
       {hasNoActivity && (
-        <section className="bg-white border border-stone-200 rounded-md p-5 mb-10">
+        <section className="k-card p-5 mb-10">
           <p className="font-serif italic text-sm text-[#993C1D] mb-1">
             Start building your Magiora presence
           </p>
@@ -96,19 +96,19 @@ export default async function DashboardPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href="/dashboard/profile"
-              className="bg-[#712B13] text-white text-sm py-2 px-4 rounded-md hover:bg-[#4A1B0C]"
+              className="k-button k-button-primary"
             >
               Complete profile
             </Link>
             <Link
               href="/dashboard/projects/new"
-              className="border border-stone-300 bg-white text-stone-700 text-sm py-2 px-4 rounded-md hover:border-[#712B13]"
+              className="k-button k-button-secondary"
             >
               Add a project
             </Link>
             <Link
               href="/casting-calls"
-              className="border border-stone-300 bg-white text-stone-700 text-sm py-2 px-4 rounded-md hover:border-[#712B13]"
+              className="k-button k-button-secondary"
             >
               Browse casting calls
             </Link>
@@ -117,7 +117,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Cards grid */}
-      <p className="font-serif italic text-sm text-[#993C1D] mb-4">Your tools</p>
+      <p className="k-eyebrow mb-4">Your tools</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
         <DashboardCard
           href="/dashboard/profile"
@@ -165,7 +165,7 @@ export default async function DashboardPage() {
         {userHasStory ? (
           <DashboardCard
             href="/dashboard/stories"
-            title="My story"
+            title="My Spotlight"
             description={
               hasStory?.status === 'published'
                 ? 'Your published feature on Magiora.'
@@ -179,7 +179,7 @@ export default async function DashboardPage() {
             <div className="w-10 h-10 rounded-md flex items-center justify-center bg-stone-100 text-stone-400 mb-3">
               {DashboardIcons.story}
             </div>
-            <h3 className="font-serif text-lg font-medium text-stone-500 mb-1">My story</h3>
+            <h3 className="font-serif text-lg font-medium text-stone-500 mb-1">My Spotlight</h3>
             <p className="text-sm text-stone-400 italic font-serif leading-snug">
               Stories are by invitation only. Keep building your work — editors are watching.
             </p>

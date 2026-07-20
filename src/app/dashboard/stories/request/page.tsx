@@ -34,8 +34,8 @@ export default async function RequestFeaturePage({
     <div className="max-w-xl">
       <BackLink href="/dashboard" label="Dashboard" />
 
-      <p className="font-serif italic text-sm text-[#993C1D] mb-2">Editorial</p>
-      <h1 className="font-serif text-3xl font-medium mb-4">Request to be featured</h1>
+      <p className="k-eyebrow mb-2">Spotlight</p>
+      <h1 className="k-section-title mb-4">Request to be featured</h1>
 
       {params.submitted && (
         <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-md p-3 mb-6">
@@ -49,7 +49,7 @@ export default async function RequestFeaturePage({
       )}
 
       {existing ? (
-        <div className="bg-white border border-stone-200 rounded-lg p-6">
+        <div className="k-card p-6">
           <p className="font-serif italic text-sm text-[#993C1D] mb-2">Your request</p>
           <h2 className="font-serif text-xl font-medium mb-2">
             Your interview is {existing.status.replace('_', ' ')}
@@ -58,19 +58,19 @@ export default async function RequestFeaturePage({
             Requested {new Date(existing.created_at).toLocaleDateString()}
           </p>
           <p className="text-sm text-stone-500 italic font-serif">
-            We'll reach out by email when we're ready to start the conversation. One feature at a time per member, so the next time you can request is after this one publishes.
+            We&apos;ll reach out by email when we&apos;re ready to start the conversation. One feature at a time per member, so the next time you can request is after this one publishes.
           </p>
         </div>
       ) : (
         <>
           <p className="font-serif text-base text-stone-700 leading-relaxed mb-8">
-            Magiora features long-form interviews with members shaping indie cinema today. If you have a story to tell — a recent project, a creative breakthrough, a perspective on the industry — we'd love to hear it.
+            Magiora features long-form interviews with members shaping indie cinema today. If you have a story to tell — a recent project, a creative breakthrough, a perspective on the industry — we&apos;d love to hear it.
           </p>
 
           <form action={requestFeature} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                What's on your mind?
+                What&apos;s on your mind?
               </label>
               <AutoGrowTextarea
                 name="request_note"
@@ -84,7 +84,7 @@ export default async function RequestFeaturePage({
 
             <button
               type="submit"
-              className="bg-[#712B13] text-white py-2 px-6 rounded-md font-medium hover:bg-[#4A1B0C] cursor-pointer"
+              className="k-button k-button-primary"
             >
               Submit request
             </button>

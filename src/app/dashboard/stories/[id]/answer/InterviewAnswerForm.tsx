@@ -43,7 +43,7 @@ export default function InterviewAnswerForm({
         <input type="hidden" name="interview_id" value={interviewId} />
         <input type="hidden" name="qa" value={JSON.stringify(qa)} />
 
-        <div className="bg-white border border-stone-200 rounded-md p-5">
+        <div className="k-card p-5">
           <label className="block text-sm font-medium mb-2">
             Intro <span className="text-xs text-stone-500 italic font-serif font-normal">— optional, sets the scene</span>
           </label>
@@ -59,7 +59,7 @@ export default function InterviewAnswerForm({
           {qa.map((item, i) => (
             <div
               key={i}
-              className="bg-white border border-stone-200 rounded-md p-5 space-y-3"
+              className="k-card p-5 space-y-3"
             >
               <div className="flex items-baseline justify-between">
                 <label className="block text-sm font-medium">Question {i + 1}</label>
@@ -78,7 +78,7 @@ export default function InterviewAnswerForm({
                 value={item.question}
                 onChange={(e) => updateQuestion(i, e.target.value)}
                 placeholder="What\u2019s the question?"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white text-sm font-serif italic"
+                className="k-control font-serif italic"
               />
               <AutoGrowTextarea
                 name={`answer_${i}`}
@@ -99,10 +99,10 @@ export default function InterviewAnswerForm({
           </button>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
           <button
             type="submit"
-            className="bg-stone-800 text-white py-2 px-5 rounded-md font-medium hover:bg-stone-900 cursor-pointer"
+            className="k-button k-button-secondary"
           >
             Save draft
           </button>
@@ -124,7 +124,7 @@ export default function InterviewAnswerForm({
           </p>
           <button
             type="submit"
-            className="bg-[#712B13] text-white py-2 px-5 rounded-md font-medium hover:bg-[#4A1B0C] cursor-pointer"
+            className="k-button k-button-primary"
           >
             {isPendingReview ? 'Re-submit for review' : 'Submit for review →'}
           </button>

@@ -38,15 +38,15 @@ export default async function AnswerInterviewPage({
 
   return (
     <div className="max-w-3xl">
-      <BackLink href="/dashboard/stories" label="My stories" />
+      <BackLink href="/dashboard/stories" label="My Spotlight" />
 
       <div className="mb-8">
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">
+        <p className="k-eyebrow mb-2">
           {interview.invited_by_admin
             ? 'You\u2019ve been invited for an interview'
             : 'Draft interview'}
         </p>
-        <h1 className="font-serif text-3xl font-medium">{interview.title}</h1>
+        <h1 className="k-section-title break-words">{interview.title}</h1>
         {interview.invited_by_admin && (
           <p className="font-serif italic text-sm text-stone-600 mt-3 max-w-2xl">
             The editor selected you for this issue. Answer in your own voice. Take your time, save as
@@ -72,7 +72,7 @@ export default async function AnswerInterviewPage({
       )}
 
       {!isEditable ? (
-        <div className="bg-white border border-stone-200 rounded-md p-6">
+        <div className="k-card p-6">
           <p className="font-serif italic text-stone-600">
             This interview is{' '}
             <span className="capitalize">{interview.status.replace('_', ' ')}</span> and can\u2019t be

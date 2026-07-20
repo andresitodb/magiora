@@ -25,8 +25,8 @@ export default async function NewCastingCallPage({
 
   return (
     <div className="max-w-2xl">
-      <p className="font-serif italic text-sm text-[#993C1D] mb-2">For producers</p>
-      <h1 className="font-serif text-3xl font-medium mb-2">Post a casting call</h1>
+      <p className="k-eyebrow mb-2">For producers</p>
+      <h1 className="k-section-title mb-2">Post a casting call</h1>
       <p className="text-sm text-stone-600 italic font-serif mb-8">
         Reviewed by the Magiora editorial team within 24 hours. Members matching
         your targeting will be notified when it goes live.
@@ -50,7 +50,7 @@ export default async function NewCastingCallPage({
               type="text"
               name="project_title"
               required
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
 
@@ -60,7 +60,7 @@ export default async function NewCastingCallPage({
               <select
                 name="project_type"
                 defaultValue="short_film"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               >
                 <option value="short_film">Short film</option>
                 <option value="feature_film">Feature film</option>
@@ -76,7 +76,7 @@ export default async function NewCastingCallPage({
               <select
                 name="project_status"
                 defaultValue="pre_production"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               >
                 <option value="pre_production">Pre-production</option>
                 <option value="in_production">In production</option>
@@ -91,7 +91,7 @@ export default async function NewCastingCallPage({
               rows={3}
               required
               placeholder="A short paragraph about the project..."
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white font-serif"
+              className="k-control font-serif"
             />
           </div>
         </section>
@@ -108,7 +108,7 @@ export default async function NewCastingCallPage({
                 name="role_name"
                 required
                 placeholder="Carmen"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
             <div>
@@ -116,7 +116,7 @@ export default async function NewCastingCallPage({
               <select
                 name="role_size"
                 defaultValue="lead"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               >
                 <option value="lead">Lead</option>
                 <option value="supporting">Supporting</option>
@@ -134,7 +134,7 @@ export default async function NewCastingCallPage({
               name="role_description"
               rows={3}
               required
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white font-serif"
+              className="k-control font-serif"
             />
           </div>
         </section>
@@ -149,7 +149,7 @@ export default async function NewCastingCallPage({
               <input
                 type="date"
                 name="shoot_start_date"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
             <div>
@@ -157,7 +157,7 @@ export default async function NewCastingCallPage({
               <input
                 type="date"
                 name="shoot_end_date"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
           </div>
@@ -168,7 +168,7 @@ export default async function NewCastingCallPage({
                 type="text"
                 name="location_city"
                 placeholder="Miami, FL"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
             <div>
@@ -176,7 +176,7 @@ export default async function NewCastingCallPage({
               <select
                 name="union_status"
                 defaultValue="sag_friendly"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               >
                 <option value="sag_friendly">SAG-friendly</option>
                 <option value="sag_only">SAG only</option>
@@ -190,17 +190,17 @@ export default async function NewCastingCallPage({
               type="text"
               name="compensation"
               placeholder="Day rate + meals + IMDB credit"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
             <p className="text-xs text-stone-500 italic font-serif mt-1">
-              Be specific. "Negotiable" and "TBD" turn applicants away.
+              Be specific. &ldquo;Negotiable&rdquo; and &ldquo;TBD&rdquo; turn applicants away.
             </p>
           </div>
         </section>
 
         <section className="space-y-4">
           <h2 className="font-serif text-xl font-medium border-b border-stone-200 pb-2">
-            Who you're looking for
+            Who you&apos;re looking for
           </h2>
           <p className="text-xs text-stone-500 italic font-serif">
             These fields power the matching engine.
@@ -212,7 +212,7 @@ export default async function NewCastingCallPage({
               <select
                 name="target_role_category"
                 defaultValue="actor"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               >
                 <option value="actor">Actor</option>
                 <option value="cinematographer">Cinematographer</option>
@@ -230,7 +230,7 @@ export default async function NewCastingCallPage({
               <select
                 name="target_gender"
                 defaultValue="Any"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               >
                 <option value="Any">Any</option>
                 <option value="Female">Female</option>
@@ -247,7 +247,7 @@ export default async function NewCastingCallPage({
                 name="target_age_min"
                 min="0"
                 max="120"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
             <div>
@@ -257,7 +257,7 @@ export default async function NewCastingCallPage({
                 name="target_age_max"
                 min="0"
                 max="120"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
           </div>
@@ -272,7 +272,7 @@ export default async function NewCastingCallPage({
               type="text"
               name="target_languages"
               placeholder="Spanish, English"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
         </section>
@@ -292,7 +292,7 @@ export default async function NewCastingCallPage({
               name="additional_requirements"
               rows={3}
               placeholder="Self-tape sides, paragraph on the material, availability confirmation..."
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white font-serif"
+              className="k-control font-serif"
             />
           </div>
           <div>
@@ -303,17 +303,17 @@ export default async function NewCastingCallPage({
               type="date"
               name="application_deadline"
               required
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
         </section>
 
-        <div className="flex gap-3 pt-4">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
           <button
             type="submit"
             name="submit_action"
             value="draft"
-            className="bg-stone-700 text-white py-2 px-6 rounded-md font-medium hover:bg-stone-800"
+            className="k-button k-button-secondary"
           >
             Save as draft
           </button>
@@ -321,7 +321,7 @@ export default async function NewCastingCallPage({
             type="submit"
             name="submit_action"
             value="submit"
-            className="bg-[#712B13] text-white py-2 px-6 rounded-md font-medium hover:bg-[#4A1B0C]"
+            className="k-button k-button-primary"
           >
             Submit for review
           </button>

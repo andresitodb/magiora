@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CREDIT_GROUPS, groupCredits } from '@/lib/projects';
 
-interface Credit {
+export interface Credit {
   id: string;
   role_title: string;
   role_category: string | null;

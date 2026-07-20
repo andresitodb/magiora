@@ -4,7 +4,7 @@ import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import ProjectPosterUploader from '@/components/ProjectPosterUploader';
 import ProjectGalleryUploader from '@/components/ProjectGalleryUploader';
-import CreditsReorderManager from '@/components/CreditsReorderManager';
+import CreditsReorderManager, { type Credit } from '@/components/CreditsReorderManager';
 import Toast from '@/components/Toast';
 import { Suspense } from 'react';
 import { updateProject, deleteProject, addCredit, removeCredit, reorderCredits } from '../../actions';
@@ -60,8 +60,8 @@ export default async function EditProjectPage({
 
       <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-8 gap-3">
         <div>
-          <p className="font-serif italic text-sm text-[#993C1D] mb-2">Edit project</p>
-          <h1 className="font-serif text-2xl md:text-3xl font-medium">{project.title}</h1>
+          <p className="k-eyebrow mb-2">Edit project</p>
+          <h1 className="k-section-title break-words">{project.title}</h1>
         </div>
         <Link
           href={`/projects/${project.slug}`}
@@ -92,7 +92,7 @@ export default async function EditProjectPage({
               name="title"
               required
               defaultValue={project.title}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
 
@@ -103,7 +103,7 @@ export default async function EditProjectPage({
               name="tagline"
               defaultValue={project.tagline ?? ''}
               placeholder="One sentence — optional"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
 
@@ -113,7 +113,7 @@ export default async function EditProjectPage({
               <select
                 name="project_type"
                 defaultValue={project.project_type ?? 'feature_film'}
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white cursor-pointer"
+                className="k-control cursor-pointer"
               >
                 {PROJECT_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
@@ -125,7 +125,7 @@ export default async function EditProjectPage({
               <select
                 name="status"
                 defaultValue={project.status ?? 'in_development'}
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white cursor-pointer"
+                className="k-control cursor-pointer"
               >
                 {PROJECT_STATUSES.map((s) => (
                   <option key={s.value} value={s.value}>{s.label}</option>
@@ -140,7 +140,7 @@ export default async function EditProjectPage({
                 defaultValue={project.year ?? ''}
                 min={1900}
                 max={new Date().getFullYear() + 5}
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
           </div>
@@ -153,7 +153,7 @@ export default async function EditProjectPage({
                 name="location_city"
                 defaultValue={project.location_city ?? ''}
                 placeholder="Where it was shot"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
             <div>
@@ -162,7 +162,7 @@ export default async function EditProjectPage({
                 type="text"
                 name="location_state"
                 defaultValue={project.location_state ?? ''}
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
           </div>
@@ -189,7 +189,7 @@ export default async function EditProjectPage({
             rows={6}
             defaultValue={project.description ?? ''}
             placeholder="What is it about?"
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white font-serif"
+            className="k-control font-serif"
           />
         </section>
 
@@ -200,7 +200,7 @@ export default async function EditProjectPage({
             name="trailer_url"
             defaultValue={project.trailer_url ?? ''}
             placeholder="https://vimeo.com/... or https://youtube.com/watch?v=..."
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+            className="k-control"
           />
           <p className="text-xs italic text-stone-500 font-serif">
             YouTube and Vimeo URLs will be embedded on the public page.
@@ -230,7 +230,7 @@ export default async function EditProjectPage({
           </ul>
         </section>
 
-        <div className="flex items-center justify-between pt-6 border-t border-stone-200">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between pt-6 border-t border-stone-200">
           <p className="text-xs text-stone-500 italic font-serif max-w-xs">
             Public projects appear on Magiora and on contributors&apos; profiles.
           </p>
@@ -249,7 +249,7 @@ export default async function EditProjectPage({
         <div className="flex justify-end pt-4">
           <button
             type="submit"
-            className="bg-[#712B13] text-white py-2.5 px-8 rounded-md font-medium hover:bg-[#4A1B0C] cursor-pointer w-full md:w-auto"
+            className="k-button k-button-primary w-full md:w-auto"
           >
             Save project
           </button>
@@ -258,7 +258,7 @@ export default async function EditProjectPage({
 
       {/* ============= CREDITS SECTION ============= */}
       <section className="mt-16 pt-12 border-t border-stone-200">
-        <div className="flex items-baseline justify-between mb-2">
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-baseline sm:justify-between mb-2">
           <div>
             <p className="font-serif italic text-sm text-[#993C1D] mb-1">Who worked on it</p>
             <h2 className="font-serif text-xl md:text-2xl font-medium">Cast &amp; crew</h2>
@@ -273,13 +273,13 @@ export default async function EditProjectPage({
 
         <CreditsReorderManager
           projectId={project.id}
-          initialCredits={(credits ?? []) as any[]}
+          initialCredits={(credits ?? []) as unknown as Credit[]}
           onReorder={reorderCredits}
           onRemove={removeCredit}
         />
 
         {/* Add credit form */}
-        <form action={addCredit} className="mt-8 p-4 bg-stone-50 rounded-md border border-stone-200 space-y-3">
+        <form action={addCredit} className="k-card mt-8 p-4 bg-stone-50 space-y-3">
           <input type="hidden" name="project_id" value={project.id} />
           <p className="font-serif italic text-sm text-[#993C1D]">+ Add a credit</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -290,7 +290,7 @@ export default async function EditProjectPage({
                 name="name"
                 required
                 placeholder="Their full name"
-                className="w-full px-3 py-1.5 border border-stone-300 rounded text-sm bg-white"
+                className="k-control"
               />
             </div>
             <div>
@@ -300,7 +300,7 @@ export default async function EditProjectPage({
                 name="role_title"
                 required
                 placeholder="Director, Lead Actor, DP, etc."
-                className="w-full px-3 py-1.5 border border-stone-300 rounded text-sm bg-white"
+                className="k-control"
               />
             </div>
           </div>
@@ -314,7 +314,7 @@ export default async function EditProjectPage({
                 name="kinora_slug"
                 placeholder="andresdb (links to their profile)"
                 pattern="[a-z0-9-]*"
-                className="w-full px-3 py-1.5 border border-stone-300 rounded text-sm bg-white font-mono"
+                className="k-control font-mono"
               />
             </div>
             <div>
@@ -325,14 +325,14 @@ export default async function EditProjectPage({
                 type="text"
                 name="character_name"
                 placeholder="Who they played"
-                className="w-full px-3 py-1.5 border border-stone-300 rounded text-sm bg-white"
+                className="k-control"
               />
             </div>
           </div>
           <div className="flex justify-end">
             <button
               type="submit"
-              className="bg-stone-800 text-white text-sm py-1.5 px-4 rounded-md hover:bg-stone-900 cursor-pointer"
+              className="k-button bg-stone-800 text-white hover:bg-stone-900"
             >
               Add credit
             </button>

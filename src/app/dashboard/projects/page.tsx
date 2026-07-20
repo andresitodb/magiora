@@ -13,6 +13,18 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+type ProjectListItem = {
+  id: string;
+  slug: string;
+  title: string;
+  tagline: string | null;
+  project_type: string;
+  status: string;
+  year: number | null;
+  poster_url: string | null;
+  visible: boolean;
+};
+
 export default async function ProjectsListPage() {
   const supabase = await createClient();
   const {
@@ -38,15 +50,15 @@ export default async function ProjectsListPage() {
 
       <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-8 gap-3">
         <div>
-          <p className="font-serif italic text-sm text-[#993C1D] mb-2">Your projects</p>
-          <h1 className="font-serif text-2xl md:text-3xl font-medium">Projects</h1>
+          <p className="k-eyebrow mb-2">Your projects</p>
+          <h1 className="k-section-title">Projects</h1>
           <p className="text-sm text-stone-500 italic font-serif mt-2 max-w-xl">
             Your films, shows, and other work. Add cast and crew so the people you worked with show up on each other&apos;s pages.
           </p>
         </div>
         <Link
           href="/dashboard/projects/new"
-          className="bg-[#712B13] text-white py-2 px-5 rounded-md font-medium text-sm hover:bg-[#4A1B0C] whitespace-nowrap text-center"
+          className="k-button k-button-primary whitespace-nowrap"
         >
           + New project
         </Link>
@@ -62,11 +74,11 @@ export default async function ProjectsListPage() {
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-          {projects.map((p: any) => (
+          {(projects as unknown as ProjectListItem[]).map((p) => (
             <Link
               key={p.id}
               href={`/dashboard/projects/${p.id}/edit`}
-              className="block group bg-white border border-stone-200 rounded-md overflow-hidden hover:border-[#712B13] transition-colors"
+              className="k-card k-card-interactive block group"
             >
               <div className="aspect-[3/4] bg-[#FAECE7] relative">
                 {p.poster_url ? (
@@ -101,7 +113,7 @@ export default async function ProjectsListPage() {
                   </p>
                 )}
                 <span
-                  className={`inline-block mt-3 text-xs px-2 py-0.5 rounded-full font-serif ${getProjectStatusColor(p.status)}`}
+                  className={`k-badge mt-3 ${getProjectStatusColor(p.status)}`}
                 >
                   {getProjectStatusLabel(p.status)}
                 </span>

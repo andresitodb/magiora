@@ -4,6 +4,24 @@ import Link from 'next/link';
 import { closeCastingCall } from '../actions';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 
+type CastingApplication = {
+  id: string;
+  status: string;
+  cover_note: string | null;
+  self_tape_url: string | null;
+  applicant: {
+    slug: string;
+    display_name: string;
+    role_category: string;
+    headshot_url: string | null;
+    location_city: string | null;
+    languages: string[];
+    age_range_min: number | null;
+    age_range_max: number | null;
+    demo_reel_url: string | null;
+  };
+};
+
 export default async function CastingCallApplicationsPage({
   params,
   searchParams,
@@ -48,8 +66,8 @@ export default async function CastingCallApplicationsPage({
         ← Back to your casting calls
       </Link>
 
-      <p className="font-serif italic text-sm text-[#993C1D] mb-2">Casting call</p>
-      <h1 className="font-serif text-3xl font-medium mb-1">{call.role_name}</h1>
+      <p className="k-eyebrow mb-2">Casting call</p>
+      <h1 className="k-section-title mb-1 break-words">{call.role_name}</h1>
       <p className="font-serif italic text-stone-600 mb-2">{call.project_title}</p>
       <p className="text-xs text-stone-500 mb-8">
         Status: <span className="font-serif italic capitalize">{call.status}</span>
@@ -71,7 +89,7 @@ export default async function CastingCallApplicationsPage({
           <input type="hidden" name="casting_call_id" value={call.id} />
           <ConfirmSubmitButton
             message="Close this casting call? New applications will no longer be accepted."
-            className="text-sm text-red-700 border border-red-200 bg-white py-2 px-4 rounded-md hover:bg-red-50 cursor-pointer"
+            className="k-button border-red-200 bg-white text-red-700 hover:bg-red-50"
           >
             Close casting call
           </ConfirmSubmitButton>
@@ -92,10 +110,10 @@ export default async function CastingCallApplicationsPage({
         </p>
       ) : (
         <div className="space-y-4">
-          {applications.map((app: any) => (
+          {(applications as unknown as CastingApplication[]).map((app) => (
             <div
               key={app.id}
-              className="bg-white border border-stone-200 rounded-lg p-5 flex gap-4"
+              className="k-card p-5 flex flex-col sm:flex-row gap-4"
             >
               <div className="w-24 aspect-[4/5] bg-[#FAECE7] rounded-md overflow-hidden flex-shrink-0">
                 {app.applicant.headshot_url ? (
@@ -134,14 +152,14 @@ export default async function CastingCallApplicationsPage({
                       </p>
                     )}
                   </div>
-                  <span className="text-xs px-2 py-1 rounded-full bg-stone-100 font-serif italic capitalize whitespace-nowrap">
+                  <span className="k-badge bg-stone-100 capitalize whitespace-nowrap">
                     {app.status}
                   </span>
                 </div>
 
                 {app.cover_note && (
                   <p className="font-serif text-sm leading-relaxed mt-2 mb-2">
-                    "{app.cover_note}"
+                    &ldquo;{app.cover_note}&rdquo;
                   </p>
                 )}
 

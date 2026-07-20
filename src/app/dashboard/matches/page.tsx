@@ -6,6 +6,22 @@ import EmptyState from '@/components/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
+type MatchRow = {
+  id: string;
+  score: number;
+  casting_call: {
+    id: string;
+    project_title: string;
+    role_name: string;
+    role_size: string | null;
+    location_city: string | null;
+    location_state: string | null;
+    application_deadline: string | null;
+    status: string;
+    project_type: string | null;
+  } | null;
+};
+
 export default async function MatchesPage() {
   const supabase = await createClient();
   const {
@@ -26,17 +42,19 @@ export default async function MatchesPage() {
     .order('created_at', { ascending: false })
     .limit(50);
 
-  const active = (matches ?? []).filter((m: any) => m.casting_call?.status === 'open');
+  const active = ((matches ?? []) as unknown as MatchRow[]).filter(
+    (match) => match.casting_call?.status === 'open'
+  );
 
   return (
     <div className="max-w-4xl">
       <BackLink href="/dashboard" label="Dashboard" />
 
       <div className="mb-8">
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Roles that match your profile</p>
-        <h1 className="font-serif text-2xl md:text-3xl font-medium">Matches</h1>
+        <p className="k-eyebrow mb-2">Roles that match your profile</p>
+        <h1 className="k-section-title">Matches</h1>
         <p className="font-serif italic text-sm text-stone-500 mt-2">
-          We've found these casting calls based on your role, location, languages, and skills.
+          We&apos;ve found these casting calls based on your role, location, languages, and skills.
         </p>
       </div>
 
@@ -50,7 +68,7 @@ export default async function MatchesPage() {
         />
       ) : (
         <div className="space-y-3">
-          {active.map((m: any) => (
+          {active.map((m) => (
             <MatchCard key={m.id} match={m} />
           ))}
         </div>
@@ -59,7 +77,7 @@ export default async function MatchesPage() {
   );
 }
 
-function MatchCard({ match }: { match: any }) {
+function MatchCard({ match }: { match: MatchRow }) {
   const call = match.casting_call;
   if (!call) return null;
 
@@ -74,7 +92,7 @@ function MatchCard({ match }: { match: any }) {
   return (
     <Link
       href={`/casting-calls/${call.id}`}
-      className="block p-4 bg-white border border-stone-200 rounded-md hover:border-[#712B13] transition-colors"
+      className="k-card k-card-interactive block p-4"
     >
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -96,7 +114,7 @@ function MatchCard({ match }: { match: any }) {
         </div>
         <div className="flex flex-col items-start md:items-end gap-1.5 flex-shrink-0">
           <span
-            className="text-xs px-2.5 py-1 rounded-full border font-serif"
+            className="k-badge border"
             style={{
               backgroundColor: score >= 75 ? '#FAECE7' : '#f5f3ee',
               borderColor: score >= 75 ? '#712B13' : '#d6d3d1',

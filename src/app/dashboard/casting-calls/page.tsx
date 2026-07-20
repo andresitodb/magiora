@@ -1,6 +1,17 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 
+type CastingApplicationRow = {
+  id: string;
+  status: string;
+  created_at: string;
+  casting_call: {
+    id: string;
+    project_title: string;
+    role_name: string;
+  };
+};
+
 export default async function MyCastingCallsPage({
   searchParams,
 }: {
@@ -37,8 +48,8 @@ export default async function MyCastingCallsPage({
 
   return (
     <div>
-      <p className="font-serif italic text-sm text-[#993C1D] mb-2">Your activity</p>
-      <h1 className="font-serif text-3xl font-medium mb-8">Casting calls</h1>
+      <p className="k-eyebrow mb-2">Your activity</p>
+      <h1 className="k-section-title mb-8">Casting calls</h1>
 
       {(params.submitted || params.draft) && (
         <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-md p-3 mb-6">
@@ -49,12 +60,12 @@ export default async function MyCastingCallsPage({
       )}
 
       <section className="mb-12">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="font-serif text-xl font-medium">Posted by you</h2>
           {isMember && (
             <Link
               href="/dashboard/casting-calls/new"
-              className="text-sm bg-[#712B13] text-white py-2 px-4 rounded-md hover:bg-[#4A1B0C]"
+              className="k-button k-button-primary"
             >
               + Post new
             </Link>
@@ -67,7 +78,7 @@ export default async function MyCastingCallsPage({
           </p>
         ) : !myCalls || myCalls.length === 0 ? (
           <p className="text-sm text-stone-500 italic font-serif">
-            You haven't posted any casting calls yet.
+            You haven&apos;t posted any casting calls yet.
           </p>
         ) : (
           <div className="divide-y divide-stone-200 border-t border-b border-stone-200">
@@ -75,13 +86,13 @@ export default async function MyCastingCallsPage({
               <Link
                 key={call.id}
                 href={`/dashboard/casting-calls/${call.id}`}
-                className="py-4 flex items-center justify-between hover:bg-stone-50 -mx-3 px-3"
+                className="py-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between hover:bg-stone-50 -mx-3 px-3"
               >
                 <div>
                   <p className="font-serif font-medium">{call.role_name}</p>
                   <p className="text-sm text-stone-600">{call.project_title}</p>
                 </div>
-                <div className="text-right">
+                <div className="sm:text-right">
                   <StatusBadge status={call.status} />
                   <p className="text-xs text-stone-500 mt-1">
                     {new Date(call.created_at).toLocaleDateString()}
@@ -97,18 +108,18 @@ export default async function MyCastingCallsPage({
         <h2 className="font-serif text-xl font-medium mb-4">Your applications</h2>
         {!myApplications || myApplications.length === 0 ? (
           <p className="text-sm text-stone-500 italic font-serif">
-            You haven't applied to any casting calls yet.{' '}
+            You haven&apos;t applied to any casting calls yet.{' '}
             <Link href="/casting-calls" className="text-[#712B13]">
               Browse open calls →
             </Link>
           </p>
         ) : (
           <div className="divide-y divide-stone-200 border-t border-b border-stone-200">
-            {myApplications.map((app: any) => (
+            {(myApplications as unknown as CastingApplicationRow[]).map((app) => (
               <Link
                 key={app.id}
                 href={`/casting-calls/${app.casting_call.id}`}
-                className="py-4 flex items-center justify-between hover:bg-stone-50 -mx-3 px-3"
+                className="py-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between hover:bg-stone-50 -mx-3 px-3"
               >
                 <div>
                   <p className="font-serif font-medium">
@@ -118,7 +129,7 @@ export default async function MyCastingCallsPage({
                     {app.casting_call.project_title}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="sm:text-right">
                   <StatusBadge status={app.status} />
                   <p className="text-xs text-stone-500 mt-1">
                     Applied {new Date(app.created_at).toLocaleDateString()}
@@ -147,7 +158,7 @@ function StatusBadge({ status }: { status: string }) {
   };
   return (
     <span
-      className={`text-xs px-2 py-1 rounded-full font-serif italic ${
+      className={`k-badge capitalize ${
         colors[status] ?? 'bg-stone-100 text-stone-700'
       }`}
     >

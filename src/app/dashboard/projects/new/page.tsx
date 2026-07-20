@@ -24,8 +24,8 @@ export default async function NewProjectPage({
       <BackLink href="/dashboard/projects" label="Projects" />
 
       <div className="mb-8">
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Add a project</p>
-        <h1 className="font-serif text-2xl md:text-3xl font-medium">New project</h1>
+        <p className="k-eyebrow mb-2">Add a project</p>
+        <h1 className="k-section-title">New project</h1>
         <p className="text-sm text-stone-500 italic font-serif mt-2">
           Start with the basics — you can add cast, crew, and gallery photos after.
         </p>
@@ -45,7 +45,7 @@ export default async function NewProjectPage({
             name="title"
             required
             placeholder="The name of your film, show, or piece"
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+            className="k-control"
           />
         </div>
 
@@ -55,7 +55,7 @@ export default async function NewProjectPage({
             type="text"
             name="tagline"
             placeholder="One sentence that captures it — optional"
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+            className="k-control"
           />
         </div>
 
@@ -65,7 +65,7 @@ export default async function NewProjectPage({
             <select
               name="project_type"
               defaultValue="feature_film"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white cursor-pointer"
+              className="k-control cursor-pointer"
             >
               {PROJECT_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -77,7 +77,7 @@ export default async function NewProjectPage({
             <select
               name="status"
               defaultValue="in_development"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white cursor-pointer"
+              className="k-control cursor-pointer"
             >
               {PROJECT_STATUSES.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -92,7 +92,7 @@ export default async function NewProjectPage({
               defaultValue={currentYear}
               min={1900}
               max={currentYear + 5}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
         </div>
@@ -108,14 +108,14 @@ export default async function NewProjectPage({
             name="description"
             rows={5}
             placeholder="What is it about? Optional but helps."
-            className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white font-serif"
+            className="k-control font-serif"
           />
         </div>
 
         <div className="flex gap-3 pt-4">
           <button
             type="submit"
-            className="bg-[#712B13] text-white py-2 px-6 rounded-md font-medium hover:bg-[#4A1B0C] cursor-pointer"
+            className="k-button k-button-primary"
           >
             Create project
           </button>

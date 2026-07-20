@@ -14,6 +14,21 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   cast: { label: 'Cast', color: 'bg-green-50 text-green-800 border-green-200' },
 };
 
+type ApplicationRow = {
+  id: string;
+  status: string;
+  created_at: string;
+  casting_call: {
+    id: string;
+    project_title: string;
+    role_name: string;
+    role_size: string | null;
+    location_city: string | null;
+    location_state: string | null;
+    status: string;
+  } | null;
+};
+
 export default async function MyApplicationsPage() {
   const supabase = await createClient();
   const {
@@ -31,13 +46,13 @@ export default async function MyApplicationsPage() {
     .eq('applicant_id', user.id)
     .order('created_at', { ascending: false });
 
-  const grouped = {
-    active: [] as any[],
-    closed: [] as any[],
+  const grouped: { active: ApplicationRow[]; closed: ApplicationRow[] } = {
+    active: [],
+    closed: [],
   };
 
-  for (const app of applications ?? []) {
-    if (app.status === 'rejected' || (app.casting_call as any)?.status === 'closed') {
+  for (const app of (applications ?? []) as unknown as ApplicationRow[]) {
+    if (app.status === 'rejected' || app.casting_call?.status === 'closed') {
       grouped.closed.push(app);
     } else {
       grouped.active.push(app);
@@ -49,8 +64,8 @@ export default async function MyApplicationsPage() {
       <BackLink href="/dashboard" label="Dashboard" />
 
       <div className="mb-8">
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Track your submissions</p>
-        <h1 className="font-serif text-2xl md:text-3xl font-medium">My Applications</h1>
+        <p className="k-eyebrow mb-2">Track your submissions</p>
+        <h1 className="k-section-title">My applications</h1>
       </div>
 
       {(!applications || applications.length === 0) ? (
@@ -90,7 +105,7 @@ export default async function MyApplicationsPage() {
   );
 }
 
-function ApplicationCard({ app }: { app: any }) {
+function ApplicationCard({ app }: { app: ApplicationRow }) {
   const call = app.casting_call;
   if (!call) return null;
 
@@ -104,7 +119,7 @@ function ApplicationCard({ app }: { app: any }) {
   return (
     <Link
       href={`/casting-calls/${call.id}`}
-      className="block p-4 bg-white border border-stone-200 rounded-md hover:border-[#712B13] transition-colors"
+      className="k-card k-card-interactive block p-4"
     >
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -125,7 +140,7 @@ function ApplicationCard({ app }: { app: any }) {
           )}
         </div>
         <div className="flex flex-col items-start md:items-end gap-1.5 flex-shrink-0">
-          <span className={`text-xs px-2.5 py-1 rounded-full border font-serif ${statusInfo.color}`}>
+          <span className={`k-badge border ${statusInfo.color}`}>
             {statusInfo.label}
           </span>
           <p className="text-xs text-stone-400 italic font-serif">Applied {submittedDate}</p>

@@ -53,7 +53,7 @@ export default async function ProfileEditPage() {
   const isCrew = !isActorPrimary && profile.role_category && profile.role_category !== 'writer';
 
   return (
-    <div className="max-w-2xl pb-24">
+    <div className="max-w-2xl pb-12">
       <Suspense fallback={null}>
         <Toast />
       </Suspense>
@@ -62,8 +62,8 @@ export default async function ProfileEditPage() {
 
       <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-8 gap-3">
         <div>
-          <p className="font-serif italic text-sm text-[#993C1D] mb-2">Your profile</p>
-          <h1 className="font-serif text-2xl md:text-3xl font-medium">Edit profile</h1>
+          <p className="k-eyebrow mb-2">Your profile</p>
+          <h1 className="k-section-title">Edit profile</h1>
         </div>
         {profile.slug && (
           <Link
@@ -105,7 +105,7 @@ export default async function ProfileEditPage() {
               name="display_name"
               defaultValue={profile.display_name ?? ''}
               required
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
         </section>
@@ -142,7 +142,7 @@ export default async function ProfileEditPage() {
                 name="demo_reel_url"
                 defaultValue={profile.demo_reel_url ?? ''}
                 placeholder="https://vimeo.com/yourreel"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
               <p className="text-xs italic text-stone-500 font-serif mt-1">
                 YouTube and Vimeo links are embedded on your public profile.
@@ -190,7 +190,7 @@ export default async function ProfileEditPage() {
                 name="location_city"
                 defaultValue={profile.location_city ?? ''}
                 placeholder="Your city"
-                className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+                className="k-control"
               />
             </div>
             <div>
@@ -305,7 +305,7 @@ export default async function ProfileEditPage() {
         <div className="pt-6 border-t border-stone-200 flex justify-end">
           <button
             type="submit"
-            className="bg-[#712B13] text-white py-2.5 px-8 rounded-md font-medium hover:bg-[#4A1B0C] transition-colors cursor-pointer w-full md:w-auto"
+            className="k-button k-button-primary w-full md:w-auto"
           >
             Save changes
           </button>
@@ -324,22 +324,6 @@ export default async function ProfileEditPage() {
         />
       </section>
 
-      {/* STICKY SAVE BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-stone-200 z-20 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
-        <div className="max-w-2xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between gap-3">
-          <p className="text-xs italic text-stone-500 font-serif hidden md:block">
-            Don&apos;t forget to save your changes.
-          </p>
-          <button
-            type="submit"
-            form="profile-form"
-            className="bg-[#712B13] text-white py-2 px-6 rounded-md font-medium hover:bg-[#4A1B0C] transition-colors cursor-pointer flex-1 md:flex-none"
-          >
-            Save changes
-          </button>
-        </div>
-      </div>
-
       <form action={changePassword} className="space-y-4 mt-16 pt-12 border-t border-stone-200">
         <div>
           <p className="font-serif italic text-sm text-[#993C1D] mb-2">Security</p>
@@ -353,7 +337,7 @@ export default async function ProfileEditPage() {
               name="new_password"
               required
               minLength={6}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
           <div>
@@ -363,13 +347,13 @@ export default async function ProfileEditPage() {
               name="confirm_password"
               required
               minLength={6}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white"
+              className="k-control"
             />
           </div>
         </div>
         <button
           type="submit"
-          className="bg-stone-800 text-white py-2 px-6 rounded-md font-medium hover:bg-stone-900 transition-colors cursor-pointer w-full md:w-auto"
+          className="k-button bg-stone-800 text-white hover:bg-stone-900 w-full md:w-auto"
         >
           Update password
         </button>

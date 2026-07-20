@@ -25,20 +25,20 @@ export default async function MyStoriesPage() {
     <div>
       <BackLink href="/dashboard" label="Dashboard" />
 
-      <p className="font-serif italic text-sm text-[#993C1D] mb-2">Your features</p>
-      <h1 className="font-serif text-3xl font-medium mb-2">My stories</h1>
+      <p className="k-eyebrow mb-2">Your features</p>
+      <h1 className="k-section-title mb-2">My Spotlight</h1>
       <p className="text-sm text-stone-600 italic font-serif mb-8">
         Interview requests, in-progress drafts, and published features about you.
       </p>
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <p className="text-sm text-stone-600">
           {myInterviews?.length ?? 0} total
         </p>
         {isMember && (
           <Link
             href="/dashboard/stories/request"
-            className="text-sm bg-[#712B13] text-white py-2 px-4 rounded-md hover:bg-[#4A1B0C]"
+            className="k-button k-button-primary"
           >
             + Request a feature
           </Link>
@@ -46,9 +46,9 @@ export default async function MyStoriesPage() {
       </div>
 
       {!myInterviews || myInterviews.length === 0 ? (
-        <div className="bg-white border border-stone-200 rounded-lg p-8 text-center">
+        <div className="k-empty">
           <p className="font-serif italic text-stone-500 mb-4">
-            No stories yet.
+            No Spotlight interviews yet.
           </p>
           {isMember ? (
             <Link
@@ -69,8 +69,8 @@ export default async function MyStoriesPage() {
       ) : (
         <div className="divide-y divide-stone-200 border-t border-b border-stone-200">
           {myInterviews.map((i) => (
-            <div key={i.id} className="py-4 flex items-center justify-between">
-              <div>
+            <div key={i.id} className="py-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <p className="font-serif font-medium">
                   {i.title ?? <span className="text-stone-400 italic">— interview pending —</span>}
                 </p>
@@ -79,8 +79,8 @@ export default async function MyStoriesPage() {
                   {i.published_at && ` · Published ${new Date(i.published_at).toLocaleDateString()}`}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <span className={`text-xs px-2 py-1 rounded-full font-serif italic capitalize ${
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`k-badge capitalize ${
                   i.status === 'published' ? 'bg-[#FAECE7] text-[#712B13]' :
                   i.status === 'in_progress' ? 'bg-amber-100 text-amber-800' :
                   'bg-stone-100 text-stone-700'

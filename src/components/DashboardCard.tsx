@@ -30,14 +30,14 @@ export default function DashboardCard({
   return (
     <Link
       href={href}
-      className={`block bg-white border border-stone-200 rounded-md p-5 transition-colors ${style.bg} group h-full`}
+      className={`k-card k-card-interactive block p-5 ${style.bg} group h-full`}
     >
       <div className="flex items-start justify-between mb-3">
         <div className={`w-10 h-10 rounded-md flex items-center justify-center ${style.iconBg} ${style.iconColor}`}>
           {icon}
         </div>
         {badge != null && badge !== 0 && badge !== '' && (
-          <span className="bg-[#712B13] text-white text-xs font-medium px-2 py-0.5 rounded-full">
+          <span className="k-badge bg-[#712B13] text-white">
             {badge}
           </span>
         )}

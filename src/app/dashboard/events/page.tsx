@@ -2,6 +2,16 @@ import { createClient } from '@/lib/supabase/server';
 import BackLink from '@/components/BackLink';
 import Link from 'next/link';
 
+type EventRsvpRow = {
+  status: string;
+  event: {
+    id: string;
+    title: string;
+    event_date: string;
+    location_name: string | null;
+  };
+};
+
 export default async function MyEventsPage({
   searchParams,
 }: {
@@ -36,8 +46,8 @@ export default async function MyEventsPage({
     <div>
       <BackLink href="/dashboard" label="Dashboard" />
 
-      <p className="font-serif italic text-sm text-[#993C1D] mb-2">Your events</p>
-      <h1 className="font-serif text-3xl font-medium mb-8">My events &amp; RSVPs</h1>
+      <p className="k-eyebrow mb-2">Your events</p>
+      <h1 className="k-section-title mb-8">My events &amp; RSVPs</h1>
 
       {params.submitted && (
         <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-md p-3 mb-6">
@@ -46,12 +56,12 @@ export default async function MyEventsPage({
       )}
 
       <section className="mb-12">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="font-serif text-xl font-medium">Posted by you</h2>
           {isMember && (
             <Link
               href="/dashboard/events/new"
-              className="text-sm bg-[#712B13] text-white py-2 px-4 rounded-md hover:bg-[#4A1B0C]"
+              className="k-button k-button-primary"
             >
               + Post new
             </Link>
@@ -64,7 +74,7 @@ export default async function MyEventsPage({
           </p>
         ) : !myEvents || myEvents.length === 0 ? (
           <p className="text-sm text-stone-500 italic font-serif">
-            You haven't posted any events yet.
+            You haven&apos;t posted any events yet.
           </p>
         ) : (
           <div className="divide-y divide-stone-200 border-t border-b border-stone-200">
@@ -72,7 +82,7 @@ export default async function MyEventsPage({
               <Link
                 key={e.id}
                 href={`/events/${e.id}`}
-                className="py-4 flex items-center justify-between hover:bg-stone-50 -mx-3 px-3"
+                className="py-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between hover:bg-stone-50 -mx-3 px-3"
               >
                 <div>
                   <p className="font-serif font-medium">{e.title}</p>
@@ -80,7 +90,7 @@ export default async function MyEventsPage({
                     {new Date(e.event_date).toLocaleString()}
                   </p>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-stone-100 font-serif italic capitalize">
+                <span className="k-badge bg-stone-100 capitalize">
                   {e.status.replace('_', ' ')}
                 </span>
               </Link>
@@ -93,18 +103,18 @@ export default async function MyEventsPage({
         <h2 className="font-serif text-xl font-medium mb-4">Your RSVPs</h2>
         {!myRsvps || myRsvps.length === 0 ? (
           <p className="text-sm text-stone-500 italic font-serif">
-            You haven't RSVP'd to anything yet.{' '}
+            You haven&apos;t RSVP&apos;d to anything yet.{' '}
             <Link href="/events" className="text-[#712B13]">
               Browse events →
             </Link>
           </p>
         ) : (
           <div className="divide-y divide-stone-200 border-t border-b border-stone-200">
-            {myRsvps.map((r: any) => (
+            {(myRsvps as unknown as EventRsvpRow[]).map((r) => (
               <Link
                 key={r.event.id}
                 href={`/events/${r.event.id}`}
-                className="py-4 flex items-center justify-between hover:bg-stone-50 -mx-3 px-3"
+                className="py-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between hover:bg-stone-50 -mx-3 px-3"
               >
                 <div>
                   <p className="font-serif font-medium">{r.event.title}</p>
@@ -113,7 +123,7 @@ export default async function MyEventsPage({
                     {r.event.location_name && ` · ${r.event.location_name}`}
                   </p>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-[#FAECE7] text-[#712B13] font-serif italic">
+                <span className="k-badge bg-[#FAECE7] text-[#712B13] capitalize">
                   {r.status}
                 </span>
               </Link>

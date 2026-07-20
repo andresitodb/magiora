@@ -19,7 +19,7 @@ const DEFAULT_TITLES: Record<string, string> = {
   interview_invited: 'You were invited for an interview',
   application_status_changed: 'Application update',
   event_reminder: 'Upcoming event',
-  story_published: 'Your story was published',
+  story_published: 'Your Spotlight interview was published',
 };
 
 type NotificationPayload = Record<string, unknown> | null;
@@ -77,8 +77,8 @@ export default async function NotificationsPage() {
       <BackLink href="/dashboard" label="Dashboard" />
 
       <div className="mb-8">
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Activity</p>
-        <h1 className="font-serif text-2xl md:text-3xl font-medium">Notifications</h1>
+        <p className="k-eyebrow mb-2">Activity</p>
+        <h1 className="k-section-title">Notifications</h1>
       </div>
 
       {(!notifications || notifications.length === 0) ? (
@@ -104,7 +104,7 @@ export default async function NotificationsPage() {
                 id={n.id}
                 href={href}
                 isUnread={isUnread}
-                className={`flex gap-3 p-4 rounded-md border ${
+                className={`k-card k-card-interactive flex gap-3 p-4 ${
                   isUnread ? 'bg-[#FAECE7]/40 border-[#FAC775]' : 'bg-white border-stone-200'
                 } hover:border-[#712B13] transition-colors`}
               >

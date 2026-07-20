@@ -17,7 +17,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
       <Nav variant="dashboard" />
-      <main className="max-w-5xl mx-auto px-6 py-12">{children}</main>
+      <main className="k-container k-section max-w-5xl">{children}</main>
     </div>
   );
 }
