@@ -10,18 +10,19 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return Response.json({ notifications: [], unreadCount: 0 });
 
-  const { data: rows } = await supabase
-    .from('notifications')
-    .select('id, type, payload, read_at, created_at')
-    .eq('recipient_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(10);
-
-  const { count: unreadCount } = await supabase
-    .from('notifications')
-    .select('*', { count: 'exact', head: true })
-    .eq('recipient_id', user.id)
-    .is('read_at', null);
+  const [{ data: rows }, { count: unreadCount }] = await Promise.all([
+    supabase
+      .from('notifications')
+      .select('id, type, payload, read_at, created_at')
+      .eq('recipient_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('recipient_id', user.id)
+      .is('read_at', null),
+  ]);
 
   // Normalize: flatten payload fields into top-level for the client
   const notifications = (rows ?? []).map(normalizeNotification);

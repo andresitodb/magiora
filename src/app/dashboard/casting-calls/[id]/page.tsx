@@ -1,13 +1,18 @@
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import { closeCastingCall } from '../actions';
+import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 
 export default async function CastingCallApplicationsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string; closed?: string }>;
 }) {
   const { id } = await params;
+  const query = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -49,6 +54,29 @@ export default async function CastingCallApplicationsPage({
       <p className="text-xs text-stone-500 mb-8">
         Status: <span className="font-serif italic capitalize">{call.status}</span>
       </p>
+
+      {query.error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 text-sm rounded-md p-3 mb-6">
+          {query.error}
+        </div>
+      )}
+      {query.closed && (
+        <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-md p-3 mb-6">
+          Casting call closed. New applications are no longer accepted.
+        </div>
+      )}
+
+      {call.status === 'open' && (
+        <form action={closeCastingCall} className="mb-8">
+          <input type="hidden" name="casting_call_id" value={call.id} />
+          <ConfirmSubmitButton
+            message="Close this casting call? New applications will no longer be accepted."
+            className="text-sm text-red-700 border border-red-200 bg-white py-2 px-4 rounded-md hover:bg-red-50 cursor-pointer"
+          >
+            Close casting call
+          </ConfirmSubmitButton>
+        </form>
+      )}
 
       <h2 className="font-serif text-2xl font-medium mb-6">
         Applications

@@ -10,6 +10,17 @@ const FREE_SKILL_LIMIT = 5;
 const VALID_TEMPLATES = TEMPLATES.map((t) => t.id);
 const VALID_ACCENTS = ACCENTS.map((a) => a.id);
 
+function optionalHttpUrl(value: FormDataEntryValue | null): string | null {
+  const text = typeof value === 'string' ? value.trim() : '';
+  if (!text) return null;
+  try {
+    const url = new URL(text);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? text : null;
+  } catch {
+    return null;
+  }
+}
+
 function sortExperienceByYear(items: any[]): any[] {
   return [...items].sort((a, b) => {
     const ay = parseInt(a?.year);
@@ -118,9 +129,45 @@ export async function updateProfile(formData: FormData) {
   const ageMin = formData.get('age_range_min') as string | null;
   const ageMax = formData.get('age_range_max') as string | null;
   const gender = formData.get('gender') as string | null;
+  const parsedAgeMin = ageMin ? Number.parseInt(ageMin, 10) : null;
+  const parsedAgeMax = ageMax ? Number.parseInt(ageMax, 10) : null;
+  const displayName = String(formData.get('display_name') ?? '').trim();
+  const demoReelRaw = formData.get('demo_reel_url');
+  const websiteRaw = formData.get('website_url');
+  const demoReelUrl = optionalHttpUrl(demoReelRaw);
+  const websiteUrl = optionalHttpUrl(websiteRaw);
+
+  if (!displayName) {
+    redirect(
+      '/dashboard/profile?error=' +
+        encodeURIComponent('Display name is required')
+    );
+  }
+  if (
+    parsedAgeMin !== null &&
+    parsedAgeMax !== null &&
+    parsedAgeMax < parsedAgeMin
+  ) {
+    redirect(
+      '/dashboard/profile?error=' +
+        encodeURIComponent('Maximum playing age cannot be lower than minimum age')
+    );
+  }
+  if (typeof demoReelRaw === 'string' && demoReelRaw.trim() && !demoReelUrl) {
+    redirect(
+      '/dashboard/profile?error=' +
+        encodeURIComponent('Demo reel must be a valid http:// or https:// URL')
+    );
+  }
+  if (typeof websiteRaw === 'string' && websiteRaw.trim() && !websiteUrl) {
+    redirect(
+      '/dashboard/profile?error=' +
+        encodeURIComponent('Website must be a valid http:// or https:// URL')
+    );
+  }
 
   const updates: any = {
-    display_name: formData.get('display_name') as string,
+    display_name: displayName,
     slug: newSlug,
     role_titles: roleTitles,
     role_category: primaryCategory,
@@ -131,7 +178,7 @@ export async function updateProfile(formData: FormData) {
     location_state: (formData.get('location_state') as string) || null,
     languages,
     skills,
-    demo_reel_url: (formData.get('demo_reel_url') as string) || null,
+    demo_reel_url: demoReelUrl,
     video_links: videoLinks,
     experience,
     recommendations,
@@ -141,13 +188,13 @@ export async function updateProfile(formData: FormData) {
     representation,
     contact_email: (formData.get('contact_email') as string) || null,
     phone: (formData.get('phone') as string) || null,
-    website_url: (formData.get('website_url') as string) || null,
+    website_url: websiteUrl,
     profile_theme: profileTheme,
     profile_accent: profileAccent,
     visible: formData.get('visible') === 'true',
     gender: gender || null,
-    age_range_min: ageMin ? parseInt(ageMin) : null,
-    age_range_max: ageMax ? parseInt(ageMax) : null,
+    age_range_min: parsedAgeMin,
+    age_range_max: parsedAgeMax,
   };
 
   const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);

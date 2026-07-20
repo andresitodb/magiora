@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import EmptyState from '@/components/EmptyState';
+import NotificationItemLink from '@/components/NotificationItemLink';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +22,17 @@ const DEFAULT_TITLES: Record<string, string> = {
   story_published: 'Your story was published',
 };
 
-function hrefFor(type: string, payload: any): string {
+type NotificationPayload = Record<string, unknown> | null;
+
+type NotificationRow = {
+  id: string;
+  type: string;
+  payload: NotificationPayload;
+  read_at: string | null;
+  created_at: string;
+};
+
+function hrefFor(type: string, payload: NotificationPayload): string {
   const id =
     payload?.related_id ??
     payload?.call_id ??
@@ -79,15 +89,21 @@ export default async function NotificationsPage() {
         />
       ) : (
         <div className="space-y-2">
-          {notifications.map((n: any) => {
+          {(notifications as NotificationRow[]).map((n) => {
             const isUnread = !n.read_at;
             const href = hrefFor(n.type, n.payload);
-            const title = n.payload?.title ?? DEFAULT_TITLES[n.type] ?? 'Notification';
-            const body = n.payload?.body ?? null;
+            const title =
+              typeof n.payload?.title === 'string'
+                ? n.payload.title
+                : (DEFAULT_TITLES[n.type] ?? 'Notification');
+            const body =
+              typeof n.payload?.body === 'string' ? n.payload.body : null;
             return (
-              <Link
+              <NotificationItemLink
                 key={n.id}
+                id={n.id}
                 href={href}
+                isUnread={isUnread}
                 className={`flex gap-3 p-4 rounded-md border ${
                   isUnread ? 'bg-[#FAECE7]/40 border-[#FAC775]' : 'bg-white border-stone-200'
                 } hover:border-[#712B13] transition-colors`}
@@ -112,7 +128,7 @@ export default async function NotificationsPage() {
                 {isUnread && (
                   <span className="w-2 h-2 bg-[#712B13] rounded-full mt-2 flex-shrink-0" />
                 )}
-              </Link>
+              </NotificationItemLink>
             );
           })}
         </div>

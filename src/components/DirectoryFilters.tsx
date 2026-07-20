@@ -31,12 +31,9 @@ export default function DirectoryFilters({
 
   const [q, setQ] = useState(currentQuery);
 
-  useEffect(() => {
-    setQ(currentQuery);
-  }, [currentQuery]);
-
   function pushFilter(updates: Record<string, string | null>) {
     const next = new URLSearchParams(searchParams.toString());
+    next.delete('page');
     for (const [k, v] of Object.entries(updates)) {
       if (v === null || v === '') next.delete(k);
       else next.set(k, v);
@@ -115,7 +112,7 @@ export default function DirectoryFilters({
             className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white text-sm cursor-pointer"
           >
             <option value="">Any language</option>
-            {sortedLangs.map((l: any) => (
+            {sortedLangs.map((l) => (
               <option key={l.code} value={l.code}>
                 {l.name}
               </option>

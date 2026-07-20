@@ -52,6 +52,11 @@ export default async function DashboardPage() {
   ]);
 
   const userHasStory = !!hasStory;
+  const hasNoActivity =
+    (matchesCount ?? 0) === 0 &&
+    (applicationsCount ?? 0) === 0 &&
+    (projectsCount ?? 0) === 0 &&
+    !userHasStory;
 
   return (
     <div className="max-w-5xl">
@@ -79,6 +84,37 @@ export default async function DashboardPage() {
       <div className="mb-10">
         <CompletenessBar profile={profile} />
       </div>
+
+      {hasNoActivity && (
+        <section className="bg-white border border-stone-200 rounded-md p-5 mb-10">
+          <p className="font-serif italic text-sm text-[#993C1D] mb-1">
+            Start building your Kinora presence
+          </p>
+          <p className="text-sm text-stone-600 font-serif mb-4">
+            Complete your profile, add a project, or browse open work.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/dashboard/profile"
+              className="bg-[#712B13] text-white text-sm py-2 px-4 rounded-md hover:bg-[#4A1B0C]"
+            >
+              Complete profile
+            </Link>
+            <Link
+              href="/dashboard/projects/new"
+              className="border border-stone-300 bg-white text-stone-700 text-sm py-2 px-4 rounded-md hover:border-[#712B13]"
+            >
+              Add a project
+            </Link>
+            <Link
+              href="/casting-calls"
+              className="border border-stone-300 bg-white text-stone-700 text-sm py-2 px-4 rounded-md hover:border-[#712B13]"
+            >
+              Browse casting calls
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Cards grid */}
       <p className="font-serif italic text-sm text-[#993C1D] mb-4">Your tools</p>

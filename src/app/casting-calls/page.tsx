@@ -16,6 +16,7 @@ export default async function CastingCallsPage() {
       'id, project_title, project_type, role_name, role_size, role_description, location_city, location_state, application_deadline, target_role_category, compensation, published_at'
     )
     .eq('status', 'open')
+    .or(`application_deadline.is.null,application_deadline.gte.${new Date().toISOString().slice(0, 10)}`)
     .order('published_at', { ascending: false })
     .limit(100);
 

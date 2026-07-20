@@ -5,6 +5,18 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 const MAX_GALLERY = 10;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+function imageValidationError(file: File): string | null {
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    return 'Use a JPG, PNG, or WebP image.';
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    return 'Image is too large. Maximum size is 10MB.';
+  }
+  return null;
+}
 
 export default function ProfileMediaSection({
   userId,
@@ -26,6 +38,11 @@ export default function ProfileMediaSection({
 
   async function uploadHeadshot(file: File) {
     setError(null);
+    const validationError = imageValidationError(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setUploading(true);
     const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
     const path = `${userId}/headshot-${Date.now()}.${ext}`;
@@ -63,6 +80,11 @@ export default function ProfileMediaSection({
     setError(null);
     if (gallery.length + files.length > MAX_GALLERY) {
       setError(`Gallery limit is ${MAX_GALLERY} images`);
+      return;
+    }
+    const invalidFile = Array.from(files).find(imageValidationError);
+    if (invalidFile) {
+      setError(imageValidationError(invalidFile));
       return;
     }
     setUploading(true);
@@ -150,7 +172,7 @@ export default function ProfileMediaSection({
               type="button"
               onClick={() => headshotInputRef.current?.click()}
               disabled={uploading}
-              className="bg-stone-800 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-stone-900 disabled:opacity-50"
+              className="bg-stone-800 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-stone-900 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {uploading ? 'Uploading…' : headshot ? 'Replace headshot' : 'Upload headshot'}
             </button>
@@ -180,11 +202,12 @@ export default function ProfileMediaSection({
               className="relative aspect-[4/5] bg-stone-100 rounded-md overflow-hidden group"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" className="w-full h-full object-cover" />
+              <img src={url} alt="Profile gallery image" className="w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={() => removeGalleryImage(url)}
-                className="absolute top-1 right-1 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-1 right-1 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
+                aria-label="Remove gallery image"
               >
                 Remove
               </button>
@@ -195,7 +218,8 @@ export default function ProfileMediaSection({
               type="button"
               onClick={() => galleryInputRef.current?.click()}
               disabled={uploading}
-              className="aspect-[4/5] border-2 border-dashed border-stone-300 rounded-md flex items-center justify-center text-stone-400 hover:border-[#712B13] hover:text-[#712B13] transition-colors"
+              className="aspect-[4/5] border-2 border-dashed border-stone-300 rounded-md flex items-center justify-center text-stone-400 hover:border-[#712B13] hover:text-[#712B13] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Add gallery images"
             >
               <span className="text-3xl font-light">+</span>
             </button>

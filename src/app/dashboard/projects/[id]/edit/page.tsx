@@ -9,6 +9,7 @@ import Toast from '@/components/Toast';
 import { Suspense } from 'react';
 import { updateProject, deleteProject, addCredit, removeCredit, reorderCredits } from '../../actions';
 import { PROJECT_TYPES, PROJECT_STATUSES } from '@/lib/projects';
+import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -344,12 +345,12 @@ export default async function EditProjectPage({
         <p className="font-serif italic text-sm text-red-700 mb-2">Danger zone</p>
         <form action={deleteProject}>
           <input type="hidden" name="project_id" value={project.id} />
-          <button
-            type="submit"
+          <ConfirmSubmitButton
+            message="Delete this project permanently? This cannot be undone."
             className="text-red-700 text-sm hover:underline cursor-pointer italic font-serif"
           >
             Delete this project permanently →
-          </button>
+          </ConfirmSubmitButton>
         </form>
       </section>
     </div>

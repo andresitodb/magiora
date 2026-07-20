@@ -1,8 +1,24 @@
 import { createAnonClient } from '@/lib/supabase/anon';
 import Nav from '@/components/Nav';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import DirectoryFilters from '@/components/DirectoryFilters';
 import { getLanguageName, LANGUAGES } from '@/lib/languages';
+
+const PAGE_SIZE = 24;
+
+type DirectoryProfile = {
+  display_name: string;
+  slug: string;
+  role_category: string | null;
+  role_titles: string[] | null;
+  custom_role_label: string | null;
+  location_city: string | null;
+  location_state: string | null;
+  headshot_url: string | null;
+  languages: string[] | null;
+  verified: boolean;
+};
 
 const ROLE_FILTERS: { value: string; label: string }[] = [
   { value: 'actor', label: 'Actors' },
@@ -29,15 +45,22 @@ export default async function DirectoryPage({
     lang?: string;
     q?: string;
     verified?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
   const supabase = createAnonClient();
+  const requestedPage = Number.parseInt(params.page ?? '1', 10);
+  const currentPage =
+    Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const from = (currentPage - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
 
   let query = supabase
     .from('profiles')
     .select(
-      'display_name, slug, role_category, role_titles, custom_role_label, location_city, location_state, headshot_url, bio, languages, verified, plan, featured_at'
+      'display_name, slug, role_category, role_titles, custom_role_label, location_city, location_state, headshot_url, bio, languages, verified, plan, featured_at',
+      { count: 'exact' }
     )
     .eq('visible', true)
     .eq('approved', true);
@@ -65,25 +88,82 @@ export default async function DirectoryPage({
     query = query.eq('verified', true);
   }
 
-  const { data: profiles } = await query
+  const profilesPromise = query
     .order('verified', { ascending: false })
     .order('featured_at', { ascending: false, nullsFirst: false })
     .order('display_name', { ascending: true })
-    .limit(200);
+    .range(from, to);
 
   // Fetch distinct cities for autocomplete
-  const { data: cityRows } = await supabase
+  const cityRowsPromise = supabase
     .from('profiles')
     .select('location_city')
     .eq('visible', true)
     .eq('approved', true)
-    .not('location_city', 'is', null);
+    .not('location_city', 'is', null)
+    .limit(1000);
+
+  const [profilesResult, cityRowsResult] = await Promise.all([
+    profilesPromise,
+    cityRowsPromise,
+  ]);
+  const {
+    data: profiles,
+    count: totalCount,
+    error: profilesError,
+    status: profilesStatus,
+  } = profilesResult;
+  const {
+    data: cityRows,
+    error: cityRowsError,
+    status: cityRowsStatus,
+  } = cityRowsResult;
+
+  if (profilesError || cityRowsError) {
+    console.error('[directory] Supabase query failed', {
+      profiles: profilesError
+        ? {
+            message: profilesError.message,
+            code: profilesError.code,
+            details: profilesError.details,
+            status: profilesStatus,
+          }
+        : null,
+      cities: cityRowsError
+        ? {
+            message: cityRowsError.message,
+            code: cityRowsError.code,
+            details: cityRowsError.details,
+            status: cityRowsStatus,
+          }
+        : null,
+    });
+  }
 
   const knownCities = Array.from(
-    new Set((cityRows ?? []).map((r: any) => r.location_city as string).filter(Boolean))
+    new Set(
+      (cityRows ?? [])
+        .map((row) => row.location_city)
+        .filter((city): city is string => Boolean(city))
+    )
   ).sort((a, b) => a.localeCompare(b));
 
-  const totalCount = profiles?.length ?? 0;
+  const resultCount = totalCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(resultCount / PAGE_SIZE));
+  const pageHref = (page: number) => {
+    const next = new URLSearchParams();
+    if (params.role) next.set('role', params.role);
+    if (params.city) next.set('city', params.city);
+    if (params.lang) next.set('lang', params.lang);
+    if (params.q) next.set('q', params.q);
+    if (params.verified === '1') next.set('verified', '1');
+    if (page > 1) next.set('page', String(page));
+    const suffix = next.toString();
+    return suffix ? `/directory?${suffix}` : '/directory';
+  };
+  if (resultCount > 0 && currentPage > totalPages) {
+    redirect(pageHref(totalPages));
+  }
 
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
@@ -95,7 +175,9 @@ export default async function DirectoryPage({
             <h1 className="font-serif text-4xl md:text-5xl font-medium">Directory</h1>
           </div>
           <p className="text-sm text-stone-500 italic font-serif">
-            {totalCount} {totalCount === 1 ? 'artist' : 'artists'}
+            {profilesError
+              ? 'Artists unavailable'
+              : `${resultCount} ${resultCount === 1 ? 'artist' : 'artists'}`}
           </p>
         </div>
         <p className="font-serif italic text-base md:text-lg text-stone-600 mb-10 max-w-2xl">
@@ -103,6 +185,7 @@ export default async function DirectoryPage({
         </p>
 
         <DirectoryFilters
+          key={params.q ?? ''}
           roleFilters={ROLE_FILTERS}
           knownCities={knownCities}
           currentRole={params.role ?? ''}
@@ -112,7 +195,34 @@ export default async function DirectoryPage({
           currentVerified={params.verified === '1'}
         />
 
-        {!profiles || profiles.length === 0 ? (
+        {cityRowsError && !profilesError && (
+          <div
+            role="status"
+            className="mt-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          >
+            City suggestions are temporarily unavailable. You can still type a city to filter the directory.
+          </div>
+        )}
+
+        {profilesError ? (
+          <div
+            role="alert"
+            className="text-center py-16 border-t border-stone-200 mt-10"
+          >
+            <p className="font-serif text-lg text-stone-800">
+              We couldn&apos;t load the directory.
+            </p>
+            <p className="font-serif italic text-stone-500 mt-2">
+              Please try again in a moment.
+            </p>
+            <Link
+              href={pageHref(currentPage)}
+              className="inline-block mt-4 text-sm text-[#712B13] italic font-serif hover:underline"
+            >
+              Try again →
+            </Link>
+          </div>
+        ) : !profiles || profiles.length === 0 ? (
           <div className="text-center py-16 border-t border-stone-200 mt-10">
             <p className="font-serif italic text-stone-500">
               No artists match those filters yet.
@@ -126,7 +236,7 @@ export default async function DirectoryPage({
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-10">
-            {profiles.map((p: any) => {
+            {(profiles as DirectoryProfile[]).map((p) => {
               const roleTitle =
                 (p.role_titles ?? [])[0] ??
                 (p.role_category === 'crew_other'
@@ -176,7 +286,7 @@ export default async function DirectoryPage({
                         {p.location_state}
                       </p>
                     )}
-                    {p.languages?.length > 0 && (
+                    {p.languages && p.languages.length > 0 && (
                       <p className="text-xs text-stone-400 italic font-serif mt-2">
                         {p.languages.slice(0, 3).map(getLanguageName).join(' · ')}
                       </p>
@@ -186,6 +296,37 @@ export default async function DirectoryPage({
               );
             })}
           </div>
+        )}
+
+        {resultCount > 0 && totalPages > 1 && (
+          <nav
+            aria-label="Directory pages"
+            className="mt-10 pt-6 border-t border-stone-200 flex items-center justify-between gap-4"
+          >
+            {currentPage > 1 ? (
+              <Link
+                href={pageHref(currentPage - 1)}
+                className="text-sm text-[#712B13] italic font-serif hover:underline"
+              >
+                ← Previous
+              </Link>
+            ) : (
+              <span />
+            )}
+            <p className="text-xs text-stone-500 italic font-serif">
+              Page {Math.min(currentPage, totalPages)} of {totalPages}
+            </p>
+            {currentPage < totalPages ? (
+              <Link
+                href={pageHref(currentPage + 1)}
+                className="text-sm text-[#712B13] italic font-serif hover:underline"
+              >
+                Next →
+              </Link>
+            ) : (
+              <span />
+            )}
+          </nav>
         )}
       </main>
     </div>

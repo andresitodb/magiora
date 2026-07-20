@@ -9,6 +9,23 @@ import { categoryForTitle } from '@/lib/role_titles';
 const VALID_TYPES = PROJECT_TYPES.map((t) => t.value) as string[];
 const VALID_STATUSES = PROJECT_STATUSES.map((s) => s.value) as string[];
 
+function validProjectYear(value: FormDataEntryValue | null): number | null {
+  if (!value) return null;
+  const year = Number.parseInt(String(value), 10);
+  const max = new Date().getFullYear() + 5;
+  return Number.isInteger(year) && year >= 1900 && year <= max ? year : null;
+}
+
+function isHttpUrl(value: string): boolean {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 async function generateUniqueSlug(supabase: any, baseTitle: string, excludeId?: string): Promise<string> {
   const base = slugify(baseTitle) || 'project';
   let slug = base;
@@ -39,6 +56,21 @@ export async function createProject(formData: FormData) {
   const slug = await generateUniqueSlug(supabase, title);
   const project_type = (formData.get('project_type') as string) || 'feature_film';
   const status = (formData.get('status') as string) || 'in_development';
+  const yearValue = formData.get('year');
+  const year = validProjectYear(yearValue);
+  const trailerUrl = String(formData.get('trailer_url') ?? '').trim();
+  if (yearValue && year === null) {
+    redirect(
+      '/dashboard/projects/new?error=' +
+        encodeURIComponent('Enter a valid production year')
+    );
+  }
+  if (!isHttpUrl(trailerUrl)) {
+    redirect(
+      '/dashboard/projects/new?error=' +
+        encodeURIComponent('Trailer URL must start with http:// or https://')
+    );
+  }
 
   const { data: created, error } = await supabase
     .from('projects')
@@ -50,9 +82,9 @@ export async function createProject(formData: FormData) {
       description: (formData.get('description') as string) || null,
       project_type: VALID_TYPES.includes(project_type) ? project_type : 'feature_film',
       status: VALID_STATUSES.includes(status) ? status : 'in_development',
-      year: formData.get('year') ? parseInt(formData.get('year') as string) : null,
+      year,
       poster_url: (formData.get('poster_url') as string) || null,
-      trailer_url: (formData.get('trailer_url') as string) || null,
+      trailer_url: trailerUrl || null,
       location_city: (formData.get('location_city') as string) || null,
       location_state: (formData.get('location_state') as string) || null,
       visible: true,
@@ -64,7 +96,7 @@ export async function createProject(formData: FormData) {
     redirect('/dashboard/projects/new?error=' + encodeURIComponent(error?.message ?? 'Could not create project'));
   }
 
-  await supabase.from('project_credits').insert({
+  const { error: ownerCreditError } = await supabase.from('project_credits').insert({
     project_id: created.id,
     profile_id: user.id,
     role_title: 'Owner',
@@ -74,6 +106,13 @@ export async function createProject(formData: FormData) {
   });
 
   revalidatePath('/dashboard/projects');
+  if (ownerCreditError) {
+    redirect(
+      `/dashboard/projects/${created.id}/edit?error=${encodeURIComponent(
+        'Project created, but its owner credit could not be added.'
+      )}`
+    );
+  }
   redirect(`/dashboard/projects/${created.id}/edit?toast=created`);
 }
 
@@ -103,11 +142,36 @@ export async function updateProject(formData: FormData) {
 
   const project_type = (formData.get('project_type') as string) || 'feature_film';
   const status = (formData.get('status') as string) || 'in_development';
+  const yearValue = formData.get('year');
+  const year = validProjectYear(yearValue);
+  const trailerUrl = String(formData.get('trailer_url') ?? '').trim();
+  if (yearValue && year === null) {
+    redirect(
+      `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+        'Enter a valid production year'
+      )}`
+    );
+  }
+  if (!isHttpUrl(trailerUrl)) {
+    redirect(
+      `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+        'Trailer URL must start with http:// or https://'
+      )}`
+    );
+  }
 
   let links: Record<string, string> = {};
   try {
     const raw = formData.get('links') as string;
-    if (raw) links = JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      links = Object.fromEntries(
+        Object.entries(parsed).filter(
+          (entry): entry is [string, string] =>
+            typeof entry[1] === 'string' && isHttpUrl(entry[1])
+        )
+      );
+    }
   } catch {}
 
   let gallery: string[] = [];
@@ -128,9 +192,9 @@ export async function updateProject(formData: FormData) {
       description: (formData.get('description') as string) || null,
       project_type: VALID_TYPES.includes(project_type) ? project_type : 'feature_film',
       status: VALID_STATUSES.includes(status) ? status : 'in_development',
-      year: formData.get('year') ? parseInt(formData.get('year') as string) : null,
+      year,
       poster_url: (formData.get('poster_url') as string) || null,
-      trailer_url: (formData.get('trailer_url') as string) || null,
+      trailer_url: trailerUrl || null,
       location_city: (formData.get('location_city') as string) || null,
       location_state: (formData.get('location_state') as string) || null,
       gallery,
@@ -157,7 +221,16 @@ export async function deleteProject(formData: FormData) {
   if (!user) redirect('/login');
 
   const projectId = formData.get('project_id') as string;
-  await supabase.from('projects').delete().eq('id', projectId).eq('owner_id', user.id);
+  const { error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', projectId)
+    .eq('owner_id', user.id);
+  if (error) {
+    redirect(
+      `/dashboard/projects?error=${encodeURIComponent(error.message)}`
+    );
+  }
 
   revalidatePath('/dashboard/projects');
   redirect('/dashboard/projects?toast=deleted');
@@ -201,6 +274,12 @@ export async function addCredit(formData: FormData) {
     if (linkedProfile) {
       profileId = linkedProfile.id;
       externalName = null;
+    } else {
+      redirect(
+        `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+          'No Kinora profile was found for that profile link.'
+        )}`
+      );
     }
   }
 
@@ -252,7 +331,18 @@ export async function removeCredit(formData: FormData) {
     redirect('/dashboard/projects');
   }
 
-  await supabase.from('project_credits').delete().eq('id', creditId).eq('project_id', projectId);
+  const { error } = await supabase
+    .from('project_credits')
+    .delete()
+    .eq('id', creditId)
+    .eq('project_id', projectId);
+  if (error) {
+    redirect(
+      `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+        error.message
+      )}`
+    );
+  }
 
   revalidatePath(`/dashboard/projects/${projectId}/edit`);
   redirect(`/dashboard/projects/${projectId}/edit`);
@@ -285,13 +375,47 @@ export async function reorderCredits(formData: FormData) {
     redirect('/dashboard/projects');
   }
 
-  // Update each credit's position. Sequential is fine for typical project sizes.
-  for (let i = 0; i < orderedIds.length; i++) {
-    await supabase
-      .from('project_credits')
-      .update({ position: i })
-      .eq('id', orderedIds[i])
-      .eq('project_id', projectId);
+  const { data: existingCredits, error: creditsError } = await supabase
+    .from('project_credits')
+    .select('id')
+    .eq('project_id', projectId);
+  if (creditsError) {
+    redirect(
+      `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+        creditsError.message
+      )}`
+    );
+  }
+
+  const existingIds = new Set((existingCredits ?? []).map((credit) => credit.id));
+  if (
+    orderedIds.length !== existingIds.size ||
+    new Set(orderedIds).size !== orderedIds.length ||
+    orderedIds.some((id) => !existingIds.has(id))
+  ) {
+    redirect(
+      `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+        'Credit order is incomplete or invalid'
+      )}`
+    );
+  }
+
+  const results = await Promise.all(
+    orderedIds.map((creditId, position) =>
+      supabase
+        .from('project_credits')
+        .update({ position })
+        .eq('id', creditId)
+        .eq('project_id', projectId)
+    )
+  );
+  const reorderError = results.find((result) => result.error)?.error;
+  if (reorderError) {
+    redirect(
+      `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
+        reorderError.message
+      )}`
+    );
   }
 
   revalidatePath(`/dashboard/projects/${projectId}/edit`);
