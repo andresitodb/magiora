@@ -22,8 +22,8 @@ export default function VerificationDocViewer({ storagePath }: { storagePath: st
         } else {
           setSignedUrl(data?.signedUrl ?? null);
         }
-      } catch (e: any) {
-        setError(e?.message ?? 'Failed to load');
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Failed to load');
       }
     }
 

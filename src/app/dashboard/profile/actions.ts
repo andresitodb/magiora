@@ -10,6 +10,16 @@ const FREE_SKILL_LIMIT = 5;
 const VALID_TEMPLATES = TEMPLATES.map((t) => t.id);
 const VALID_ACCENTS = ACCENTS.map((a) => a.id);
 
+interface ExperienceItem {
+  year?: string | number | null;
+  [key: string]: unknown;
+}
+
+interface VideoLink {
+  url?: string;
+  [key: string]: unknown;
+}
+
 function optionalHttpUrl(value: FormDataEntryValue | null): string | null {
   const text = typeof value === 'string' ? value.trim() : '';
   if (!text) return null;
@@ -21,10 +31,10 @@ function optionalHttpUrl(value: FormDataEntryValue | null): string | null {
   }
 }
 
-function sortExperienceByYear(items: any[]): any[] {
+function sortExperienceByYear(items: ExperienceItem[]): ExperienceItem[] {
   return [...items].sort((a, b) => {
-    const ay = parseInt(a?.year);
-    const by = parseInt(b?.year);
+    const ay = parseInt(String(a.year ?? ''));
+    const by = parseInt(String(b.year ?? ''));
     const aValid = !isNaN(ay);
     const bValid = !isNaN(by);
     if (!aValid && !bValid) return 0;
@@ -90,10 +100,10 @@ export async function updateProfile(formData: FormData) {
   if (isMember) {
     const submittedTheme = formData.get('profile_theme') as string | null;
     const submittedAccent = formData.get('profile_accent') as string | null;
-    if (submittedTheme && VALID_TEMPLATES.includes(submittedTheme as any)) {
+    if (submittedTheme && VALID_TEMPLATES.some((theme) => theme === submittedTheme)) {
       profileTheme = submittedTheme;
     }
-    if (submittedAccent && VALID_ACCENTS.includes(submittedAccent as any)) {
+    if (submittedAccent && VALID_ACCENTS.some((accent) => accent === submittedAccent)) {
       profileAccent = submittedAccent;
     }
   }
@@ -103,21 +113,23 @@ export async function updateProfile(formData: FormData) {
   let skills = formData.getAll('skills').map(String).map((s) => s.trim()).filter(Boolean);
   if (!isMember && skills.length > FREE_SKILL_LIMIT) skills = skills.slice(0, FREE_SKILL_LIMIT);
 
-  const parseJSON = (key: string, fallback: any) => {
+  const parseJSON = <T,>(key: string, fallback: T): T => {
     try {
       const raw = formData.get(key) as string | null;
-      return raw ? JSON.parse(raw) : fallback;
+      return raw ? (JSON.parse(raw) as T) : fallback;
     } catch {
       return fallback;
     }
   };
 
-  let videoLinks: any[] = [];
+  let videoLinks: VideoLink[] = [];
   if (isMember) {
-    videoLinks = parseJSON('video_links', []).filter((l: any) => l.url?.trim());
+    videoLinks = parseJSON<VideoLink[]>('video_links', []).filter((link) =>
+      link.url?.trim()
+    );
   }
 
-  const experienceRaw = parseJSON('experience', []);
+  const experienceRaw = parseJSON<ExperienceItem[]>('experience', []);
   const experience = sortExperienceByYear(experienceRaw);
 
   const recommendations = parseJSON('recommendations', []);
@@ -166,7 +178,7 @@ export async function updateProfile(formData: FormData) {
     );
   }
 
-  const updates: any = {
+  const updates = {
     display_name: displayName,
     slug: newSlug,
     role_titles: roleTitles,
@@ -319,7 +331,7 @@ export async function requestVerified(formData: FormData) {
       .single();
 
     await supabase.from('notifications').insert(
-      admins.map((a: any) => ({
+      admins.map((a) => ({
         recipient_id: a.id,
         type: 'verification_request',
         payload: {

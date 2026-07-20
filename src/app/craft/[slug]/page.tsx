@@ -123,7 +123,7 @@ export default async function CraftDetailPage({
               {t.related} {getCategoryLabel(article.category, locale).toLowerCase()}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {related.map((r: any) => (
+              {related.map((r) => (
                 <Link key={r.id} href={`/craft/${r.slug}`} className="block group">
                   <div className="aspect-[5/3] bg-[#FAECE7] rounded-md overflow-hidden mb-3">
                     {r.cover_image_url ? (

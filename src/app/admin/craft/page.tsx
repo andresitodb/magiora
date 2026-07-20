@@ -37,9 +37,9 @@ export default async function AdminCraftPage({
   const { data: allArticles } = await supabase.from('craft_articles').select('status, publish_at');
   const counts = {
     total: allArticles?.length ?? 0,
-    published: allArticles?.filter((a: any) => a.status === 'published' && new Date(a.publish_at) <= new Date()).length ?? 0,
-    scheduled: allArticles?.filter((a: any) => a.status === 'published' && new Date(a.publish_at) > new Date()).length ?? 0,
-    draft: allArticles?.filter((a: any) => a.status === 'draft').length ?? 0,
+    published: allArticles?.filter((a) => a.status === 'published' && new Date(a.publish_at) <= new Date()).length ?? 0,
+    scheduled: allArticles?.filter((a) => a.status === 'published' && new Date(a.publish_at) > new Date()).length ?? 0,
+    draft: allArticles?.filter((a) => a.status === 'draft').length ?? 0,
   };
 
   return (
@@ -112,7 +112,7 @@ export default async function AdminCraftPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-200">
-              {articles.map((a: any) => {
+              {articles.map((a) => {
                 const publishDate = new Date(a.publish_at);
                 const isFuture = publishDate > new Date();
                 const isLive = a.status === 'published' && !isFuture;

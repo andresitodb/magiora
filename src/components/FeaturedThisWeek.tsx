@@ -26,7 +26,7 @@ export default async function FeaturedThisWeek() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
-          {profiles.map((p: any) => {
+          {profiles.map((p) => {
             const roleTitle =
               (p.role_titles ?? [])[0] ??
               (p.role_category === 'crew_other'

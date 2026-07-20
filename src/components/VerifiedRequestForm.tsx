@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { SectionIcons } from '@/components/SectionIcons';
 
 interface VerificationData {
   imdb_url?: string;
@@ -61,8 +60,8 @@ export default function VerifiedRequestForm({
       if (upErr) throw upErr;
       // We can't get a public URL since the bucket is private — store the path
       setIdPhotoUrl(fileName);
-    } catch (e: any) {
-      setUploadError(e?.message ?? 'Upload failed');
+    } catch (e: unknown) {
+      setUploadError(e instanceof Error ? e.message : 'Upload failed');
     } finally {
       setUploading(false);
     }

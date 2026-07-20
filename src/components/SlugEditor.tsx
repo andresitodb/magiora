@@ -1,7 +1,11 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useSyncExternalStore } from 'react';
 import { checkSlugAvailability } from '@/app/dashboard/profile/actions';
+
+const subscribeToHost = () => () => {};
+const getHost = () => window.location.host;
+const getServerHost = () => 'magiora.com';
 
 export default function SlugEditor({
   currentSlug,
@@ -11,41 +15,33 @@ export default function SlugEditor({
   isMember: boolean;
 }) {
   const [slug, setSlug] = useState(currentSlug);
-  const [debounced, setDebounced] = useState(currentSlug);
   const [status, setStatus] = useState<
     'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unchanged'
   >('unchanged');
   const [, startTransition] = useTransition();
 
-  // HYDRATION FIX: defer the baseUrl until after mount so server and client agree.
-  // Server render: shows the public brand domain. Client: replaces with actual origin.
-  const [baseUrl, setBaseUrl] = useState('magiora.com/m/');
-  useEffect(() => {
-    setBaseUrl(`${window.location.host}/m/`);
-  }, []);
-
-  // Debounce typing
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(slug), 400);
-    return () => clearTimeout(t);
-  }, [slug]);
+  const host = useSyncExternalStore(subscribeToHost, getHost, getServerHost);
+  const baseUrl = `${host}/m/`;
 
   useEffect(() => {
     if (!isMember) return;
-    if (debounced === currentSlug) {
-      setStatus('unchanged');
-      return;
-    }
-    if (!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(debounced)) {
-      setStatus('invalid');
-      return;
-    }
-    setStatus('checking');
-    startTransition(async () => {
-      const res = await checkSlugAvailability(debounced);
-      setStatus(res.available ? 'available' : 'taken');
-    });
-  }, [debounced, currentSlug, isMember]);
+    const timer = setTimeout(() => {
+      if (slug === currentSlug) {
+        setStatus('unchanged');
+        return;
+      }
+      if (!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(slug)) {
+        setStatus('invalid');
+        return;
+      }
+      setStatus('checking');
+      startTransition(async () => {
+        const res = await checkSlugAvailability(slug);
+        setStatus(res.available ? 'available' : 'taken');
+      });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [slug, currentSlug, isMember]);
 
   return (
     <div>

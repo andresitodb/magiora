@@ -48,14 +48,23 @@ export function getCategoryLabel(category: CraftCategory, locale: string): strin
   return locale === 'es' ? cat.label_es : cat.label_en;
 }
 
-export function getArticleTitle(article: CraftArticle, locale: string): string {
+export function getArticleTitle(
+  article: Pick<CraftArticle, 'title_en' | 'title_es'>,
+  locale: string
+): string {
   return locale === 'es' ? article.title_es : article.title_en;
 }
 
-export function getArticleIntro(article: CraftArticle, locale: string): string | null {
+export function getArticleIntro(
+  article: Pick<CraftArticle, 'intro_en' | 'intro_es'>,
+  locale: string
+): string | null {
   return locale === 'es' ? article.intro_es : article.intro_en;
 }
 
-export function getArticleBody(article: CraftArticle, locale: string): string {
+export function getArticleBody(
+  article: Pick<CraftArticle, 'body_en' | 'body_es'>,
+  locale: string
+): string {
   return locale === 'es' ? article.body_es : article.body_en;
 }

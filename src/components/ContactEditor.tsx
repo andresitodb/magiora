@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { KNOWN_NETWORKS, getSocialHint, getSocialLabel } from '@/lib/socialLinks';
+import { getSocialHint, getSocialLabel } from '@/lib/socialLinks';
 
 const COMMON_NETWORKS = ['instagram', 'imdb', 'vimeo', 'youtube', 'x', 'linkedin', 'tiktok'];
+
+type Representation = Record<string, string>;
 
 export default function ContactEditor({
   defaultContactEmail,
@@ -16,10 +18,10 @@ export default function ContactEditor({
   defaultPhone?: string;
   defaultWebsiteUrl: string;
   defaultSocial: Record<string, string>;
-  defaultRep: any;
+  defaultRep: Representation;
 }) {
   const [social, setSocial] = useState<Record<string, string>>(defaultSocial);
-  const [rep, setRep] = useState<any>({
+  const [rep, setRep] = useState<Representation>({
     agency: defaultRep.agency ?? '',
     manager: defaultRep.manager ?? '',
     agent: defaultRep.agent ?? '',
@@ -34,7 +36,7 @@ export default function ContactEditor({
   }
 
   function setRepField(field: string, value: string) {
-    setRep((prev: any) => ({ ...prev, [field]: value }));
+    setRep((prev) => ({ ...prev, [field]: value }));
   }
 
   return (

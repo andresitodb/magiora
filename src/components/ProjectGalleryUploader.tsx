@@ -41,8 +41,8 @@ export default function ProjectGalleryUploader({
       }
       setGallery([...gallery, ...newUrls]);
       if (fileRef.current) fileRef.current.value = '';
-    } catch (e: any) {
-      setError(e?.message ?? 'Upload failed');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Upload failed');
     } finally {
       setUploading(false);
     }

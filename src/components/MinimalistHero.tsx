@@ -1,5 +1,7 @@
 import { type Accent } from '@/lib/profile_themes';
 import VerifiedBadge from '@/components/VerifiedBadge';
+import type { CSSProperties } from 'react';
+import type { ProfileHeroData } from '@/components/profileHeroTypes';
 
 export default function MinimalistHero({
   profile,
@@ -7,7 +9,7 @@ export default function MinimalistHero({
   roleTitles,
   accent,
 }: {
-  profile: any;
+  profile: ProfileHeroData;
   primaryTitle: string;
   roleTitles: string[];
   accent: Accent;
@@ -16,7 +18,10 @@ export default function MinimalistHero({
     <div className="text-center py-12 md:py-16 mb-10">
       <div
         className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden mx-auto mb-8 ring-4"
-        style={{ '--tw-ring-color': accent.accentSoft, backgroundColor: accent.accentSoft } as any}
+        style={{
+          '--tw-ring-color': accent.accentSoft,
+          backgroundColor: accent.accentSoft,
+        } as CSSProperties}
       >
         {profile.headshot_url ? (
           /* eslint-disable-next-line @next/next/no-img-element */

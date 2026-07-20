@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useEffectEvent } from 'react';
 
 export default function CityAutocomplete({
   defaultValue,
@@ -15,6 +15,12 @@ export default function CityAutocomplete({
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const lastRequestedCity = useRef(defaultValue);
+  const updateCity = useEffectEvent((city: string) => {
+    if (city !== defaultValue) {
+      lastRequestedCity.current = city;
+      onChange(city, 'replace');
+    }
+  });
 
   useEffect(() => {
     if (defaultValue !== lastRequestedCity.current) {
@@ -35,13 +41,10 @@ export default function CityAutocomplete({
   // Debounce: update URL when input changes
   useEffect(() => {
     const t = setTimeout(() => {
-      if (input !== defaultValue) {
-        lastRequestedCity.current = input;
-        onChange(input, 'replace');
-      }
+      updateCity(input);
     }, 400);
     return () => clearTimeout(t);
-  }, [input]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [input]);
 
   const suggestions = input.trim()
     ? knownCities

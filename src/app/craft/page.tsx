@@ -100,7 +100,7 @@ export default async function CraftListPage({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {articles.map((article: any) => (
+            {articles.map((article) => (
               <CraftCard key={article.id} article={article} locale={locale} readingLabel={t.readingTime} />
             ))}
           </div>
@@ -115,7 +115,19 @@ function CraftCard({
   locale,
   readingLabel,
 }: {
-  article: CraftArticle;
+  article: Pick<
+    CraftArticle,
+    | 'id'
+    | 'slug'
+    | 'title_en'
+    | 'title_es'
+    | 'intro_en'
+    | 'intro_es'
+    | 'category'
+    | 'reading_minutes'
+    | 'cover_image_url'
+    | 'publish_at'
+  >;
   locale: string;
   readingLabel: string;
 }) {

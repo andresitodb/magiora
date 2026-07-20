@@ -4,6 +4,14 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+function getIdPhotoPath(value: unknown): string | null {
+  if (!value || typeof value !== 'object' || !('id_photo_url' in value)) {
+    return null;
+  }
+  const path = (value as { id_photo_url?: unknown }).id_photo_url;
+  return typeof path === 'string' ? path : null;
+}
+
 async function requireAdmin() {
   const supabase = await createClient();
   const {
@@ -53,7 +61,7 @@ export async function approveVerified(formData: FormData) {
   }
 
   // Delete the ID photo for privacy now that review is done
-  const idPath = (target?.verification_data as any)?.id_photo_url;
+  const idPath = getIdPhotoPath(target?.verification_data);
   if (idPath) {
     await supabase.storage.from('verification-docs').remove([idPath]);
   }
@@ -109,7 +117,7 @@ export async function rejectVerified(formData: FormData) {
   }
 
   // Delete the ID photo for privacy
-  const idPath = (target?.verification_data as any)?.id_photo_url;
+  const idPath = getIdPhotoPath(target?.verification_data);
   if (idPath) {
     await supabase.storage.from('verification-docs').remove([idPath]);
   }

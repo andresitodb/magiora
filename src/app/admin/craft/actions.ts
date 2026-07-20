@@ -3,6 +3,22 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+interface CraftArticleFormData {
+  slug: string;
+  title_en: string;
+  title_es: string;
+  intro_en: string | null;
+  intro_es: string | null;
+  body_en: string;
+  body_es: string;
+  category: string;
+  reading_minutes: number;
+  cover_image_url: string | null;
+  status: string;
+  publish_at: string;
+}
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -31,7 +47,7 @@ function slugify(s: string): string {
     .slice(0, 60);
 }
 
-async function generateUniqueSlug(supabase: any, baseTitle: string, excludeId?: string): Promise<string> {
+async function generateUniqueSlug(supabase: SupabaseClient, baseTitle: string, excludeId?: string): Promise<string> {
   const base = slugify(baseTitle) || 'article';
   let slug = base;
   let n = 1;
@@ -46,7 +62,7 @@ async function generateUniqueSlug(supabase: any, baseTitle: string, excludeId?: 
   }
 }
 
-function formToData(formData: FormData): any {
+function formToData(formData: FormData): CraftArticleFormData {
   return {
     slug: ((formData.get('slug') as string) ?? '').trim(),
     title_en: ((formData.get('title_en') as string) ?? '').trim(),

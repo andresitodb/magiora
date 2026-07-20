@@ -70,8 +70,10 @@ export const CREDIT_GROUPS: { id: string; label: string; categories: string[] }[
   { id: 'crew', label: 'Other crew', categories: ['crew_other'] },
 ];
 
-export function groupCredits(credits: any[]): Record<string, any[]> {
-  const out: Record<string, any[]> = {};
+export function groupCredits<T extends { role_category?: string | null }>(
+  credits: T[]
+): Record<string, T[]> {
+  const out: Record<string, T[]> = {};
   for (const group of CREDIT_GROUPS) out[group.id] = [];
   out['other'] = [];
 

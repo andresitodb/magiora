@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 type PersonSuggestion = {
@@ -47,19 +53,23 @@ export default function SpotlightSearch({
     });
   }
 
+  const updateQuery = useEffectEvent((query: string) => {
+    if (suppressNextSearch.current) {
+      suppressNextSearch.current = false;
+      return;
+    }
+    if (query !== currentQuery && !currentPerson) {
+      lastRequested.current = query;
+      navigate({ q: query || null }, 'replace');
+    }
+  });
+
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (suppressNextSearch.current) {
-        suppressNextSearch.current = false;
-        return;
-      }
-      if (input !== currentQuery && !currentPerson) {
-        lastRequested.current = input;
-        navigate({ q: input || null }, 'replace');
-      }
+      updateQuery(input);
     }, 400);
     return () => clearTimeout(timeout);
-  }, [input]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [input]);
 
   useEffect(() => {
     if (!currentPerson && currentQuery !== lastRequested.current) {

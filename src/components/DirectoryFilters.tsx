@@ -1,7 +1,14 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useTransition, useEffect, useMemo, useRef } from 'react';
+import {
+  useState,
+  useTransition,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+} from 'react';
 import { LANGUAGES } from '@/lib/languages';
 import RoleAutocomplete from '@/components/RoleAutocomplete';
 import CityAutocomplete from '@/components/CityAutocomplete';
@@ -51,15 +58,19 @@ export default function DirectoryFilters({
     });
   }
 
+  const updateQuery = useEffectEvent((query: string) => {
+    if (query !== currentQuery) {
+      lastRequestedQuery.current = query;
+      pushFilter({ q: query || null }, 'replace');
+    }
+  });
+
   useEffect(() => {
     const t = setTimeout(() => {
-      if (q !== currentQuery) {
-        lastRequestedQuery.current = q;
-        pushFilter({ q: q || null }, 'replace');
-      }
+      updateQuery(q);
     }, 400);
     return () => clearTimeout(t);
-  }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [q]);
 
   useEffect(() => {
     if (currentQuery !== lastRequestedQuery.current) {

@@ -27,7 +27,7 @@ export async function postEvent(formData: FormData) {
   const endDateStr = formData.get('end_date') as string | null;
   const endTime = formData.get('end_time') as string | null;
 
-  const insertData: any = {
+  const insertData = {
     posted_by: user.id,
     status,
     title: formData.get('title') as string,

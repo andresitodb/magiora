@@ -32,8 +32,8 @@ export default function ProjectPosterUploader({
       if (upErr) throw upErr;
       const { data } = supabase.storage.from('project-media').getPublicUrl(fileName);
       setUrl(data.publicUrl);
-    } catch (e: any) {
-      setError(e?.message ?? 'Upload failed');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Upload failed');
     } finally {
       setUploading(false);
     }

@@ -36,7 +36,7 @@ export default function RecommendationsEditor({
 
       {items.length === 0 && (
         <p className="text-xs italic text-stone-500 font-serif">
-          Quotes from directors, producers, or co-stars who've worked with you.
+          Quotes from directors, producers, or co-stars who&apos;ve worked with you.
         </p>
       )}
 

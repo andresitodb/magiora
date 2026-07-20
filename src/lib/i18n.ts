@@ -20,10 +20,10 @@ export async function getT() {
 
   return function t(key: string): string {
     const parts = key.split('.');
-    let value: any = messages;
+    let value: unknown = messages;
     for (const p of parts) {
       if (value && typeof value === 'object' && p in value) {
-        value = value[p];
+        value = (value as Record<string, unknown>)[p];
       } else {
         return key;
       }

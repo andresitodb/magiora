@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 type SelectFilter = {
@@ -46,15 +52,19 @@ export default function DiscoveryFilters({
     });
   }
 
+  const updateQuery = useEffectEvent((nextQuery: string) => {
+    if (nextQuery !== currentQuery) {
+      lastRequestedQuery.current = nextQuery;
+      update({ q: nextQuery || null }, 'replace');
+    }
+  });
+
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (query !== currentQuery) {
-        lastRequestedQuery.current = query;
-        update({ q: query || null }, 'replace');
-      }
+      updateQuery(query);
     }, 400);
     return () => clearTimeout(timeout);
-  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [query]);
 
   useEffect(() => {
     if (currentQuery !== lastRequestedQuery.current) setQuery(currentQuery);

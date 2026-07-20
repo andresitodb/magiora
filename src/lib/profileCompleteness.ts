@@ -14,7 +14,34 @@ export interface CompletenessResult {
   done: number;
 }
 
-export function computeCompleteness(profile: any): CompletenessResult {
+export interface ProfileCompletenessData {
+  role_category?: string | null;
+  role_categories?: string[] | null;
+  headshot_url?: string | null;
+  bio?: string | null;
+  role_titles?: string[] | null;
+  location_city?: string | null;
+  languages?: string[] | null;
+  skills?: string[] | null;
+  experience?: unknown[] | null;
+  contact_email?: string | null;
+  demo_reel_url?: string | null;
+  video_links?: unknown[] | null;
+  gallery?: string[] | null;
+  social_links?: Record<string, string | null> | null;
+  physical_details?: {
+    height_ft?: number | null;
+    weight_lb?: number | null;
+  } | null;
+  age_range_min?: number | null;
+  age_range_max?: number | null;
+  equipment?: unknown[] | null;
+}
+
+export function computeCompleteness(
+  profile: ProfileCompletenessData
+): CompletenessResult {
+  const socialLinks = profile.social_links ?? {};
   const isActor =
     profile.role_category === 'actor' ||
     (profile.role_categories ?? []).includes('actor');
@@ -75,7 +102,7 @@ export function computeCompleteness(profile: any): CompletenessResult {
     },
     {
       weight: 6,
-      done: Object.keys(profile.social_links ?? {}).filter((k) => profile.social_links[k]).length >= 1,
+      done: Object.keys(socialLinks).filter((key) => socialLinks[key]).length >= 1,
       label: 'Add at least one social link',
     },
     // Conditional checks for actors

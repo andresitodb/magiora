@@ -9,6 +9,14 @@ const HAIR_COLORS = ['Black', 'Brown', 'Blonde', 'Red', 'Gray', 'White', 'Other'
 const EYE_COLORS = ['Brown', 'Blue', 'Green', 'Hazel', 'Gray', 'Other'];
 const GENDERS = ['Male', 'Female', 'Non-binary', 'Other', 'Prefer not to say'];
 
+interface PhysicalDetails {
+  height_ft?: number | null;
+  height_in?: number | null;
+  weight_lb?: number | null;
+  hair_color?: string | null;
+  eye_color?: string | null;
+}
+
 export default function RoleSection({
   defaultRoleTitles,
   defaultPhysicalDetails,
@@ -17,20 +25,23 @@ export default function RoleSection({
   defaultAgeMax,
 }: {
   defaultRoleTitles: string[];
-  defaultPhysicalDetails: any;
+  defaultPhysicalDetails: PhysicalDetails;
   defaultGender?: string | null;
   defaultAgeMin?: number | null;
   defaultAgeMax?: number | null;
 }) {
   const [titles, setTitles] = useState<string[]>(defaultRoleTitles);
-  const [physical, setPhysical] = useState<any>(defaultPhysicalDetails ?? {});
+  const [physical, setPhysical] = useState<PhysicalDetails>(defaultPhysicalDetails ?? {});
 
   // Derived state — no setState in render, no loops
   const isActor =
     titles.length > 0 && getCategoryForTitle(titles[0]) === 'actor';
 
-  function setPhysicalField(field: string, value: any) {
-    setPhysical((prev: any) => ({ ...prev, [field]: value }));
+  function setPhysicalField(
+    field: keyof PhysicalDetails,
+    value: string | number | null
+  ) {
+    setPhysical((prev) => ({ ...prev, [field]: value }));
   }
 
   return (

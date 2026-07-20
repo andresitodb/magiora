@@ -30,7 +30,9 @@ export default async function AdminCastingCallsPage() {
             </tr>
           </thead>
           <tbody>
-            {calls?.map((c: any) => (
+            {calls?.map((c) => {
+              const poster = Array.isArray(c.poster) ? c.poster[0] : c.poster;
+              return (
               <tr key={c.id} className="border-b border-stone-100 hover:bg-stone-50">
                 <td className="px-4 py-3">
                   <p className="font-serif font-medium">{c.role_name}</p>
@@ -38,10 +40,10 @@ export default async function AdminCastingCallsPage() {
                 </td>
                 <td className="px-4 py-3">
                   <Link
-                    href={`/m/${c.poster?.slug}`}
+                    href={`/m/${poster?.slug}`}
                     className="font-serif italic text-[#712B13] hover:underline"
                   >
-                    {c.poster?.display_name}
+                    {poster?.display_name}
                   </Link>
                 </td>
                 <td className="px-4 py-3">
@@ -55,7 +57,8 @@ export default async function AdminCastingCallsPage() {
                   {new Date(c.created_at).toLocaleDateString()}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

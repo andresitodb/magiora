@@ -1,22 +1,27 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useSyncExternalStore } from 'react';
+
+const subscribeToOrigin = () => () => {};
+const getOrigin = () => window.location.origin;
+const getServerOrigin = () => '';
 
 export default function SubscribeCalendarButton() {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Hydration-safe URLs: only computed client-side after mount
-  const [urls, setUrls] = useState<{ webcal: string; https: string; gcal: string } | null>(null);
-  useEffect(() => {
-    const host = window.location.host;
-    const origin = window.location.origin;
-    setUrls({
-      webcal: `webcal://${host}/events.ics`,
-      https: `${origin}/events.ics`,
-      gcal: `https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(`${origin}/events.ics`)}`,
-    });
-  }, []);
+  const origin = useSyncExternalStore(
+    subscribeToOrigin,
+    getOrigin,
+    getServerOrigin
+  );
+  const host = origin ? new URL(origin).host : '';
+  const urls = origin
+    ? {
+        webcal: `webcal://${host}/events.ics`,
+        gcal: `https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(`${origin}/events.ics`)}`,
+      }
+    : null;
 
   useEffect(() => {
     function onClick(e: MouseEvent) {

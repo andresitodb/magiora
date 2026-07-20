@@ -34,7 +34,7 @@ export default function Toast() {
     }
 
     if (parsed) {
-      setMessage(parsed);
+      const mountTimer = setTimeout(() => setMessage(parsed), 0);
       // Slight delay before mounting (smooth fade-in)
       requestAnimationFrame(() => setVisible(true));
 
@@ -50,6 +50,7 @@ export default function Toast() {
       router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false });
 
       return () => {
+        clearTimeout(mountTimer);
         clearTimeout(dismissTimer);
         clearTimeout(cleanupTimer);
       };

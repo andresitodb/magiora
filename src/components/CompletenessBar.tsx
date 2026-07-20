@@ -1,7 +1,14 @@
 import Link from 'next/link';
-import { computeCompleteness } from '@/lib/profileCompleteness';
+import {
+  computeCompleteness,
+  type ProfileCompletenessData,
+} from '@/lib/profileCompleteness';
 
-export default function CompletenessBar({ profile }: { profile: any }) {
+export default function CompletenessBar({
+  profile,
+}: {
+  profile: ProfileCompletenessData;
+}) {
   const { percent, missing } = computeCompleteness(profile);
 
   if (percent === 100) {

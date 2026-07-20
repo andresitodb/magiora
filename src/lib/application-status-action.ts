@@ -8,6 +8,13 @@ import { sendEmail, applicationStatusEmail } from '@/lib/email';
 
 const VALID_STATUSES = ['submitted', 'viewed', 'shortlisted', 'rejected', 'cast'];
 
+interface CastingCallSummary {
+  id: string;
+  project_title: string;
+  role_name: string;
+  posted_by: string;
+}
+
 export async function updateApplicationStatus(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -34,13 +41,15 @@ export async function updateApplicationStatus(formData: FormData) {
 
   if (!app) redirect('/dashboard');
 
-  const call = app.casting_call as any;
+  const call = (Array.isArray(app.casting_call)
+    ? app.casting_call[0]
+    : app.casting_call) as CastingCallSummary | null;
   if (!call || call.posted_by !== user.id) {
     redirect('/dashboard?error=forbidden');
   }
 
   // Update status
-  const update: any = { status: newStatus };
+  const update: { status: string; viewed_at?: string } = { status: newStatus };
   if (newStatus === 'viewed' && app.status === 'submitted') {
     update.viewed_at = new Date().toISOString();
   }

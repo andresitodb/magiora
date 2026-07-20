@@ -56,7 +56,7 @@ export default async function AdminVerificationsPage({
         </p>
       ) : (
         <div className="space-y-6">
-          {pending.map((p: any) => {
+          {pending.map((p) => {
             const data = p.verification_data ?? {};
             const submitted = data.submitted_at
               ? new Date(data.submitted_at).toLocaleString('en-US', {

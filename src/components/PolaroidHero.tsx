@@ -1,5 +1,6 @@
 import { type Accent } from '@/lib/profile_themes';
 import VerifiedBadge from '@/components/VerifiedBadge';
+import type { ProfileHeroData } from '@/components/profileHeroTypes';
 
 export default function PolaroidHero({
   profile,
@@ -7,7 +8,7 @@ export default function PolaroidHero({
   roleTitles,
   accent,
 }: {
-  profile: any;
+  profile: ProfileHeroData;
   primaryTitle: string;
   roleTitles: string[];
   accent: Accent;

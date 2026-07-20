@@ -70,12 +70,6 @@ export default function NotificationsBell({ unreadCount: initialUnread }: { unre
     }
   }
 
-  useEffect(() => {
-    if (open && notifications.length === 0) {
-      loadNotifications();
-    }
-  }, [open]); // eslint-disable-line
-
   async function markAsRead(notifId: string) {
     await fetch('/api/notifications/mark-read', {
       method: 'POST',
@@ -104,7 +98,13 @@ export default function NotificationsBell({ unreadCount: initialUnread }: { unre
     <div ref={wrapperRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          const nextOpen = !open;
+          setOpen(nextOpen);
+          if (nextOpen && notifications.length === 0) {
+            void loadNotifications();
+          }
+        }}
         aria-label="Notifications"
         className="p-2 rounded-md hover:bg-stone-100 text-stone-700 cursor-pointer relative"
       >

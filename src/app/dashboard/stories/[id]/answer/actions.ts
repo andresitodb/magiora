@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 async function authedUser() {
   const supabase = await createClient();
@@ -13,7 +14,7 @@ async function authedUser() {
   return { supabase, user };
 }
 
-async function ownsInterview(supabase: any, interviewId: string, userId: string) {
+async function ownsInterview(supabase: SupabaseClient, interviewId: string, userId: string) {
   const { data } = await supabase
     .from('interviews')
     .select('id, subject_profile_id, status')
