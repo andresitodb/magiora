@@ -13,6 +13,10 @@ import {
   internalPlanForPrice,
   isOlderStripeEvent,
 } from '../src/lib/billingSubscription.ts';
+import {
+  inspectEmailConfig,
+  parsePublicSupabaseConfig,
+} from '../src/lib/environment.ts';
 
 test('safeLocalRedirect accepts local paths and rejects redirect bypasses', () => {
   assert.equal(safeLocalRedirect('/dashboard?tab=profile', '/'), '/dashboard?tab=profile');
@@ -93,6 +97,34 @@ test('billing access and ordering use authoritative subscription state', () => {
   );
   assert.equal(internalPlanForPrice('price_m', 'price_m', 'price_a'), 'member_monthly');
   assert.equal(internalPlanForPrice('price_unknown', 'price_m', 'price_a'), null);
+});
+
+test('public Supabase configuration fails clearly and permits local development', () => {
+  assert.throws(
+    () => parsePublicSupabaseConfig(undefined, undefined),
+    /NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY/
+  );
+  assert.throws(
+    () => parsePublicSupabaseConfig('http://remote.example', 'anon-key'),
+    /HTTPS or localhost/
+  );
+  assert.deepEqual(parsePublicSupabaseConfig('http://localhost:54321', 'anon-key'), {
+    url: 'http://localhost:54321',
+    anonKey: 'anon-key',
+  });
+});
+
+test('email configuration distinguishes disabled, invalid, and staging-ready states', () => {
+  assert.equal(inspectEmailConfig(undefined, undefined, undefined).status, 'disabled');
+  assert.equal(inspectEmailConfig('bad', 'bad', 'not-a-url').status, 'broken');
+  assert.equal(
+    inspectEmailConfig(
+      're_staging_example',
+      'Magiora Staging <staging@example.com>',
+      'https://staging.magiora.example'
+    ).status,
+    'enabled'
+  );
 });
 
 test('casting eligibility rejects non-members, owners, closed and duplicate applications', () => {

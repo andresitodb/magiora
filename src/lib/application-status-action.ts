@@ -80,13 +80,13 @@ export async function updateApplicationStatus(formData: FormData) {
         newStatus,
         call.id
       );
-      sendEmail({
+      await sendEmail({
         to: actor.contact_email,
         template: 'application_status',
         subject,
         html,
         relatedId: applicationId,
-      }).catch((err) => console.error('[email] application_status failed:', err));
+      });
     }
 
     await service.from('notifications').insert({

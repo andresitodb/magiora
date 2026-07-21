@@ -1,9 +1,11 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { getPublicSupabaseConfig } from '@/lib/environment';
 
 export function createAnonClient() {
+  const config = getPublicSupabaseConfig();
   return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    config.url,
+    config.anonKey,
     {
       auth: {
         persistSession: false,

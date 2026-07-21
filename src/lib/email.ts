@@ -8,9 +8,8 @@
 // If RESEND_API_KEY is missing, emails are logged but skipped (dev mode).
 
 import { createServiceClient } from '@/lib/supabase/service';
+import { inspectEmailConfig } from '@/lib/environment';
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const EMAIL_FROM = process.env.EMAIL_FROM ?? 'Magiora <onboarding@resend.dev>';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 interface SendOptions {
@@ -43,18 +42,28 @@ export async function sendEmail(opts: SendOptions): Promise<{ status: 'sent' | '
     return { status: 'skipped', error: 'Already sent (dedupe)' };
   }
 
-  // No API key? log as skipped in dev
-  if (!RESEND_API_KEY) {
+  const emailConfig = inspectEmailConfig(
+    process.env.RESEND_API_KEY,
+    process.env.EMAIL_FROM,
+    process.env.NEXT_PUBLIC_SITE_URL
+  );
+
+  if (emailConfig.status !== 'enabled') {
+    const reason =
+      emailConfig.status === 'disabled'
+        ? 'RESEND_API_KEY not configured'
+        : `Email configuration invalid: ${emailConfig.issues.join('; ')}`;
     await supabase.from('email_log').insert({
       to_email: opts.to,
       template: opts.template,
       subject: opts.subject,
       related_id: opts.relatedId ?? null,
       status: 'skipped',
-      error: 'RESEND_API_KEY not configured',
+      error: reason,
+      dedupe_key: dedupeKey,
     });
-    console.warn(`[email] SKIPPED ${opts.template} → ${opts.to} (no RESEND_API_KEY)`);
-    return { status: 'skipped', error: 'RESEND_API_KEY not configured' };
+    console.warn(`[email] SKIPPED ${opts.template} (configuration unavailable)`);
+    return { status: 'skipped', error: reason };
   }
 
   try {
@@ -62,10 +71,10 @@ export async function sendEmail(opts: SendOptions): Promise<{ status: 'sent' | '
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+        Authorization: `Bearer ${emailConfig.apiKey}`,
       },
       body: JSON.stringify({
-        from: EMAIL_FROM,
+        from: emailConfig.from,
         to: opts.to,
         subject: opts.subject,
         html: opts.html,
@@ -82,8 +91,9 @@ export async function sendEmail(opts: SendOptions): Promise<{ status: 'sent' | '
         related_id: opts.relatedId ?? null,
         status: 'failed',
         error: errorBody.slice(0, 500),
+        dedupe_key: dedupeKey,
       });
-      console.error(`[email] FAILED ${opts.template} → ${opts.to}:`, errorBody);
+      console.error(`[email] FAILED ${opts.template}`, { status: res.status });
       return { status: 'failed', error: errorBody };
     }
 
@@ -94,6 +104,7 @@ export async function sendEmail(opts: SendOptions): Promise<{ status: 'sent' | '
       related_id: opts.relatedId ?? null,
       status: 'sent',
       sent_at: new Date().toISOString(),
+      dedupe_key: dedupeKey,
     });
     return { status: 'sent' };
   } catch (err: unknown) {
@@ -104,6 +115,7 @@ export async function sendEmail(opts: SendOptions): Promise<{ status: 'sent' | '
       related_id: opts.relatedId ?? null,
       status: 'failed',
       error: String(err).slice(0, 500),
+      dedupe_key: dedupeKey,
     });
     return { status: 'failed', error: String(err) };
   }
