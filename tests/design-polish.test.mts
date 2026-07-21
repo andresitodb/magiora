@@ -6,14 +6,37 @@ import {
   projectCountLabel,
   seededSubset,
   selectUpcomingEvents,
+  selectFeaturedProjects,
+  featuredProjectsHeading,
   shouldRandomizeDirectory,
   stringSeed,
 } from '../src/lib/designPolish.ts';
+import { shouldShowEventImage } from '../src/lib/eventArtwork.ts';
 
 test('project counts are hidden at zero and shown when positive', () => {
   assert.equal(projectCountLabel(0, true), null);
   assert.equal(projectCountLabel(3, true), '3 projects');
   assert.equal(projectCountLabel(1, true), '1 project');
+});
+
+test('Featured Projects hides at zero, uses singular at one, and shows two with a plural heading', () => {
+  assert.deepEqual(selectFeaturedProjects([]), []);
+  assert.equal(featuredProjectsHeading(0), null);
+
+  const one = selectFeaturedProjects([{ id: 'one' }]);
+  assert.deepEqual(one.map((project) => project.id), ['one']);
+  assert.equal(featuredProjectsHeading(one.length), 'Featured Project');
+
+  const two = selectFeaturedProjects([{ id: 'one' }, { id: 'two' }, { id: 'three' }]);
+  assert.deepEqual(two.map((project) => project.id), ['one', 'two']);
+  assert.equal(featuredProjectsHeading(two.length), 'Featured Projects');
+});
+
+test('event artwork falls back for missing or failed images', () => {
+  assert.equal(shouldShowEventImage(null, false), false);
+  assert.equal(shouldShowEventImage('', false), false);
+  assert.equal(shouldShowEventImage('https://example.com/event.jpg', false), true);
+  assert.equal(shouldShowEventImage('https://example.com/event.jpg', true), false);
 });
 
 test('anonymous casting is gated while authenticated casting remains available', () => {

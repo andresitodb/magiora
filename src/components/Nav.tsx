@@ -77,6 +77,7 @@ export default async function Nav({
     { href: '/admin', label: 'Overview' },
     { href: '/admin/featured', label: 'Featured' },
     { href: '/admin/members', label: 'Members' },
+    { href: '/admin/projects', label: 'Projects' },
     { href: '/admin/casting-calls', label: 'Calls' },
     { href: '/admin/events', label: 'Events' },
     { href: '/admin/stories', label: 'Spotlight' },

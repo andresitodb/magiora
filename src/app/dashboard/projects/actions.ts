@@ -3,29 +3,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { slugify, PROJECT_TYPES, PROJECT_STATUSES } from '@/lib/projects';
+import {
+  isHttpProjectUrl,
+  normalizeProjectStatus,
+  normalizeProjectType,
+  parseProjectYear,
+  slugify,
+} from '@/lib/projects';
 import { categoryForTitle } from '@/lib/role_titles';
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-const VALID_TYPES = PROJECT_TYPES.map((t) => t.value) as string[];
-const VALID_STATUSES = PROJECT_STATUSES.map((s) => s.value) as string[];
-
-function validProjectYear(value: FormDataEntryValue | null): number | null {
-  if (!value) return null;
-  const year = Number.parseInt(String(value), 10);
-  const max = new Date().getFullYear() + 5;
-  return Number.isInteger(year) && year >= 1900 && year <= max ? year : null;
-}
-
-function isHttpUrl(value: string): boolean {
-  if (!value) return true;
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
 
 async function generateUniqueSlug(
   supabase: SupabaseClient,
@@ -59,10 +45,10 @@ export async function createProject(formData: FormData) {
   }
 
   const slug = await generateUniqueSlug(supabase, title);
-  const project_type = (formData.get('project_type') as string) || 'feature_film';
-  const status = (formData.get('status') as string) || 'in_development';
+  const project_type = normalizeProjectType(formData.get('project_type'));
+  const status = normalizeProjectStatus(formData.get('status'));
   const yearValue = formData.get('year');
-  const year = validProjectYear(yearValue);
+  const year = parseProjectYear(yearValue);
   const trailerUrl = String(formData.get('trailer_url') ?? '').trim();
   if (yearValue && year === null) {
     redirect(
@@ -70,7 +56,7 @@ export async function createProject(formData: FormData) {
         encodeURIComponent('Enter a valid production year')
     );
   }
-  if (!isHttpUrl(trailerUrl)) {
+  if (!isHttpProjectUrl(trailerUrl)) {
     redirect(
       '/dashboard/projects/new?error=' +
         encodeURIComponent('Trailer URL must start with http:// or https://')
@@ -85,8 +71,8 @@ export async function createProject(formData: FormData) {
       title,
       tagline: (formData.get('tagline') as string) || null,
       description: (formData.get('description') as string) || null,
-      project_type: VALID_TYPES.includes(project_type) ? project_type : 'feature_film',
-      status: VALID_STATUSES.includes(status) ? status : 'in_development',
+      project_type,
+      status,
       year,
       poster_url: (formData.get('poster_url') as string) || null,
       trailer_url: trailerUrl || null,
@@ -129,10 +115,10 @@ export async function updateProject(formData: FormData) {
   const newTitle = title !== existing.title;
   const slug = newTitle ? await generateUniqueSlug(supabase, title, projectId) : existing.slug;
 
-  const project_type = (formData.get('project_type') as string) || 'feature_film';
-  const status = (formData.get('status') as string) || 'in_development';
+  const project_type = normalizeProjectType(formData.get('project_type'));
+  const status = normalizeProjectStatus(formData.get('status'));
   const yearValue = formData.get('year');
-  const year = validProjectYear(yearValue);
+  const year = parseProjectYear(yearValue);
   const trailerUrl = String(formData.get('trailer_url') ?? '').trim();
   if (yearValue && year === null) {
     redirect(
@@ -141,7 +127,7 @@ export async function updateProject(formData: FormData) {
       )}`
     );
   }
-  if (!isHttpUrl(trailerUrl)) {
+  if (!isHttpProjectUrl(trailerUrl)) {
     redirect(
       `/dashboard/projects/${projectId}/edit?error=${encodeURIComponent(
         'Trailer URL must start with http:// or https://'
@@ -157,7 +143,7 @@ export async function updateProject(formData: FormData) {
       links = Object.fromEntries(
         Object.entries(parsed).filter(
           (entry): entry is [string, string] =>
-            typeof entry[1] === 'string' && isHttpUrl(entry[1])
+            typeof entry[1] === 'string' && isHttpProjectUrl(entry[1])
         )
       );
     }
@@ -179,8 +165,8 @@ export async function updateProject(formData: FormData) {
       title,
       tagline: (formData.get('tagline') as string) || null,
       description: (formData.get('description') as string) || null,
-      project_type: VALID_TYPES.includes(project_type) ? project_type : 'feature_film',
-      status: VALID_STATUSES.includes(status) ? status : 'in_development',
+      project_type,
+      status,
       year,
       poster_url: (formData.get('poster_url') as string) || null,
       trailer_url: trailerUrl || null,

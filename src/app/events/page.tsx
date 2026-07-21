@@ -3,6 +3,7 @@ import Nav from '@/components/Nav';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import DiscoveryFilters from '@/components/DiscoveryFilters';
+import EventArtwork from '@/components/EventArtwork';
 
 const PAGE_SIZE = 20;
 
@@ -12,6 +13,7 @@ type PublicEvent = {
   description: string | null;
   event_date: string;
   location_name: string | null;
+  cover_image_url: string | null;
   price_public: number | null;
   posted_by_profile:
     | { display_name: string; slug: string }
@@ -119,38 +121,32 @@ function EventCard({ event }: { event: PublicEvent }) {
   return (
     <Link
       href={`/events/${event.id}`}
-      className="k-card k-card-interactive grid grid-cols-[72px_1fr] sm:grid-cols-[100px_1fr_auto] gap-4 md:gap-6 items-start p-4 md:p-6"
+      className="k-card k-card-interactive group grid grid-cols-1 overflow-hidden sm:grid-cols-[minmax(220px,34%)_1fr]"
     >
-      <div className="text-center">
-        <p className="font-serif italic text-xs text-[#993C1D]">
-          {start.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
-        </p>
-        <p className="font-serif text-4xl md:text-5xl font-medium leading-none text-[#4A1B0C]">
-          {start.toLocaleDateString('en-US', { day: 'numeric' })}
-        </p>
-        <p className="font-serif italic text-xs text-stone-500 mt-1">
-          {start.toLocaleDateString('en-US', { weekday: 'long' })}
-        </p>
-      </div>
-      <div>
-        <h2 className="font-serif text-xl font-medium mb-2">{event.title}</h2>
+      <EventArtwork imageUrl={event.cover_image_url} title={event.title} eventDate={event.event_date} className="sm:aspect-auto sm:h-full sm:min-h-56" />
+      <div className="flex min-w-0 flex-col p-5 md:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="k-eyebrow mb-2 normal-case tracking-normal">
+              {start.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+            <h2 className="font-serif text-2xl font-medium leading-tight group-hover:text-[var(--magiora-brand)]">{event.title}</h2>
+          </div>
+          <div className="shrink-0 text-left sm:text-right">
+            {event.price_public != null && event.price_public > 0 ? <p className="font-serif font-medium">${event.price_public}</p> : <p className="font-serif italic text-sm text-[#712B13]">Free</p>}
+          </div>
+        </div>
         {event.description && (
-          <p className="text-sm text-stone-700 line-clamp-2 mb-3 font-serif">
+          <p className="text-sm text-stone-700 line-clamp-2 mt-3 font-serif">
             {event.description}
           </p>
         )}
-        <p className="text-xs text-stone-500 font-serif italic">
+        <p className="mt-auto pt-5 text-xs text-stone-500 font-serif italic">
           {start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
           {event.location_name && ` · ${event.location_name}`}
           {host && <> · Hosted by <span className="text-[#712B13]">{host.display_name}</span></>}
         </p>
-      </div>
-      <div className="text-left sm:text-right col-start-2 sm:col-start-auto">
-        {event.price_public != null && event.price_public > 0 ? (
-          <p className="font-serif font-medium">${event.price_public}</p>
-        ) : (
-          <p className="font-serif italic text-sm text-[#712B13]">Free</p>
-        )}
+        <p className="k-link mt-3">View event →</p>
       </div>
     </Link>
   );

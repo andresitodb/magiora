@@ -42,6 +42,37 @@ export const PROJECT_STATUSES: { value: ProjectStatus; label: string; color: str
   { value: 'released', label: 'Released', color: 'bg-[#FAECE7] text-[#712B13]' },
 ];
 
+export function normalizeProjectType(value: FormDataEntryValue | null): ProjectType {
+  const candidate = String(value ?? '');
+  return PROJECT_TYPES.some((type) => type.value === candidate)
+    ? candidate as ProjectType
+    : 'feature_film';
+}
+
+export function normalizeProjectStatus(value: FormDataEntryValue | null): ProjectStatus {
+  const candidate = String(value ?? '');
+  return PROJECT_STATUSES.some((status) => status.value === candidate)
+    ? candidate as ProjectStatus
+    : 'in_development';
+}
+
+export function parseProjectYear(value: FormDataEntryValue | null): number | null {
+  if (!value) return null;
+  const year = Number.parseInt(String(value), 10);
+  const max = new Date().getFullYear() + 5;
+  return Number.isInteger(year) && year >= 1900 && year <= max ? year : null;
+}
+
+export function isHttpProjectUrl(value: string): boolean {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export function getProjectTypeLabel(value: string | null): string {
   if (!value) return 'Project';
   return PROJECT_TYPES.find((t) => t.value === value)?.label ?? value.replace('_', ' ');

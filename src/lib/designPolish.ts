@@ -47,6 +47,15 @@ export function selectUpcomingEvents<T extends { event_date: string }>(
     .slice(0, HOME_UPCOMING_LIMIT);
 }
 
+export function selectFeaturedProjects<T>(projects: T[] | null | undefined): T[] {
+  return (projects ?? []).slice(0, 2);
+}
+
+export function featuredProjectsHeading(count: number): string | null {
+  if (count === 0) return null;
+  return count === 1 ? 'Featured Project' : 'Featured Projects';
+}
+
 export function projectCountLabel(count: number, countsAvailable: boolean): string | null {
   if (!countsAvailable || count <= 0) return null;
   return `${count} ${count === 1 ? 'project' : 'projects'}`;

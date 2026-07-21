@@ -9,7 +9,12 @@ import {
   getProjectTypeLabel,
 } from '@/lib/projects';
 import { applyPublicBrand } from '@/lib/publicBrand';
-import { selectUpcomingEvents } from '@/lib/designPolish';
+import {
+  featuredProjectsHeading,
+  selectFeaturedProjects,
+  selectUpcomingEvents,
+} from '@/lib/designPolish';
+import EventArtwork from '@/components/EventArtwork';
 
 export const revalidate = 60;
 
@@ -91,7 +96,7 @@ export default async function HomePage() {
       .not('featured_at', 'is', null)
       .order('featured_at', { ascending: false })
       .order('id', { ascending: true })
-      .limit(1),
+      .limit(2),
     supabase
       .from('events')
       .select('id, title, event_date, location_name, cover_image_url')
@@ -102,7 +107,10 @@ export default async function HomePage() {
   ]);
 
   const spotlightStories = (stories ?? []) as SpotlightStory[];
-  const featuredProject = (featuredProjects?.[0] ?? null) as FeaturedProject | null;
+  const homeFeaturedProjects = selectFeaturedProjects(
+    (featuredProjects ?? []) as FeaturedProject[]
+  );
+  const featuredProjectsTitle = featuredProjectsHeading(homeFeaturedProjects.length);
   const homeUpcomingEvents = selectUpcomingEvents(upcomingEvents ?? [], nowIso);
 
   return (
@@ -139,20 +147,7 @@ export default async function HomePage() {
                   aria-label={`View event: ${event.title}`}
                   className="k-card k-card-interactive group flex h-full flex-col"
                 >
-                  <div className="aspect-[16/10] overflow-hidden bg-[var(--magiora-soft)]">
-                    {event.cover_image_url ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={event.cover_image_url}
-                        alt=""
-                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center font-serif text-3xl text-[var(--magiora-brand)]">
-                        {start.toLocaleDateString('en-US', { day: 'numeric' })}
-                      </div>
-                    )}
-                  </div>
+                  <EventArtwork imageUrl={event.cover_image_url} title={event.title} eventDate={event.event_date} />
                   <div className="flex flex-1 flex-col p-5">
                     <p className="k-eyebrow mb-2 normal-case tracking-normal">
                       {start.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
@@ -290,66 +285,49 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* FEATURED PROJECT */}
-      {featuredProject && (
+      {/* FEATURED PROJECTS */}
+      {featuredProjectsTitle && (
         <section className="k-home-section max-w-6xl mx-auto px-6 border-t">
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-6">
             <div>
               <p className="k-eyebrow mb-1">
                 From the community
               </p>
-              <h2 className="k-section-title">Featured Project</h2>
+              <h2 className="k-section-title">{featuredProjectsTitle}</h2>
             </div>
             <Link href="/projects" className="k-editorial-link font-serif italic text-sm">
               Browse projects →
             </Link>
           </div>
 
-          <Link
-            href={`/projects/${featuredProject.slug}`}
-            className="k-card k-card-interactive grid grid-cols-1 md:grid-cols-[280px_1fr] group"
-          >
-            <div className="h-64 md:h-80 overflow-hidden bg-[var(--magiora-soft)] w-full">
-              {featuredProject.poster_url ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={featuredProject.poster_url}
-                  alt={featuredProject.title}
-                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[var(--magiora-brand)] font-serif italic text-2xl text-center px-4">
-                  {featuredProject.title}
+          <div className="space-y-6">
+            {homeFeaturedProjects.map((project, index) => (
+              <Link
+                key={project.id}
+                href={`/projects/${project.slug}`}
+                className={`k-card k-card-interactive grid grid-cols-1 group ${index === 0 ? 'md:grid-cols-[280px_1fr]' : 'md:grid-cols-[220px_1fr]'}`}
+              >
+                <div className={`${index === 0 ? 'h-64 md:h-80' : 'h-56 md:h-64'} overflow-hidden bg-[var(--magiora-soft)] w-full`}>
+                  {project.poster_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={project.poster_url} alt={`${project.title} poster`} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[var(--magiora-brand)] font-serif italic text-2xl text-center px-4">{project.title}</div>
+                  )}
                 </div>
-              )}
-            </div>
-            <div className="p-5 md:p-8 self-center">
-              <p className="font-serif italic text-sm text-[var(--magiora-copper)] mb-2">
-                {getProjectTypeLabel(featuredProject.project_type)}
-                {featuredProject.year && (
-                  <span className="text-stone-500"> · {featuredProject.year}</span>
-                )}
-              </p>
-              <h3 className="font-serif text-3xl md:text-4xl font-medium leading-tight group-hover:text-[var(--magiora-brand)] transition-colors">
-                {featuredProject.title}
-              </h3>
-              {featuredProject.tagline && (
-                <p className="font-serif italic text-lg text-stone-600 mt-3">
-                  {featuredProject.tagline}
-                </p>
-              )}
-              {featuredProject.status && (
-                <span
-                  className={`inline-block mt-4 text-xs px-2.5 py-1 rounded-full font-serif ${getProjectStatusColor(featuredProject.status)}`}
-                >
-                  {getProjectStatusLabel(featuredProject.status)}
-                </span>
-              )}
-              <p className="k-link mt-5 group-hover:underline">
-                View project →
-              </p>
-            </div>
-          </Link>
+                <div className={`${index === 0 ? 'p-5 md:p-8' : 'p-5 md:p-7'} self-center`}>
+                  <p className="font-serif italic text-sm text-[var(--magiora-copper)] mb-2">
+                    {getProjectTypeLabel(project.project_type)}
+                    {project.year && <span className="text-stone-500"> · {project.year}</span>}
+                  </p>
+                  <h3 className={`${index === 0 ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl'} font-serif font-medium leading-tight group-hover:text-[var(--magiora-brand)] transition-colors`}>{project.title}</h3>
+                  {project.tagline && <p className="font-serif italic text-lg text-stone-600 mt-3">{project.tagline}</p>}
+                  {project.status && <span className={`inline-block mt-4 text-xs px-2.5 py-1 rounded-full font-serif ${getProjectStatusColor(project.status)}`}>{getProjectStatusLabel(project.status)}</span>}
+                  <p className="k-link mt-5 group-hover:underline">View project →</p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
 
