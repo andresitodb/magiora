@@ -8,7 +8,7 @@
 // If RESEND_API_KEY is missing, emails are logged but skipped (dev mode).
 
 import { createServiceClient } from '@/lib/supabase/service';
-import { inspectEmailConfig } from '@/lib/environment';
+import { inspectEmailConfig } from '@/lib/emailConfig';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 

@@ -14,9 +14,9 @@ import {
   isOlderStripeEvent,
 } from '../src/lib/billingSubscription.ts';
 import {
-  inspectEmailConfig,
   parsePublicSupabaseConfig,
 } from '../src/lib/environment.ts';
+import { inspectEmailConfig } from '../src/lib/emailConfig.ts';
 
 test('safeLocalRedirect accepts local paths and rejects redirect bypasses', () => {
   assert.equal(safeLocalRedirect('/dashboard?tab=profile', '/'), '/dashboard?tab=profile');
@@ -82,6 +82,21 @@ test('billing configuration distinguishes disabled, broken, and enabled states',
     VERCEL_ENV: 'preview',
   });
   assert.equal(enabled.status, 'enabled');
+
+  const productionWithTestKey = inspectBillingConfig({
+    STRIPE_SECRET_KEY: 'sk_test_example',
+    STRIPE_WEBHOOK_SECRET: 'whsec_example',
+    STRIPE_PRICE_ID_MONTHLY: 'price_monthly',
+    STRIPE_PRICE_ID_ANNUAL: 'price_annual',
+    NEXT_PUBLIC_SITE_URL: 'https://magiora.example',
+    NEXT_PUBLIC_SUPABASE_URL: 'https://project.supabase.co',
+    SUPABASE_SERVICE_ROLE_KEY: 'service-role-example',
+    VERCEL_ENV: 'production',
+  });
+  assert.equal(productionWithTestKey.status, 'broken');
+  if (productionWithTestKey.status === 'broken') {
+    assert.ok(productionWithTestKey.issues.includes('Stripe test keys are not allowed in production'));
+  }
 });
 
 test('billing access and ordering use authoritative subscription state', () => {

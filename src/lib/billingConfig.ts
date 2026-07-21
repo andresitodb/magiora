@@ -77,6 +77,9 @@ export function inspectBillingConfig(
   if (environment !== 'production' && secretKey.startsWith('sk_live_')) {
     issues.push('Live Stripe keys are not allowed outside production');
   }
+  if (environment === 'production' && secretKey.startsWith('sk_test_')) {
+    issues.push('Stripe test keys are not allowed in production');
+  }
 
   if (issues.length > 0) return { status: 'broken', issues };
 
