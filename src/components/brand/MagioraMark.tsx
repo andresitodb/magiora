@@ -12,7 +12,7 @@ export default function MagioraMark({
 }: MagioraMarkProps) {
   return (
     <svg
-      viewBox="0 0 48 32"
+      viewBox="0 0 64 48"
       fill="none"
       role={decorative ? undefined : 'img'}
       aria-hidden={decorative || undefined}
@@ -22,11 +22,12 @@ export default function MagioraMark({
     >
       {!decorative && <title>{title}</title>}
       <path
-        d="M4 28V4L24 21L44 4V28"
+        d="M10 40V8L32 28L54 8V40"
         stroke="currentColor"
-        strokeWidth="4"
+        strokeWidth="5.5"
         strokeLinecap="square"
         strokeLinejoin="miter"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );
