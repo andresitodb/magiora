@@ -69,6 +69,7 @@ export function buildIcsEvent(event: EventForIcs, siteUrl: string): string[] {
 
   const lines = [
     'BEGIN:VEVENT',
+    // Keep the historical UID namespace: calendar clients use UID to match updates.
     `UID:event-${event.id}@kinora.com`,
     `DTSTAMP:${toIcsDate(new Date().toISOString())}`,
     `DTSTART:${start}`,

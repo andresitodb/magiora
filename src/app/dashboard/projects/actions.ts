@@ -235,7 +235,7 @@ export async function addCredit(formData: FormData) {
   const projectId = formData.get('project_id') as string;
   const name = (formData.get('name') as string)?.trim();
   const roleTitle = (formData.get('role_title') as string)?.trim();
-  const kinoraSlug = (formData.get('kinora_slug') as string)?.trim();
+  const magioraSlug = (formData.get('magiora_slug') as string)?.trim();
   const characterName = (formData.get('character_name') as string)?.trim() || null;
 
   if (!projectId || !name || !roleTitle) {
@@ -254,11 +254,11 @@ export async function addCredit(formData: FormData) {
   let profileId: string | null = null;
   let externalName: string | null = name;
 
-  if (kinoraSlug) {
+  if (magioraSlug) {
     const { data: linkedProfile } = await supabase
       .from('profiles')
       .select('id, display_name')
-      .eq('slug', kinoraSlug)
+      .eq('slug', magioraSlug)
       .maybeSingle();
     if (linkedProfile) {
       profileId = linkedProfile.id;

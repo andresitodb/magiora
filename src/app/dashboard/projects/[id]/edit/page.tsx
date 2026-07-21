@@ -311,7 +311,7 @@ export default async function EditProjectPage({
               </label>
               <input
                 type="text"
-                name="kinora_slug"
+                name="magiora_slug"
                 placeholder="andresdb (links to their profile)"
                 pattern="[a-z0-9-]*"
                 className="k-control font-mono"

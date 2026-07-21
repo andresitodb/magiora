@@ -1,16 +1,20 @@
 import { cookies } from 'next/headers';
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
+import { resolveLocale, type Locale } from '@/lib/locale';
 
-export type Locale = 'en' | 'es';
+export type { Locale } from '@/lib/locale';
 const messagesByLocale = { en, es };
 
-const COOKIE_NAME = 'kinora_locale';
+const COOKIE_NAME = 'magiora_locale';
+const LEGACY_COOKIE_NAME = 'kinora_locale';
 
 export async function getLocale(): Promise<Locale> {
   const cookieStore = await cookies();
-  const stored = cookieStore.get(COOKIE_NAME)?.value;
-  return stored === 'es' ? 'es' : 'en';
+  return resolveLocale(
+    cookieStore.get(COOKIE_NAME)?.value,
+    cookieStore.get(LEGACY_COOKIE_NAME)?.value
+  );
 }
 
 // Server-side: call from a Server Component to get a translator function.

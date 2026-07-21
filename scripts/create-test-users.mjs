@@ -37,7 +37,7 @@ if (!PASSWORD) {
 
 const USERS = [
   {
-    email: 'maria.actress@kinora.test',
+    email: 'maria.actress@magiora.test',
     display_name: 'María Fernanda Velázquez',
     slug: 'maria-velazquez',
     role_titles: ['Actor'],
@@ -80,7 +80,7 @@ const USERS = [
     representation: { agency: 'Hispanic Talent Agency Miami', manager: '' },
   },
   {
-    email: 'carlos.dp@kinora.test',
+    email: 'carlos.dp@magiora.test',
     display_name: 'Carlos Tomé',
     slug: 'carlos-tome',
     role_titles: ['Director of Photography', 'Camera Operator'],
@@ -126,7 +126,7 @@ const USERS = [
     representation: {},
   },
   {
-    email: 'ana.director@kinora.test',
+    email: 'ana.director@magiora.test',
     display_name: 'Ana Lucía Restrepo',
     slug: 'ana-restrepo',
     role_titles: ['Director', 'Screenwriter', 'Producer'],
@@ -165,7 +165,7 @@ const USERS = [
     representation: { agency: 'Latitud Casting & Talent', manager: 'Sofía Vega' },
   },
   {
-    email: 'luis.composer@kinora.test',
+    email: 'luis.composer@magiora.test',
     display_name: 'Luis Carmona',
     slug: 'luis-carmona',
     role_titles: ['Composer', 'Sound Designer', 'Music Supervisor'],

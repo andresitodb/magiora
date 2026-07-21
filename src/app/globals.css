@@ -7,23 +7,23 @@
 }
 
 :root {
-  --kinora-bg: #f5f3ee;
-  --kinora-surface: #ffffff;
-  --kinora-text: #1c1917;
-  --kinora-muted: #78716c;
-  --kinora-border: #e7e5e4;
-  --kinora-brand: #712b13;
-  --kinora-brand-hover: #4a1b0c;
-  --kinora-accent: #993c1d;
-  --kinora-soft: #faece7;
-  --kinora-radius: 0.5rem;
-  --kinora-shadow: 0 1px 2px rgb(28 25 23 / 0.04);
-  --kinora-section-space: clamp(3rem, 6vw, 5rem);
+  --magiora-bg: #f5f3ee;
+  --magiora-surface: #ffffff;
+  --magiora-text: #1c1917;
+  --magiora-muted: #78716c;
+  --magiora-border: #e7e5e4;
+  --magiora-brand: #712b13;
+  --magiora-brand-hover: #4a1b0c;
+  --magiora-accent: #993c1d;
+  --magiora-soft: #faece7;
+  --magiora-radius: 0.5rem;
+  --magiora-shadow: 0 1px 2px rgb(28 25 23 / 0.04);
+  --magiora-section-space: clamp(3rem, 6vw, 5rem);
 }
 
 body {
-  background: var(--kinora-bg);
-  color: var(--kinora-text);
+  background: var(--magiora-bg);
+  color: var(--magiora-text);
   font-family: var(--font-sans);
   line-height: 1.6;
 }
@@ -46,7 +46,7 @@ textarea {
 }
 
 :where(a, button, input, select, textarea):focus-visible {
-  outline: 2px solid var(--kinora-brand);
+  outline: 2px solid var(--magiora-brand);
   outline-offset: 2px;
 }
 
@@ -56,11 +56,11 @@ textarea {
 }
 
 .k-section {
-  padding-block: var(--kinora-section-space);
+  padding-block: var(--magiora-section-space);
 }
 
 .k-eyebrow {
-  color: var(--kinora-accent);
+  color: var(--magiora-accent);
   font-family: var(--font-serif);
   font-size: 0.75rem;
   font-style: italic;
@@ -86,14 +86,14 @@ textarea {
 }
 
 .k-body {
-  color: var(--kinora-text);
+  color: var(--magiora-text);
   font-family: var(--font-serif);
   font-size: 1rem;
   line-height: 1.7;
 }
 
 .k-body-muted {
-  color: var(--kinora-muted);
+  color: var(--magiora-muted);
   font-family: var(--font-serif);
   font-size: 0.9375rem;
   font-style: italic;
@@ -101,23 +101,23 @@ textarea {
 }
 
 .k-card {
-  background: var(--kinora-surface);
-  border: 1px solid var(--kinora-border);
-  border-radius: var(--kinora-radius);
-  box-shadow: var(--kinora-shadow);
+  background: var(--magiora-surface);
+  border: 1px solid var(--magiora-border);
+  border-radius: var(--magiora-radius);
+  box-shadow: var(--magiora-shadow);
   min-width: 0;
   overflow: hidden;
 }
 
 .k-card-interactive:hover {
-  border-color: var(--kinora-brand);
+  border-color: var(--magiora-brand);
   box-shadow: 0 4px 16px rgb(28 25 23 / 0.07);
 }
 
 .k-button {
   align-items: center;
   border: 1px solid transparent;
-  border-radius: var(--kinora-radius);
+  border-radius: var(--magiora-radius);
   cursor: pointer;
   display: inline-flex;
   font-size: 0.875rem;
@@ -129,37 +129,37 @@ textarea {
 }
 
 .k-button-primary {
-  background: var(--kinora-brand);
+  background: var(--magiora-brand);
   color: white;
 }
 
 .k-button-primary:hover {
-  background: var(--kinora-brand-hover);
+  background: var(--magiora-brand-hover);
 }
 
 .k-button-secondary {
-  background: var(--kinora-surface);
+  background: var(--magiora-surface);
   border-color: #d6d3d1;
-  color: var(--kinora-text);
+  color: var(--magiora-text);
 }
 
 .k-button-secondary:hover {
-  border-color: var(--kinora-brand);
-  color: var(--kinora-brand);
+  border-color: var(--magiora-brand);
+  color: var(--magiora-brand);
 }
 
 .k-button-ghost {
   background: transparent;
-  color: var(--kinora-muted);
+  color: var(--magiora-muted);
 }
 
 .k-button-ghost:hover,
 .k-link:hover {
-  color: var(--kinora-brand);
+  color: var(--magiora-brand);
 }
 
 .k-link {
-  color: var(--kinora-brand);
+  color: var(--magiora-brand);
   font-family: var(--font-serif);
   font-size: 0.875rem;
   font-style: italic;
@@ -171,10 +171,10 @@ textarea {
 }
 
 .k-control {
-  background: var(--kinora-surface);
+  background: var(--magiora-surface);
   border: 1px solid #d6d3d1;
-  border-radius: var(--kinora-radius);
-  color: var(--kinora-text);
+  border-radius: var(--magiora-radius);
+  color: var(--magiora-text);
   font-size: 0.875rem;
   min-height: 2.75rem;
   padding: 0.625rem 0.75rem;
@@ -186,7 +186,7 @@ textarea {
 }
 
 .k-control:focus {
-  border-color: var(--kinora-brand);
+  border-color: var(--magiora-brand);
 }
 
 .k-badge {
@@ -202,22 +202,22 @@ textarea {
 }
 
 .k-empty {
-  background: var(--kinora-surface);
-  border: 1px solid var(--kinora-border);
-  border-radius: var(--kinora-radius);
+  background: var(--magiora-surface);
+  border: 1px solid var(--magiora-border);
+  border-radius: var(--magiora-radius);
   min-height: 16rem;
   padding: clamp(2rem, 6vw, 4rem);
   text-align: center;
 }
 
 .k-skeleton {
-  animation: kinora-pulse 1.6s ease-in-out infinite;
+  animation: magiora-pulse 1.6s ease-in-out infinite;
   background: linear-gradient(90deg, #eeeae2 25%, #f7f4ee 50%, #eeeae2 75%);
   background-size: 200% 100%;
-  border-radius: var(--kinora-radius);
+  border-radius: var(--magiora-radius);
 }
 
-@keyframes kinora-pulse {
+@keyframes magiora-pulse {
   to {
     background-position: -200% 0;
   }

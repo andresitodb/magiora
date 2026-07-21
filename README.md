@@ -6,7 +6,7 @@ El error de Pricing ("Neither apiKey nor config.authenticator provided") es porq
 
 ## 🔧 Instalación
 
-### 1. Descomprimir sobre `E:\kinora\`
+### 1. Descomprimir sobre `E:\MAGIORA\magiora\`
 Sobreescribí todo. Son 11 archivos.
 
 ### 2. Correr el seed SQL (opcional pero recomendado)
