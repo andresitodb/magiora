@@ -10,7 +10,7 @@ export async function requestPasswordReset(formData: FormData) {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${
       process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-    }/reset-password`,
+    }/auth/callback?next=${encodeURIComponent('/reset-password')}`,
   });
 
   // We don't reveal whether the email exists — always show the same "sent" message.
