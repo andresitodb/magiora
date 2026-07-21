@@ -9,6 +9,7 @@ import {
   getProjectTypeLabel,
 } from '@/lib/projects';
 import { applyPublicBrand } from '@/lib/publicBrand';
+import { selectUpcomingEvents } from '@/lib/designPolish';
 
 export const revalidate = 60;
 
@@ -97,11 +98,12 @@ export default async function HomePage() {
       .eq('status', 'published')
       .gte('event_date', nowIso)
       .order('event_date', { ascending: true })
-      .limit(4),
+      .limit(3),
   ]);
 
   const spotlightStories = (stories ?? []) as SpotlightStory[];
   const featuredProject = (featuredProjects?.[0] ?? null) as FeaturedProject | null;
+  const homeUpcomingEvents = selectUpcomingEvents(upcomingEvents ?? [], nowIso);
 
   return (
     <div className="min-h-screen bg-[var(--magiora-bg)]">
@@ -114,6 +116,61 @@ export default async function HomePage() {
           Where ideas become productions.
         </p>
       </section>
+
+      {/* UPCOMING EVENTS */}
+      {homeUpcomingEvents.length > 0 && (
+        <section className="k-home-section max-w-6xl mx-auto px-6 border-b border-[var(--magiora-border)]">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-6">
+            <div>
+              <p className="k-eyebrow mb-1">Upcoming</p>
+              <h2 className="k-section-title">Upcoming Events</h2>
+            </div>
+            <Link href="/events" className="k-editorial-link font-serif italic text-sm">
+              Browse all events →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            {homeUpcomingEvents.map((event) => {
+              const start = new Date(event.event_date);
+              return (
+                <Link
+                  key={event.id}
+                  href={`/events/${event.id}`}
+                  aria-label={`View event: ${event.title}`}
+                  className="k-card k-card-interactive group flex h-full flex-col"
+                >
+                  <div className="aspect-[16/10] overflow-hidden bg-[var(--magiora-soft)]">
+                    {event.cover_image_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={event.cover_image_url}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center font-serif text-3xl text-[var(--magiora-brand)]">
+                        {start.toLocaleDateString('en-US', { day: 'numeric' })}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    <p className="k-eyebrow mb-2 normal-case tracking-normal">
+                      {start.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                    </p>
+                    <h3 className="font-serif text-xl font-medium leading-tight group-hover:text-[var(--magiora-brand)]">
+                      {event.title}
+                    </h3>
+                    {event.location_name && (
+                      <p className="mt-2 font-serif text-sm italic text-stone-500">{event.location_name}</p>
+                    )}
+                    <p className="k-link mt-auto pt-4">View event →</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* SPOTLIGHT */}
       {spotlightStories.length > 0 && (
@@ -293,48 +350,6 @@ export default async function HomePage() {
               </p>
             </div>
           </Link>
-        </section>
-      )}
-
-      {/* UPCOMING EVENTS */}
-      {upcomingEvents && upcomingEvents.length > 0 && (
-        <section className="k-home-section max-w-6xl mx-auto px-6 border-t">
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-6">
-            <div>
-              <p className="k-eyebrow mb-1">
-                The calendar
-              </p>
-              <h2 className="k-section-title">Coming up</h2>
-            </div>
-            <Link href="/events" className="k-editorial-link font-serif italic text-sm">
-              All events →
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {upcomingEvents.map((event) => {
-              const start = new Date(event.event_date);
-              return (
-                <Link
-                  key={event.id}
-                  href={`/events/${event.id}`}
-                  className="k-card k-card-interactive block p-5"
-                >
-                  <p className="font-serif italic text-xs text-[var(--magiora-copper)] mb-2">
-                    {start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                  </p>
-                  <h3 className="font-serif text-base font-medium mb-1 leading-tight">
-                    {event.title}
-                  </h3>
-                  {event.location_name && (
-                    <p className="text-xs text-stone-500 italic font-serif mt-2">
-                      {event.location_name}
-                    </p>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
         </section>
       )}
 

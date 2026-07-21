@@ -7,6 +7,8 @@ import { applyCastingCall } from '@/app/dashboard/casting-calls/actions';
 import type { Metadata } from 'next';
 import { entityMetadata, metadataText, unavailableMetadata } from '@/lib/metadata';
 import { getCastingEntity } from '@/lib/publicEntityLoaders';
+import CastingAccessGate from '@/components/CastingAccessGate';
+import { canBrowseCasting } from '@/lib/designPolish';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,8 +18,18 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const { data: call, error } = await getCastingEntity(id);
   const pathname = `/casting-calls/${encodeURIComponent(id)}`;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!canBrowseCasting(user?.id)) {
+    return {
+      title: 'Casting Calls | Magiora',
+      description: 'Join Magiora to discover verified casting opportunities.',
+    };
+  }
+  const { data: call, error } = await getCastingEntity(id);
 
   if (error || !call || call.status !== 'open') {
     return unavailableMetadata(pathname);
@@ -58,6 +70,10 @@ export default async function CastingCallDetailPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!canBrowseCasting(user?.id)) {
+    return <CastingAccessGate nextPath={`/casting-calls/${id}`} />;
+  }
 
   // REQUIRE LOGIN — non-logged users get redirected to login with next=
   const { data: call } = await getCastingEntity(id);
@@ -229,18 +245,6 @@ export default async function CastingCallDetailPage({
               <p className="font-serif text-lg font-medium text-stone-700">
                 Applications are closed
               </p>
-            </div>
-          ) : !user ? (
-            <div className="bg-[#FAECE7] border border-[#FAC775] rounded-md p-5 text-center">
-              <p className="font-serif text-lg font-medium text-[#712B13] mb-3">
-                Sign in to apply
-              </p>
-              <Link
-                href={`/login?next=${encodeURIComponent(`/casting-calls/${call.id}`)}`}
-                className="k-button k-button-primary"
-              >
-                Sign in
-              </Link>
             </div>
           ) : !isMember ? (
             <div className="bg-[#FAECE7] border border-[#FAC775] rounded-md p-5 text-center">

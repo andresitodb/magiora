@@ -3,6 +3,8 @@ import Nav from '@/components/Nav';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import DiscoveryFilters from '@/components/DiscoveryFilters';
+import CastingAccessGate from '@/components/CastingAccessGate';
+import { canBrowseCasting } from '@/lib/designPolish';
 
 export const dynamic = 'force-dynamic';
 const PAGE_SIZE = 24;
@@ -30,6 +32,7 @@ export default async function CastingCallsPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (!canBrowseCasting(user?.id)) return <CastingAccessGate />;
   const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
 
   let query = supabase
@@ -93,19 +96,6 @@ export default async function CastingCallsPage({
           searchPlaceholder="Project, production, role or description..."
         />
 
-        {!user && (
-          <div className="k-card border-[#FAC775] p-4 mb-6 flex items-start justify-between gap-3 flex-wrap">
-            <p className="font-serif text-sm">
-              <span className="italic text-[#993C1D]">Browse mode.</span>{' '}
-              Sign up free to open call details and apply.
-            </p>
-            <div className="flex gap-2">
-              <Link href="/login?next=/casting-calls" className="k-button k-button-ghost">Sign in</Link>
-              <Link href="/signup" className="k-button k-button-primary">Join free</Link>
-            </div>
-          </div>
-        )}
-
         {error ? (
           <div className="k-empty"><p className="k-body-muted">Casting calls are temporarily unavailable.</p></div>
         ) : calls.length === 0 ? (
@@ -142,7 +132,7 @@ export default async function CastingCallsPage({
                         <span className="text-stone-500 font-normal italic"> in </span>
                         {call.project_title}
                       </h2>
-                      {user && call.role_description && (
+                      {call.role_description && (
                         <p className="text-sm text-stone-600 mt-2 line-clamp-2 italic font-serif">
                           {call.role_description}
                         </p>
@@ -151,11 +141,10 @@ export default async function CastingCallsPage({
                         {(call.location_city || call.location_state) && (
                           <span>{call.location_city}{call.location_city && call.location_state && ', '}{call.location_state}</span>
                         )}
-                        {user && call.compensation && <span>{call.compensation}</span>}
+                        {call.compensation && <span>{call.compensation}</span>}
                         {deadline && <span>Applies by {deadline}</span>}
                       </div>
                     </div>
-                    {!user && <span className="text-xs italic font-serif text-[#993C1D]">Sign in to apply</span>}
                   </div>
                 </Link>
               );

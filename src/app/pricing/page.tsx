@@ -70,10 +70,7 @@ export default async function PricingPage({
           </div>
 
           {/* MEMBER */}
-          <div className="k-card bg-[#FAECE7] border-2 border-[#712B13] p-6 md:p-8 flex flex-col relative overflow-visible">
-            <span className="k-badge absolute -top-3 right-6 bg-[#712B13] text-white">
-              Recommended
-            </span>
+          <div className="k-card bg-[#FAECE7] border-2 border-[#712B13] p-6 md:p-8 flex flex-col">
             <p className="font-serif italic text-xs text-[#712B13] uppercase tracking-widest mb-2">Paid</p>
             <h2 className="font-serif text-2xl font-medium mb-1">Member</h2>
             <p className="font-serif italic text-sm text-stone-600 mb-6">For working artists.</p>

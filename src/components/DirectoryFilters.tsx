@@ -114,8 +114,8 @@ export default function DirectoryFilters({
   const hasAnyFilter = activeFilters.length > 0;
 
   return (
-    <div className="k-card p-4 md:p-5 space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+    <div className="k-card p-3 md:p-4 space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
         <div>
           <label className="block text-xs font-medium text-stone-600 mb-1 italic font-serif">
             Search by name

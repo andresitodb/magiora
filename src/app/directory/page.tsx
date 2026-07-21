@@ -2,10 +2,19 @@ import { createAnonClient } from '@/lib/supabase/anon';
 import Nav from '@/components/Nav';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import DirectoryFilters from '@/components/DirectoryFilters';
 import { getLanguageName, LANGUAGES } from '@/lib/languages';
+import {
+  DIRECTORY_PAGE_SIZE,
+  DIRECTORY_RANDOM_POOL_SIZE,
+  projectCountLabel,
+  seededSubset,
+  shouldRandomizeDirectory,
+  stringSeed,
+} from '@/lib/designPolish';
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = DIRECTORY_PAGE_SIZE;
 
 type DirectoryProfile = {
   id: string;
@@ -57,6 +66,14 @@ export default async function DirectoryPage({
     Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+  const hasFilters = Boolean(
+    params.role || params.city || params.lang || params.q || params.verified === '1'
+  );
+  const randomizeDefault = shouldRandomizeDirectory({
+    hasFilters,
+    hasExplicitSort: params.sort !== undefined,
+    page: currentPage,
+  });
 
   let query = supabase
     .from('profiles')
@@ -93,7 +110,11 @@ export default async function DirectoryPage({
   const sort = ['relevance', 'newest', 'verified', 'name'].includes(params.sort ?? '')
     ? params.sort!
     : 'relevance';
-  if (sort === 'newest') {
+  if (randomizeDefault) {
+    // PostgREST has no safe random order. Fetch a bounded RLS-protected pool,
+    // then choose a per-request server-side subset; never shuffle in the client.
+    query = query.order('id', { ascending: true });
+  } else if (sort === 'newest') {
     query = query.order('created_at', { ascending: false });
   } else if (sort === 'name') {
     query = query.order('display_name', { ascending: true, nullsFirst: false });
@@ -107,7 +128,9 @@ export default async function DirectoryPage({
       query = query.order('display_name', { ascending: true, nullsFirst: false });
     }
   }
-  const profilesPromise = query.range(from, to);
+  const profilesPromise = randomizeDefault
+    ? query.limit(DIRECTORY_RANDOM_POOL_SIZE)
+    : query.range(from, to);
 
   // Fetch distinct cities for autocomplete
   const cityRowsPromise = supabase
@@ -123,11 +146,21 @@ export default async function DirectoryPage({
     cityRowsPromise,
   ]);
   const {
-    data: profiles,
+    data: profileRows,
     count: totalCount,
     error: profilesError,
     status: profilesStatus,
   } = profilesResult;
+  const requestHeaders = randomizeDefault ? await headers() : null;
+  const requestSeed = stringSeed(
+    requestHeaders?.get('x-vercel-id') ??
+      requestHeaders?.get('x-request-id') ??
+      requestHeaders?.get('user-agent') ??
+      'magiora-directory'
+  );
+  const profiles = randomizeDefault
+    ? seededSubset(profileRows ?? [], PAGE_SIZE, requestSeed)
+    : profileRows;
   const {
     data: cityRows,
     error: cityRowsError,
@@ -281,7 +314,7 @@ export default async function DirectoryPage({
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mt-8">
             {(profiles as DirectoryProfile[]).map((p) => {
               const roleTitle =
                 (p.role_titles ?? [])[0] ??
@@ -337,12 +370,15 @@ export default async function DirectoryPage({
                         {p.languages.slice(0, 3).map(getLanguageName).join(' · ')}
                       </p>
                     )}
-                    {projectCountsAvailable && (
+                    {projectCountLabel(
+                      projectCountByProfile.get(p.id) ?? 0,
+                      projectCountsAvailable
+                    ) && (
                       <p className="text-xs text-stone-400 italic font-serif mt-2">
-                        {projectCountByProfile.get(p.id) ?? 0}{' '}
-                        {(projectCountByProfile.get(p.id) ?? 0) === 1
-                          ? 'project'
-                          : 'projects'}
+                        {projectCountLabel(
+                          projectCountByProfile.get(p.id) ?? 0,
+                          projectCountsAvailable
+                        )}
                       </p>
                     )}
                   </div>
