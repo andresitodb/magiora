@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 type CastingApplicationRow = {
   id: string;
@@ -23,13 +24,7 @@ export default async function MyCastingCallsPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user!.id)
-    .single();
-
-  const isMember = profile?.plan === 'member';
+  const isMember = await hasPaidMembership(user!.id);
 
   const { data: myCalls } = await supabase
     .from('casting_calls')

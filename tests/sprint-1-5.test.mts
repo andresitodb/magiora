@@ -7,6 +7,12 @@ import {
   isStaleSubscriptionEvent,
   subscriptionProfileId,
 } from '../src/lib/stripeSubscription.ts';
+import { inspectBillingConfig } from '../src/lib/billingConfig.ts';
+import {
+  grantsPaidAccess,
+  internalPlanForPrice,
+  isOlderStripeEvent,
+} from '../src/lib/billingSubscription.ts';
 
 test('safeLocalRedirect accepts local paths and rejects redirect bypasses', () => {
   assert.equal(safeLocalRedirect('/dashboard?tab=profile', '/'), '/dashboard?tab=profile');
@@ -50,6 +56,43 @@ test('Stripe metadata and stale-event ordering prefer the current subscription',
   assert.equal(isStaleSubscriptionEvent('sub_current', 'sub_old'), true);
   assert.equal(isStaleSubscriptionEvent('sub_current', 'sub_current'), false);
   assert.equal(isStaleSubscriptionEvent(null, 'sub_first'), false);
+});
+
+test('billing configuration distinguishes disabled, broken, and enabled states', () => {
+  assert.equal(inspectBillingConfig({}).status, 'disabled');
+  const broken = inspectBillingConfig({ STRIPE_SECRET_KEY: 'bad' });
+  assert.equal(broken.status, 'broken');
+  if (broken.status === 'broken') {
+    assert.ok(broken.issues.includes('STRIPE_WEBHOOK_SECRET is missing'));
+    assert.ok(broken.issues.includes('STRIPE_SECRET_KEY has an invalid format'));
+  }
+
+  const enabled = inspectBillingConfig({
+    STRIPE_SECRET_KEY: 'sk_test_example',
+    STRIPE_WEBHOOK_SECRET: 'whsec_example',
+    STRIPE_PRICE_ID_MONTHLY: 'price_monthly',
+    STRIPE_PRICE_ID_ANNUAL: 'price_annual',
+    NEXT_PUBLIC_SITE_URL: 'https://staging.magiora.example',
+    NEXT_PUBLIC_SUPABASE_URL: 'https://project.supabase.co',
+    SUPABASE_SERVICE_ROLE_KEY: 'service-role-example',
+    VERCEL_ENV: 'preview',
+  });
+  assert.equal(enabled.status, 'enabled');
+});
+
+test('billing access and ordering use authoritative subscription state', () => {
+  const future = new Date(Date.now() + 60_000).toISOString();
+  const past = new Date(Date.now() - 60_000).toISOString();
+  assert.equal(grantsPaidAccess('active', future), true);
+  assert.equal(grantsPaidAccess('trialing', future), true);
+  assert.equal(grantsPaidAccess('past_due', future), false);
+  assert.equal(grantsPaidAccess('active', past), false);
+  assert.equal(
+    isOlderStripeEvent('2026-07-20T12:00:00.000Z', Date.parse('2026-07-20T11:00:00.000Z') / 1000),
+    true
+  );
+  assert.equal(internalPlanForPrice('price_m', 'price_m', 'price_a'), 'member_monthly');
+  assert.equal(internalPlanForPrice('price_unknown', 'price_m', 'price_a'), null);
 });
 
 test('casting eligibility rejects non-members, owners, closed and duplicate applications', () => {

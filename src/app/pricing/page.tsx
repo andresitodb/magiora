@@ -1,7 +1,8 @@
 import Nav from '@/components/Nav';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { startCheckout } from './actions';
+import { hasPaidMembership } from '@/lib/billingServer';
+import { openBillingPortal, startCheckout } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,17 +17,7 @@ export default async function PricingPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  let currentPlan: string | null = null;
-  if (user) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('plan')
-      .eq('id', user.id)
-      .single();
-    currentPlan = data?.plan ?? null;
-  }
-
-  const isOnMember = currentPlan === 'member';
+  const isOnMember = user ? await hasPaidMembership(user.id) : false;
 
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
@@ -118,7 +109,11 @@ export default async function PricingPage({
                 </Link>
               </div>
             ) : isOnMember ? (
-              <p className="mt-8 text-center text-sm italic font-serif text-[#712B13]">You&apos;re a Member.</p>
+              <form action={openBillingPortal} className="mt-8">
+                <button type="submit" className="k-button k-button-primary w-full">
+                  Manage billing
+                </button>
+              </form>
             ) : (
               <div className="mt-8 grid grid-cols-2 gap-2">
                 <form action={startCheckout}>

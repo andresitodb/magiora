@@ -1,185 +1,215 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
-import {
-  isStaleSubscriptionEvent,
-  subscriptionProfileId,
-} from '@/lib/stripeSubscription';
+import type Stripe from 'stripe';
+import { getBillingClients } from '@/lib/billingServer';
+import { internalPlanForPrice } from '@/lib/billingSubscription';
 
-function getWebhookClients() {
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+type WebhookClaim = 'claimed' | 'completed' | 'busy';
 
-  if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !serviceRoleKey) {
-    throw new Error('Stripe webhook environment is not configured');
-  }
-
-  return {
-    stripe: new Stripe(stripeSecretKey),
-    webhookSecret,
-    supabaseAdmin: createClient(supabaseUrl, serviceRoleKey),
-  };
-}
-
-function errorMessage(error: unknown): string {
+function message(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function eventObjectId(event: Stripe.Event): string | null {
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    return typeof session.subscription === 'string'
+      ? session.subscription
+      : session.id;
+  }
+  return 'id' in event.data.object && typeof event.data.object.id === 'string'
+    ? event.data.object.id
+    : null;
+}
+
+async function resolveProfileId(
+  subscription: Stripe.Subscription,
+  supabaseAdmin: ReturnType<typeof getBillingClients>['supabaseAdmin']
+): Promise<string | null> {
+  if (subscription.metadata.profile_id) return subscription.metadata.profile_id;
+
+  const { data, error } = await supabaseAdmin
+    .from('subscriptions')
+    .select('profile_id')
+    .or(
+      `stripe_subscription_id.eq.${subscription.id},stripe_customer_id.eq.${String(subscription.customer)}`
+    )
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error('Subscription owner lookup failed');
+  return data?.profile_id ?? null;
+}
+
+async function syncSubscription(
+  subscription: Stripe.Subscription,
+  event: Stripe.Event,
+  clients: ReturnType<typeof getBillingClients>,
+  checkoutProfileId?: string | null
+) {
+  const item = subscription.items.data[0];
+  if (!item) throw new Error('Subscription has no items');
+  const profileId =
+    checkoutProfileId ??
+    (await resolveProfileId(subscription, clients.supabaseAdmin));
+  if (!profileId) throw new Error('Subscription owner is unknown');
+
+  const internalPlan = internalPlanForPrice(
+    item.price.id,
+    clients.config.monthlyPriceId,
+    clients.config.annualPriceId
+  );
+  if (!internalPlan) throw new Error('Subscription uses an unknown Stripe price');
+
+  const { data, error } = await clients.supabaseAdmin.rpc(
+    'sync_stripe_subscription',
+    {
+      p_profile_id: profileId,
+      p_customer_id: String(subscription.customer),
+      p_subscription_id: subscription.id,
+      p_price_id: item.price.id,
+      p_plan: internalPlan,
+      p_status: subscription.status,
+      p_period_start: new Date(item.current_period_start * 1000).toISOString(),
+      p_period_end: new Date(item.current_period_end * 1000).toISOString(),
+      p_cancel_at_period_end: subscription.cancel_at_period_end,
+      p_cancel_at: subscription.cancel_at
+        ? new Date(subscription.cancel_at * 1000).toISOString()
+        : null,
+      p_canceled_at: subscription.canceled_at
+        ? new Date(subscription.canceled_at * 1000).toISOString()
+        : null,
+      p_event_created_at: new Date(event.created * 1000).toISOString(),
+    }
+  );
+  if (error) throw new Error(`Subscription synchronization failed: ${error.message}`);
+  if (data === false) {
+    console.info('[billing] Stale Stripe event ignored', {
+      eventId: event.id,
+      eventType: event.type,
+      subscriptionId: subscription.id,
+    });
+  }
+}
+
 export async function POST(request: NextRequest) {
-  let clients: ReturnType<typeof getWebhookClients>;
+  let clients: ReturnType<typeof getBillingClients>;
   try {
-    clients = getWebhookClients();
+    clients = getBillingClients();
   } catch (error) {
-    console.error('Stripe webhook configuration error:', error);
-    return NextResponse.json({ error: 'webhook not configured' }, { status: 503 });
+    console.error('[billing] Webhook configuration invalid', {
+      message: message(error),
+    });
+    return NextResponse.json({ error: 'webhook unavailable' }, { status: 503 });
   }
 
-  const { stripe, webhookSecret, supabaseAdmin } = clients;
-  const body = await request.text();
   const signature = request.headers.get('stripe-signature');
   if (!signature) {
     return NextResponse.json({ error: 'missing signature' }, { status: 400 });
   }
 
+  const rawBody = await request.text();
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err: unknown) {
-    console.error('Webhook signature failed:', errorMessage(err));
+    event = clients.stripe.webhooks.constructEvent(
+      rawBody,
+      signature,
+      clients.config.stripeWebhookSecret
+    );
+  } catch (error) {
+    console.warn('[billing] Webhook signature rejected', {
+      message: message(error),
+    });
     return NextResponse.json({ error: 'invalid signature' }, { status: 400 });
+  }
+
+  const objectId = eventObjectId(event);
+  const { data: claim, error: claimError } = await clients.supabaseAdmin.rpc(
+    'claim_stripe_webhook_event',
+    {
+      p_event_id: event.id,
+      p_event_type: event.type,
+      p_stripe_created_at: new Date(event.created * 1000).toISOString(),
+      p_stripe_object_id: objectId,
+    }
+  );
+  if (claimError) {
+    console.error('[billing] Webhook event claim failed', {
+      eventId: event.id,
+      eventType: event.type,
+      message: claimError.message,
+    });
+    return NextResponse.json({ error: 'event ledger unavailable' }, { status: 503 });
+  }
+  if ((claim as WebhookClaim) === 'completed') {
+    console.info('[billing] Duplicate webhook acknowledged', {
+      eventId: event.id,
+      eventType: event.type,
+    });
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+  if ((claim as WebhookClaim) === 'busy') {
+    return NextResponse.json({ error: 'event already processing' }, { status: 409 });
   }
 
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        const sub = await stripe.subscriptions.retrieve(
-          session.subscription as string
+        if (typeof session.subscription !== 'string') {
+          throw new Error('Checkout did not contain a subscription');
+        }
+        const subscription = await clients.stripe.subscriptions.retrieve(
+          session.subscription
         );
-        const profileId = subscriptionProfileId(
-          session.metadata?.profile_id,
-          sub.metadata.profile_id
+        await syncSubscription(
+          subscription,
+          event,
+          clients,
+          session.metadata?.profile_id
         );
-        if (!profileId) break;
-        const subscriptionItem = sub.items.data[0];
-        if (!subscriptionItem) break;
-
-        const { error: subscriptionError } = await supabaseAdmin
-          .from('subscriptions')
-          .upsert(
-            {
-              profile_id: profileId,
-              stripe_customer_id: session.customer as string,
-              stripe_subscription_id: sub.id,
-              status: sub.status,
-              plan:
-                subscriptionItem.price.recurring?.interval === 'year'
-                  ? 'member_annual'
-                  : 'member_monthly',
-              current_period_start: new Date(
-                subscriptionItem.current_period_start * 1000
-              ).toISOString(),
-              current_period_end: new Date(
-                subscriptionItem.current_period_end * 1000
-              ).toISOString(),
-            },
-            { onConflict: 'profile_id' }
-          );
-        if (subscriptionError) throw subscriptionError;
-
-        const { error: profileError } = await supabaseAdmin
-          .from('profiles')
-          .update({ plan: 'member' })
-          .eq('id', profileId);
-        if (profileError) throw profileError;
-
         break;
       }
-
+      case 'customer.subscription.created':
       case 'customer.subscription.updated':
-      case 'customer.subscription.deleted': {
-        const sub = event.data.object as Stripe.Subscription;
-        const profileId = sub.metadata?.profile_id;
-        if (!profileId) break;
-        const subscriptionItem = sub.items.data[0];
-        if (!subscriptionItem) break;
-
-        const { data: storedSubscription, error: storedLookupError } =
-          await supabaseAdmin
-            .from('subscriptions')
-            .select('stripe_subscription_id')
-            .eq('profile_id', profileId)
-            .maybeSingle();
-        if (storedLookupError) throw storedLookupError;
-        if (
-          isStaleSubscriptionEvent(
-            storedSubscription?.stripe_subscription_id,
-            sub.id
-          )
-        ) {
-          break;
-        }
-
-        const { error: subscriptionError } = await supabaseAdmin
-          .from('subscriptions')
-          .upsert(
-            {
-              profile_id: profileId,
-              stripe_customer_id: sub.customer as string,
-              stripe_subscription_id: sub.id,
-              status: sub.status,
-              plan:
-                subscriptionItem.price.recurring?.interval === 'year'
-                  ? 'member_annual'
-                  : 'member_monthly',
-              current_period_start: new Date(
-                subscriptionItem.current_period_start * 1000
-              ).toISOString(),
-              current_period_end: new Date(
-                subscriptionItem.current_period_end * 1000
-              ).toISOString(),
-              cancel_at: sub.cancel_at
-                ? new Date(sub.cancel_at * 1000).toISOString()
-                : null,
-              canceled_at: sub.canceled_at
-                ? new Date(sub.canceled_at * 1000).toISOString()
-                : null,
-            },
-            { onConflict: 'profile_id' }
-          );
-        if (subscriptionError) throw subscriptionError;
-
-        if (sub.status === 'active' || sub.status === 'trialing') {
-          const { error: profileError } = await supabaseAdmin
-            .from('profiles')
-            .update({ plan: 'member' })
-            .eq('id', profileId);
-          if (profileError) throw profileError;
-        } else {
-          const { data: currentSubscription, error: lookupError } =
-            await supabaseAdmin
-              .from('subscriptions')
-              .select('stripe_subscription_id')
-              .eq('profile_id', profileId)
-              .maybeSingle();
-          if (lookupError) throw lookupError;
-
-          if (currentSubscription?.stripe_subscription_id === sub.id) {
-            const { error: profileError } = await supabaseAdmin
-              .from('profiles')
-              .update({ plan: 'listed' })
-              .eq('id', profileId);
-            if (profileError) throw profileError;
-          }
-        }
+      case 'customer.subscription.deleted':
+        await syncSubscription(
+          event.data.object as Stripe.Subscription,
+          event,
+          clients
+        );
         break;
-      }
+      case 'invoice.paid':
+      case 'invoice.payment_failed':
+        console.info('[billing] Invoice event recorded; subscription events remain authoritative', {
+          eventId: event.id,
+          eventType: event.type,
+        });
+        break;
+      default:
+        console.info('[billing] Unsupported Stripe event recorded and ignored', {
+          eventId: event.id,
+          eventType: event.type,
+        });
     }
-  } catch (err: unknown) {
-    console.error('Webhook handler error:', err);
-    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
+
+    const { error: finishError } = await clients.supabaseAdmin.rpc(
+      'finish_stripe_webhook_event',
+      { p_event_id: event.id, p_success: true, p_error_summary: null }
+    );
+    if (finishError) throw new Error('Unable to complete webhook ledger entry');
+  } catch (error) {
+    const errorSummary = message(error).slice(0, 500);
+    await clients.supabaseAdmin.rpc('finish_stripe_webhook_event', {
+      p_event_id: event.id,
+      p_success: false,
+      p_error_summary: errorSummary,
+    });
+    console.error('[billing] Webhook processing failed', {
+      eventId: event.id,
+      eventType: event.type,
+      objectId,
+      message: errorSummary,
+    });
+    return NextResponse.json({ error: 'webhook processing failed' }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

@@ -5,10 +5,16 @@ import CompletenessBar from '@/components/CompletenessBar';
 import DashboardCard, { DashboardIcons } from '@/components/DashboardCard';
 import Toast from '@/components/Toast';
 import { Suspense } from 'react';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 export const dynamic = 'force-dynamic';
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string }>;
+}) {
+  const params = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,6 +28,9 @@ export default async function DashboardPage() {
     .single();
 
   if (!profile) redirect('/login');
+
+  const checkoutMembership =
+    params.checkout === 'pending' ? await hasPaidMembership(user.id) : null;
 
   // Counts for badges on cards
   const [
@@ -63,6 +72,21 @@ export default async function DashboardPage() {
       <Suspense fallback={null}>
         <Toast />
       </Suspense>
+
+      {checkoutMembership !== null && (
+        <div
+          className={`k-card p-4 mb-8 text-sm font-serif ${
+            checkoutMembership
+              ? 'border-green-200 bg-green-50 text-green-900'
+              : 'border-amber-200 bg-amber-50 text-amber-900'
+          }`}
+          role="status"
+        >
+          {checkoutMembership
+            ? 'Your Magiora membership is active.'
+            : 'Your payment is being confirmed. Membership access will activate after Stripe confirms it.'}
+        </div>
+      )}
 
       {/* Welcome header */}
       <div className="mb-8">

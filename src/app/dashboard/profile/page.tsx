@@ -19,6 +19,7 @@ import Toast from '@/components/Toast';
 import { SectionIcons } from '@/components/SectionIcons';
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 const FREE_SKILL_LIMIT = 5;
 const FREE_GALLERY_LIMIT = 3;
@@ -46,7 +47,7 @@ export default async function ProfileEditPage() {
 
   if (!profile) return null;
 
-  const isMember = profile.plan === 'member';
+  const isMember = await hasPaidMembership(user!.id);
   const isActorPrimary =
     profile.role_category === 'actor' ||
     (profile.role_titles?.[0] && ['actor', 'lead actor', 'supporting actor', 'background actor', 'voice actor'].includes((profile.role_titles[0] as string).toLowerCase()));

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { postCastingCall } from '../actions';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 export default async function NewCastingCallPage({
   searchParams,
@@ -13,13 +14,7 @@ export default async function NewCastingCallPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user!.id)
-    .single();
-
-  if (profile?.plan !== 'member') {
+  if (!(await hasPaidMembership(user!.id))) {
     redirect('/dashboard?error=members_only');
   }
 

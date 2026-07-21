@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requestFeature } from '../actions';
 import BackLink from '@/components/BackLink';
 import AutoGrowTextarea from '@/components/AutoGrowTextarea';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 export default async function RequestFeaturePage({
   searchParams,
@@ -15,13 +16,9 @@ export default async function RequestFeaturePage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan, display_name')
-    .eq('id', user!.id)
-    .single();
-
-  if (profile?.plan !== 'member') redirect('/pricing?reason=feature_request');
+  if (!(await hasPaidMembership(user!.id))) {
+    redirect('/pricing?reason=feature_request');
+  }
 
   const { data: existing } = await supabase
     .from('interviews')

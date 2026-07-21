@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { postEvent } from '../actions';
 import BackLink from '@/components/BackLink';
 import AutoGrowTextarea from '@/components/AutoGrowTextarea';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 export default async function NewEventPage({
   searchParams,
@@ -14,13 +15,9 @@ export default async function NewEventPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user!.id)
-    .single();
-
-  if (profile?.plan !== 'member') redirect('/dashboard?error=members_only');
+  if (!(await hasPaidMembership(user!.id))) {
+    redirect('/dashboard?error=members_only');
+  }
 
   return (
     <div className="max-w-2xl">

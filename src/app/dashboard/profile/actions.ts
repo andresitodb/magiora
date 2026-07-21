@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { hasPaidMembership } from '@/lib/billingServer';
 import { categoryForTitle, CUSTOM_FALLBACK_CATEGORY } from '@/lib/role_titles';
 import { TEMPLATES, ACCENTS, DEFAULT_TEMPLATE, DEFAULT_ACCENT } from '@/lib/profile_themes';
 
@@ -53,10 +54,10 @@ export async function updateProfile(formData: FormData) {
 
   const { data: existingProfile } = await supabase
     .from('profiles')
-    .select('plan, slug')
+    .select('slug')
     .eq('id', user.id)
     .single();
-  const isMember = existingProfile?.plan === 'member';
+  const isMember = await hasPaidMembership(user.id);
 
   const roleTitles = formData
     .getAll('role_titles')

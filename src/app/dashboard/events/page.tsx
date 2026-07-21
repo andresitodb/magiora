@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import BackLink from '@/components/BackLink';
 import Link from 'next/link';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 type EventRsvpRow = {
   status: string;
@@ -23,12 +24,7 @@ export default async function MyEventsPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user!.id)
-    .single();
-  const isMember = profile?.plan === 'member';
+  const isMember = await hasPaidMembership(user!.id);
 
   const { data: myEvents } = await supabase
     .from('events')

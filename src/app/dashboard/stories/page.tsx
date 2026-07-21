@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import BackLink from '@/components/BackLink';
 import Link from 'next/link';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 export default async function MyStoriesPage() {
   const supabase = await createClient();
@@ -8,12 +9,7 @@ export default async function MyStoriesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user!.id)
-    .single();
-  const isMember = profile?.plan === 'member';
+  const isMember = await hasPaidMembership(user!.id);
 
   const { data: myInterviews } = await supabase
     .from('interviews')

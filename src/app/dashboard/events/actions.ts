@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 export async function postEvent(formData: FormData) {
   const supabase = await createClient();
@@ -12,12 +13,9 @@ export async function postEvent(formData: FormData) {
 
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user.id)
-    .single();
-  if (profile?.plan !== 'member') redirect('/dashboard?error=members_only');
+  if (!(await hasPaidMembership(user.id))) {
+    redirect('/dashboard?error=members_only');
+  }
 
   const action = formData.get('submit_action') as string;
   const status = action === 'submit' ? 'pending_review' : 'draft';

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { castingApplicationIssue } from '@/lib/castingEligibility';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 function isHttpUrl(value: string): boolean {
   if (!value) return true;
@@ -25,12 +26,7 @@ export async function postCastingCall(formData: FormData) {
     redirect('/login');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user.id)
-    .single();
-  if (profile?.plan !== 'member') {
+  if (!(await hasPaidMembership(user.id))) {
     redirect('/dashboard?error=members_only');
   }
 
@@ -136,12 +132,6 @@ export async function applyCastingCall(formData: FormData) {
     redirect('/casting-calls?error=invalid_call');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user.id)
-    .single();
-
   const { data: call } = await supabase
     .from('casting_calls')
     .select('id, status, posted_by, application_deadline')
@@ -158,7 +148,7 @@ export async function applyCastingCall(formData: FormData) {
     .eq('applicant_id', user.id)
     .maybeSingle();
   const eligibilityIssue = castingApplicationIssue({
-    isMember: profile?.plan === 'member',
+    isMember: await hasPaidMembership(user.id),
     status: call.status,
     isOwner: call.posted_by === user.id,
     applicationDeadline: call.application_deadline,

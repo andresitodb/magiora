@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { hasPaidMembership } from '@/lib/billingServer';
 
 export async function requestFeature(formData: FormData) {
   const supabase = await createClient();
@@ -11,13 +12,7 @@ export async function requestFeature(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.plan !== 'member') {
+  if (!(await hasPaidMembership(user.id))) {
     redirect('/pricing?reason=feature_request');
   }
 
