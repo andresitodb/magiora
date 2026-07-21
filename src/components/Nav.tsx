@@ -4,7 +4,16 @@ import LocaleSwitcher from '@/components/LocaleSwitcher';
 import GlobalSearch from '@/components/GlobalSearch';
 import NavMobileMenu from '@/components/NavMobileMenu';
 import NotificationsBell from '@/components/NotificationsBell';
+import MagioraLogo from '@/components/brand/MagioraLogo';
 import Link from 'next/link';
+
+function UserOutlineIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-4 w-4 shrink-0">
+      <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 type NavProfile = {
   display_name: string;
@@ -77,19 +86,20 @@ export default async function Nav({
   const links = isAdmin ? adminLinks : publicLinks;
 
   const linkClass = isAdmin
-    ? 'text-stone-300 hover:text-white text-sm whitespace-nowrap'
-    : 'text-stone-700 hover:text-[#712B13] text-sm whitespace-nowrap';
+    ? 'text-stone-300 hover:text-white text-sm whitespace-nowrap transition-colors'
+    : 'text-stone-700 hover:text-[var(--magiora-brand)] text-sm whitespace-nowrap transition-colors';
 
   const logoHref = '/';
 
   return (
-    <nav className={isAdmin ? 'border-b border-stone-700 bg-stone-900' : 'border-b border-stone-200 bg-white'}>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 md:gap-4">
+    <nav className={isAdmin ? 'border-b border-stone-700 bg-stone-900' : 'border-b border-[var(--magiora-border)] bg-white'}>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between gap-2 md:gap-4">
         <Link
           href={logoHref}
-          className={`font-serif text-xl md:text-2xl font-medium shrink-0 ${isAdmin ? 'text-white' : 'text-stone-900'}`}
+          aria-label="Magiora home"
+          className="shrink-0 rounded-sm"
         >
-          Magiora
+          <MagioraLogo inverse={isAdmin} />
           {isAdmin && (
             <span className="text-stone-400 italic text-xs md:text-sm ml-2 hidden sm:inline">editor&apos;s desk</span>
           )}
@@ -168,8 +178,9 @@ export default async function Nav({
             <>
               <Link
                 href="/login"
-                className="text-[#712B13] hover:text-[#4A1B0C] text-sm font-medium whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 text-[var(--magiora-brand)] hover:text-[var(--magiora-brand-hover)] text-sm font-medium whitespace-nowrap"
               >
+                <UserOutlineIcon />
                 {tr('nav.sign_in', 'Sign in')}
               </Link>
               <Link

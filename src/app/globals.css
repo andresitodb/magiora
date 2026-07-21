@@ -7,15 +7,16 @@
 }
 
 :root {
-  --magiora-bg: #f5f3ee;
+  --magiora-bg: #f7f6f4;
   --magiora-surface: #ffffff;
-  --magiora-text: #1c1917;
+  --magiora-text: #191715;
   --magiora-muted: #78716c;
   --magiora-border: #e7e5e4;
-  --magiora-brand: #712b13;
-  --magiora-brand-hover: #4a1b0c;
-  --magiora-accent: #993c1d;
-  --magiora-soft: #faece7;
+  --magiora-brand: #6b3f2a;
+  --magiora-brand-hover: #503020;
+  --magiora-accent: #6b3f2a;
+  --magiora-copper: #a86b45;
+  --magiora-soft: #f1ebe7;
   --magiora-radius: 0.5rem;
   --magiora-shadow: 0 1px 2px rgb(28 25 23 / 0.04);
   --magiora-section-space: clamp(3rem, 6vw, 5rem);
@@ -111,7 +112,7 @@ textarea {
 
 .k-card-interactive:hover {
   border-color: var(--magiora-brand);
-  box-shadow: 0 4px 16px rgb(28 25 23 / 0.07);
+  box-shadow: 0 2px 10px rgb(25 23 21 / 0.05);
 }
 
 .k-button {
@@ -166,6 +167,22 @@ textarea {
   text-underline-offset: 0.2em;
 }
 
+.k-editorial-link {
+  color: var(--magiora-brand);
+  text-decoration-color: transparent;
+  text-underline-offset: 0.25em;
+}
+
+.k-editorial-link:hover {
+  text-decoration-color: currentColor;
+  text-decoration-line: underline;
+}
+
+.k-home-section {
+  border-color: var(--magiora-border);
+  padding-block: clamp(3rem, 6vw, 4.5rem);
+}
+
 .k-link:hover {
   text-decoration: underline;
 }
@@ -212,14 +229,13 @@ textarea {
 
 .k-skeleton {
   animation: magiora-pulse 1.6s ease-in-out infinite;
-  background: linear-gradient(90deg, #eeeae2 25%, #f7f4ee 50%, #eeeae2 75%);
-  background-size: 200% 100%;
+  background: #eeeae5;
   border-radius: var(--magiora-radius);
 }
 
 @keyframes magiora-pulse {
   to {
-    background-position: -200% 0;
+    opacity: 0.45;
   }
 }
 

@@ -22,15 +22,18 @@ export default function NewsletterSignup() {
   }
 
   return (
-    <div className="max-w-md mx-auto text-center">
-      <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-2">
+    <div className="max-w-xl mx-auto text-center">
+      <p className="k-eyebrow mb-2">
         The Magiora dispatch
       </p>
-      <p className="font-serif text-base text-stone-700 mb-4">
+      <h2 className="font-serif text-2xl md:text-3xl font-medium text-[var(--magiora-text)]">
+        Stories worth following
+      </h2>
+      <p className="font-serif text-base text-stone-600 mt-2 mb-6">
         A monthly note on the professionals, projects, and films we&apos;re tracking.
       </p>
 
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
         <input
           type="email"
           value={email}
@@ -41,11 +44,12 @@ export default function NewsletterSignup() {
           required
           autoCapitalize="none"
           placeholder="your@email.com"
-          className="flex-1 px-3 py-2 border border-stone-300 rounded-md bg-white text-sm"
+          aria-label="Email address"
+          className="k-control flex-1"
         />
         <button
           type="submit"
-          className="bg-[#712B13] text-white px-5 py-2 rounded-md font-medium text-sm hover:bg-[#4A1B0C] cursor-pointer whitespace-nowrap"
+          className="k-button k-button-primary whitespace-nowrap"
         >
           Subscribe
         </button>

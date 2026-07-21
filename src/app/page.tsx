@@ -104,11 +104,11 @@ export default async function HomePage() {
   const featuredProject = (featuredProjects?.[0] ?? null) as FeaturedProject | null;
 
   return (
-    <div className="min-h-screen bg-[#f5f3ee]">
+    <div className="min-h-screen bg-[var(--magiora-bg)]">
       <Nav />
 
       {/* Masthead */}
-      <section className="max-w-6xl mx-auto px-6 pt-10 pb-8 text-center border-b border-stone-300">
+      <section className="max-w-6xl mx-auto px-6 pt-12 pb-10 md:pt-16 md:pb-12 text-center border-b border-[var(--magiora-border)]">
         <h1 className="k-page-title text-5xl md:text-7xl">Magiora</h1>
         <p className="font-serif italic text-base text-stone-500 mt-3">
           Where ideas become productions.
@@ -120,12 +120,12 @@ export default async function HomePage() {
         <section className="max-w-6xl mx-auto px-6 py-12">
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-8">
             <div>
-              <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
+              <p className="k-eyebrow mb-1">
                 In conversation
               </p>
               <h2 className="k-section-title">Spotlight</h2>
             </div>
-            <Link href="/stories" className="font-serif italic text-sm text-[#712B13] hover:underline">
+            <Link href="/stories" className="k-editorial-link font-serif italic text-sm">
               Explore Spotlight →
             </Link>
           </div>
@@ -144,20 +144,20 @@ export default async function HomePage() {
                         <img
                           src={story.hero_image_url ?? subject?.headshot_url ?? ''}
                           alt={applyPublicBrand(story.title)}
-                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
+                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-[#FAECE7] to-[#FBEAF0] flex items-center justify-center font-serif italic text-4xl text-[#712B13]">
+                        <div className="w-full h-full bg-[var(--magiora-soft)] flex items-center justify-center font-serif italic text-4xl text-[var(--magiora-brand)]">
                           {(subject?.display_name?.[0] ?? story.title?.[0] ?? '?').toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="p-5 flex flex-1 flex-col">
-                      <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-2">
+                      <p className="k-eyebrow mb-2">
                         Spotlight
                         {subject?.display_name && ` · On ${subject.display_name}`}
                       </p>
-                      <h3 className="font-serif text-xl md:text-2xl font-medium mb-3 group-hover:text-[#712B13] transition-colors leading-tight line-clamp-2 min-h-[3.5rem]">
+                      <h3 className="font-serif text-xl md:text-2xl font-medium mb-3 group-hover:text-[var(--magiora-brand)] transition-colors leading-tight line-clamp-2 min-h-[3.5rem]">
                         {applyPublicBrand(story.title)}
                       </h3>
                       {story.intro && (
@@ -165,7 +165,7 @@ export default async function HomePage() {
                           {applyPublicBrand(story.intro)}
                         </p>
                       )}
-                      <p className="font-serif italic text-sm text-[#712B13] mt-auto pt-4 group-hover:underline">
+                      <p className="k-link mt-auto pt-4 group-hover:underline">
                         Read the interview →
                       </p>
                     </div>
@@ -178,42 +178,42 @@ export default async function HomePage() {
 
       {/* FEATURED PROFESSIONALS — 2 columns, larger cards */}
       {featuredProfiles && featuredProfiles.length > 0 && (
-        <section className="max-w-6xl mx-auto px-6 py-12 border-t border-stone-300">
+        <section className="k-home-section max-w-6xl mx-auto px-6 border-t">
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-6">
             <div>
-              <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
+              <p className="k-eyebrow mb-1">
                 On our radar
               </p>
               <h2 className="k-section-title">Featured Professionals</h2>
             </div>
-            <Link href="/directory" className="font-serif italic text-sm text-[#712B13] hover:underline">
+            <Link href="/directory" className="k-editorial-link font-serif italic text-sm">
               Browse all →
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-stretch">
             {(featuredProfiles as FeaturedProfile[]).map((p) => {
               const roleTitle =
                 (p.role_titles ?? [])[0] ??
                 (p.role_category === 'crew_other' ? p.custom_role_label : p.role_category?.replace('_', ' '));
               return (
-                <Link key={p.slug} href={`/m/${p.slug}`} className="flex h-full flex-col group">
-                  <div className="h-64 md:h-72 bg-transparent overflow-hidden mb-4">
+                <Link key={p.slug} href={`/m/${p.slug}`} className="k-card k-card-interactive flex h-full flex-col group p-4 md:p-5">
+                  <div className="aspect-[4/5] bg-[var(--magiora-soft)] overflow-hidden mb-5">
                     {p.headshot_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={p.headshot_url}
                         alt={p.display_name}
-                        className="w-full h-full object-contain object-top group-hover:scale-[1.01] transition-transform"
+                        className="w-full h-full object-cover object-center group-hover:scale-[1.01] transition-transform duration-200"
                       />
                     ) : (
-                      <div className="w-full h-full rounded-md bg-[#FAECE7] flex items-center justify-center text-[#712B13] font-serif italic text-3xl">
+                      <div className="w-full h-full bg-[var(--magiora-soft)] flex items-center justify-center text-[var(--magiora-brand)] font-serif italic text-3xl">
                         {(p.display_name?.[0] ?? '?').toUpperCase()}
                       </div>
                     )}
                   </div>
-                  <p className="font-serif italic text-sm text-[#993C1D] capitalize mb-2">{roleTitle}</p>
-                  <p className="font-serif text-2xl font-medium group-hover:text-[#712B13] transition-colors flex items-center gap-2 mb-1">
+                  <p className="font-serif italic text-sm text-[var(--magiora-copper)] capitalize mb-2">{roleTitle}</p>
+                  <p className="font-serif text-2xl font-medium group-hover:text-[var(--magiora-brand)] transition-colors flex items-center gap-2 mb-1">
                     {p.display_name}
                     {p.verified && <VerifiedBadge size="sm" />}
                   </p>
@@ -235,45 +235,45 @@ export default async function HomePage() {
 
       {/* FEATURED PROJECT */}
       {featuredProject && (
-        <section className="max-w-6xl mx-auto px-6 py-12 border-t border-stone-300">
+        <section className="k-home-section max-w-6xl mx-auto px-6 border-t">
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-6">
             <div>
-              <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
+              <p className="k-eyebrow mb-1">
                 From the community
               </p>
               <h2 className="k-section-title">Featured Project</h2>
             </div>
-            <Link href="/projects" className="font-serif italic text-sm text-[#712B13] hover:underline">
+            <Link href="/projects" className="k-editorial-link font-serif italic text-sm">
               Browse projects →
             </Link>
           </div>
 
           <Link
             href={`/projects/${featuredProject.slug}`}
-            className="k-card k-card-interactive grid grid-cols-1 md:grid-cols-[240px_1fr] group"
+            className="k-card k-card-interactive grid grid-cols-1 md:grid-cols-[280px_1fr] group"
           >
-            <div className="h-64 md:h-72 overflow-hidden bg-[#FAECE7] w-full">
+            <div className="h-64 md:h-80 overflow-hidden bg-[var(--magiora-soft)] w-full">
               {featuredProject.poster_url ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={featuredProject.poster_url}
                   alt={featuredProject.title}
-                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
+                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-[#712B13] font-serif italic text-2xl text-center px-4">
+                <div className="w-full h-full flex items-center justify-center text-[var(--magiora-brand)] font-serif italic text-2xl text-center px-4">
                   {featuredProject.title}
                 </div>
               )}
             </div>
             <div className="p-5 md:p-8 self-center">
-              <p className="font-serif italic text-sm text-[#993C1D] mb-2">
+              <p className="font-serif italic text-sm text-[var(--magiora-copper)] mb-2">
                 {getProjectTypeLabel(featuredProject.project_type)}
                 {featuredProject.year && (
                   <span className="text-stone-500"> · {featuredProject.year}</span>
                 )}
               </p>
-              <h3 className="font-serif text-2xl md:text-3xl font-medium leading-tight group-hover:text-[#712B13] transition-colors">
+              <h3 className="font-serif text-3xl md:text-4xl font-medium leading-tight group-hover:text-[var(--magiora-brand)] transition-colors">
                 {featuredProject.title}
               </h3>
               {featuredProject.tagline && (
@@ -288,7 +288,7 @@ export default async function HomePage() {
                   {getProjectStatusLabel(featuredProject.status)}
                 </span>
               )}
-              <p className="font-serif italic text-sm text-[#712B13] mt-5 group-hover:underline">
+              <p className="k-link mt-5 group-hover:underline">
                 View project →
               </p>
             </div>
@@ -298,15 +298,15 @@ export default async function HomePage() {
 
       {/* UPCOMING EVENTS */}
       {upcomingEvents && upcomingEvents.length > 0 && (
-        <section className="max-w-6xl mx-auto px-6 py-12 border-t border-stone-300">
+        <section className="k-home-section max-w-6xl mx-auto px-6 border-t">
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-baseline sm:justify-between mb-6">
             <div>
-              <p className="font-serif italic text-xs text-[#993C1D] uppercase tracking-widest mb-1">
+              <p className="k-eyebrow mb-1">
                 The calendar
               </p>
               <h2 className="k-section-title">Coming up</h2>
             </div>
-            <Link href="/events" className="font-serif italic text-sm text-[#712B13] hover:underline">
+            <Link href="/events" className="k-editorial-link font-serif italic text-sm">
               All events →
             </Link>
           </div>
@@ -320,7 +320,7 @@ export default async function HomePage() {
                   href={`/events/${event.id}`}
                   className="k-card k-card-interactive block p-5"
                 >
-                  <p className="font-serif italic text-xs text-[#993C1D] mb-2">
+                  <p className="font-serif italic text-xs text-[var(--magiora-copper)] mb-2">
                     {start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </p>
                   <h3 className="font-serif text-base font-medium mb-1 leading-tight">
@@ -339,11 +339,11 @@ export default async function HomePage() {
       )}
 
       {/* NEWSLETTER */}
-      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-stone-300">
+      <section className="k-home-section max-w-6xl mx-auto px-6 border-t">
         <NewsletterSignup />
       </section>
 
-      <footer className="border-t border-stone-300 py-12 text-center">
+      <footer className="border-t border-[var(--magiora-border)] py-10 text-center">
         <p className="font-serif text-sm text-stone-700">
           © {new Date().getFullYear()} Magiora
         </p>
