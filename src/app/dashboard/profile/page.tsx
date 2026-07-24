@@ -71,7 +71,7 @@ export default async function ProfileEditPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: profile }, { count: linkedCreditCount }] = await Promise.all([
+  const [{ data: profile }, { data: linkedCredits, count: linkedCreditCount }, { data: ownedPreviewProjects }] = await Promise.all([
     supabase
       .from('profiles')
       .select('*')
@@ -79,11 +79,31 @@ export default async function ProfileEditPage({
       .single(),
     supabase
       .from('project_credits')
-      .select('id', { count: 'exact', head: true })
+      .select('id, project:projects(title, tagline, poster_url)', { count: 'exact' })
       .eq('profile_id', user!.id),
+    supabase
+      .from('projects')
+      .select('title, tagline, poster_url')
+      .eq('owner_id', user!.id)
+      .order('updated_at', { ascending: false })
+      .limit(6),
   ]);
 
   if (!profile) return null;
+
+  const creditedPreviewProjects = (linkedCredits ?? []).flatMap((credit) => {
+    const related = Array.isArray(credit.project) ? credit.project[0] : credit.project;
+    const project = related as
+      | { title: string; tagline: string | null; poster_url: string | null }
+      | null
+      | undefined;
+    return project ? [project] : [];
+  });
+  const previewProjects = [...(ownedPreviewProjects ?? []), ...creditedPreviewProjects]
+    .filter((project, index, projects) =>
+      projects.findIndex((candidate) => candidate.title === project.title) === index
+    )
+    .slice(0, 6);
 
   const isMember = await hasPaidMembership(user!.id);
   const isActorPrimary =
@@ -100,9 +120,6 @@ export default async function ProfileEditPage({
   const publicStatus = getProfilePublicStatus(profile.visible, profile.approved);
   const primaryRole =
     profile.role_titles?.[0] || profile.role_category || 'Creative professional';
-  const profileLocation = [profile.location_city, profile.location_state]
-    .filter(Boolean)
-    .join(', ');
   const statusStyles = {
     Public: 'border-green-200 bg-green-50 text-green-900',
     Private: 'border-stone-200 bg-stone-50 text-stone-800',
@@ -392,10 +409,22 @@ export default async function ProfileEditPage({
                     defaultTemplate={profile.profile_theme}
                     defaultAccent={profile.profile_accent}
                     isMember={isMember}
-                    displayName={profile.display_name ?? 'Professional name'}
-                    headshotUrl={profile.headshot_url}
-                    role={primaryRole}
-                    location={profileLocation}
+                    initialData={{
+                      headshotUrl: profile.headshot_url,
+                      displayName: profile.display_name ?? '',
+                      roles: profile.role_titles ?? [primaryRole],
+                      city: profile.location_city ?? '',
+                      state: profile.location_state ?? '',
+                      bio: profile.bio ?? '',
+                      languages: profile.languages ?? [],
+                      skills: profile.skills ?? [],
+                      demoReelUrl: profile.demo_reel_url ?? '',
+                      gallery: profile.gallery ?? [],
+                      experience: profile.experience ?? [],
+                      projects: previewProjects,
+                      recommendations: profile.recommendations ?? [],
+                      socialLinks: profile.social_links ?? {},
+                    }}
                   />
                 </div>
               </section>

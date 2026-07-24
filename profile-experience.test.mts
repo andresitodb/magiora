@@ -12,6 +12,7 @@ import {
   validationSummary,
 } from './src/lib/profileExperience.ts';
 import { ACCENTS, TEMPLATES, contrastRatio } from './src/lib/profile_themes.ts';
+import { mergeProfilePreviewData, type ProfilePreviewData } from './src/lib/profilePreview.ts';
 
 test('profile fields are grouped into the six editorial chapters', () => {
   assert.deepEqual(PROFILE_CHAPTERS.map((chapter) => chapter.label), [
@@ -123,7 +124,7 @@ test('Member presentation remains interactive and pricing copy matches actual li
   assert.doesNotMatch(themeSource, /disabled=\{!isMember\}/);
   assert.doesNotMatch(slugSource, /disabled=\{!isMember\}/);
   assert.match(pricingSource, /up to 10 gallery photos/i);
-  assert.match(pricingSource, /4 profile themes &amp; 6 color palettes/i);
+  assert.match(pricingSource, /6 profile themes &amp; 6 color palettes/i);
   assert.match(pricingSource, /Up to 4 additional video links/i);
 });
 
@@ -136,8 +137,8 @@ test('profile presentation uses page-like previews and keeps Member styling inte
     new URL('./src/components/MemberEdition.tsx', import.meta.url),
     'utf8',
   );
-  assert.match(themeSource, /aria-label="Live profile preview"/);
-  assert.match(themeSource, /data-template-preview=\{templateId\}/);
+  assert.doesNotMatch(themeSource, /LiveProfilePreview/);
+  assert.match(themeSource, /TemplateMiniature/);
   assert.match(themeSource, /magiora:profile-preview/);
   assert.doesNotMatch(memberSource, /yellow|opacity-50|pointer-events-none|\block\b/i);
   assert.match(memberSource, /Member edition/);
@@ -174,7 +175,7 @@ test('dashboard public profile action is visible, secondary, and not icon-only',
 });
 
 test('every palette provides readable semantic text, buttons, and overlays for every template', () => {
-  assert.equal(TEMPLATES.length, 4);
+  assert.equal(TEMPLATES.length, 6);
   for (const palette of ACCENTS) {
     assert.ok(contrastRatio(palette.primaryText, palette.background) >= 4.5, `${palette.name} primary text`);
     assert.ok(contrastRatio(palette.secondaryText, palette.background) >= 4.5, `${palette.name} secondary text`);
@@ -183,6 +184,87 @@ test('every palette provides readable semantic text, buttons, and overlays for e
     for (const template of TEMPLATES) {
       assert.ok(template.id && palette.surface && palette.border, `${palette.name}/${template.name} tokens`);
     }
+  }
+});
+
+test('all six templates are registered with distinct portfolio directions', () => {
+  assert.deepEqual(TEMPLATES.map(({ id }) => id), [
+    'editorial',
+    'cinematic',
+    'portrait',
+    'minimalist',
+    'stage',
+    'studio',
+  ]);
+  assert.equal(new Set(TEMPLATES.map(({ name }) => name)).size, 6);
+});
+
+test('preview data prefers local unsaved values while retaining stored sections', () => {
+  const stored: ProfilePreviewData = {
+    headshotUrl: '/portrait.jpg',
+    displayName: 'Stored Name',
+    roles: ['Actor'],
+    city: 'Miami',
+    state: 'FL',
+    bio: 'Stored biography',
+    languages: ['en'],
+    skills: ['Dance'],
+    demoReelUrl: '',
+    gallery: ['/gallery.jpg'],
+    experience: [{ year: '2025', title: 'Stored credit' }],
+    projects: [{ title: 'Stored project' }],
+    recommendations: [],
+    socialLinks: { instagram: '@stored' },
+  };
+  const preview = mergeProfilePreviewData(stored, {
+    displayName: 'Unsaved Name',
+    bio: 'Unsaved biography',
+    skills: ['Dance', 'Voice'],
+  });
+  assert.equal(preview.displayName, 'Unsaved Name');
+  assert.equal(preview.bio, 'Unsaved biography');
+  assert.deepEqual(preview.skills, ['Dance', 'Voice']);
+  assert.equal(preview.projects[0].title, 'Stored project');
+  assert.equal(preview.headshotUrl, '/portrait.jpg');
+});
+
+test('template cards and full preview consume complete real profile data without an inline large preview', () => {
+  const themeSource = readFileSync(
+    new URL('./src/components/ThemeSelector.tsx', import.meta.url),
+    'utf8',
+  );
+  for (const field of [
+    'headshotUrl', 'displayName', 'roles', 'city', 'state', 'bio', 'languages',
+    'skills', 'demoReelUrl', 'gallery', 'experience', 'projects',
+    'recommendations', 'socialLinks',
+  ]) {
+    assert.match(themeSource, new RegExp(field));
+  }
+  assert.match(themeSource, /Open full preview/);
+  assert.doesNotMatch(themeSource, /aria-label="Live profile preview"/);
+});
+
+test('Editorial and Cinematic previews use structurally distinct layouts', () => {
+  const themeSource = readFileSync(
+    new URL('./src/components/ThemeSelector.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(themeSource, /data-template-layout="editorial-columns"/);
+  assert.match(themeSource, /data-template-layout="cinematic-title-sequence"/);
+  assert.match(themeSource, /columns-2/);
+  assert.match(themeSource, /min-h-\[70vh\]/);
+});
+
+test('Free save gate rejects each Member template without changing persistence rules', () => {
+  for (const template of TEMPLATES.filter(({ id }) => id !== 'editorial')) {
+    assert.ok(getRequestedMemberFeatures({
+      isMember: false,
+      currentSlug: 'ava-stone',
+      requestedSlug: 'ava-stone',
+      requestedTheme: template.id,
+      requestedAccent: 'coral',
+      skillCount: 3,
+    }).includes('Profile theme'));
   }
 });
 

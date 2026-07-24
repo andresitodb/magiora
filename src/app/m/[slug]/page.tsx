@@ -341,10 +341,10 @@ export default async function PublicProfilePage({
         {template.id === 'cinematic' && (
           <CinematicHero profile={profile} primaryTitle={primaryTitle} roleTitles={roleTitles} accent={accent} />
         )}
-        {template.id === 'portrait' && (
+        {(template.id === 'portrait' || template.id === 'stage') && (
           <PortraitHero profile={profile} primaryTitle={primaryTitle} roleTitles={roleTitles} accent={accent} />
         )}
-        {template.id === 'minimalist' && (
+        {(template.id === 'minimalist' || template.id === 'studio') && (
           <MinimalistHero profile={profile} primaryTitle={primaryTitle} roleTitles={roleTitles} accent={accent} />
         )}
         {template.id === 'editorial' && (

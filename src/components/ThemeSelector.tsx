@@ -10,6 +10,13 @@ import {
   type TemplateId,
   type AccentId,
 } from '@/lib/profile_themes';
+import {
+  mergeProfilePreviewData,
+  parsePreviewJson,
+  type ProfilePreviewData,
+  type PreviewCredit,
+  type PreviewRecommendation,
+} from '@/lib/profilePreview';
 
 type Accent = (typeof ACCENTS)[number];
 
@@ -17,18 +24,12 @@ export default function ThemeSelector({
   defaultTemplate = DEFAULT_TEMPLATE,
   defaultAccent = DEFAULT_ACCENT,
   isMember,
-  displayName,
-  headshotUrl,
-  role,
-  location,
+  initialData,
 }: {
   defaultTemplate?: TemplateId | string;
   defaultAccent?: AccentId | string;
   isMember: boolean;
-  displayName: string;
-  headshotUrl?: string | null;
-  role: string;
-  location: string;
+  initialData: ProfilePreviewData;
 }) {
   const normalizedDefault =
     defaultTemplate === 'polaroid' ? 'portrait' : (defaultTemplate as TemplateId);
@@ -38,12 +39,7 @@ export default function ThemeSelector({
   const [accent, setAccent] = useState<AccentId>(
     isMember ? ((defaultAccent as AccentId) ?? DEFAULT_ACCENT) : DEFAULT_ACCENT
   );
-  const [previewIdentity, setPreviewIdentity] = useState({
-    displayName,
-    headshotUrl,
-    role,
-    location,
-  });
+  const [previewData, setPreviewData] = useState(initialData);
   const [fullPreviewOpen, setFullPreviewOpen] = useState(false);
   const selectedAccent = ACCENTS.find((item) => item.id === accent) ?? ACCENTS[0];
 
@@ -55,21 +51,38 @@ export default function ThemeSelector({
     const readProfileFields = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        const nameField = form.elements.namedItem('display_name');
-        const cityField = form.elements.namedItem('location_city');
-        const roleFields = form.querySelectorAll<HTMLInputElement>('input[name="role_titles"]');
-        setPreviewIdentity((current) => ({
-          ...current,
-          displayName: nameField instanceof HTMLInputElement ? nameField.value : current.displayName,
-          role: Array.from(roleFields).map((field) => field.value).filter(Boolean).join(' · ') || role,
-          location: cityField instanceof HTMLInputElement ? cityField.value : current.location,
-        }));
+        const formData = new FormData(form);
+        setPreviewData((stored) =>
+          mergeProfilePreviewData(stored, {
+            displayName: String(formData.get('display_name') ?? ''),
+            roles: formData.getAll('role_titles').map(String).filter(Boolean),
+            city: String(formData.get('location_city') ?? ''),
+            state: String(formData.get('location_state') ?? ''),
+            bio: String(formData.get('bio') ?? ''),
+            languages: formData.getAll('languages').map(String).filter(Boolean),
+            skills: formData.getAll('skills').map(String).filter(Boolean),
+            demoReelUrl: String(formData.get('demo_reel_url') ?? ''),
+            experience: parsePreviewJson<PreviewCredit[]>(
+              formData.get('experience'),
+              stored.experience
+            ),
+            recommendations: parsePreviewJson<PreviewRecommendation[]>(
+              formData.get('recommendations'),
+              stored.recommendations
+            ),
+            socialLinks: parsePreviewJson<Record<string, string>>(
+              formData.get('social_links'),
+              stored.socialLinks
+            ),
+          })
+        );
       });
     };
     const handlePortrait = (event: Event) => {
       const detail = (event as CustomEvent<{ headshotUrl?: string }>).detail;
-      if (detail?.headshotUrl) {
-        setPreviewIdentity((current) => ({ ...current, headshotUrl: detail.headshotUrl }));
+      const newHeadshotUrl = detail?.headshotUrl;
+      if (newHeadshotUrl) {
+        setPreviewData((current) => ({ ...current, headshotUrl: newHeadshotUrl }));
       }
     };
 
@@ -82,36 +95,16 @@ export default function ThemeSelector({
       form.removeEventListener('change', readProfileFields);
       window.removeEventListener('magiora:profile-preview', handlePortrait);
     };
-  }, [location, role]);
+  }, []);
 
   return (
     <div className="space-y-6">
       <input type="hidden" name="profile_theme" value={template} />
       <input type="hidden" name="profile_accent" value={accent} />
 
-      <div aria-live="polite">
-        <LiveProfilePreview
-          template={template}
-          accent={selectedAccent}
-          displayName={previewIdentity.displayName}
-          headshotUrl={previewIdentity.headshotUrl}
-          role={previewIdentity.role}
-          location={previewIdentity.location}
-        />
-      </div>
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => setFullPreviewOpen(true)}
-          className="k-button k-button-secondary"
-        >
-          Open full preview <span aria-hidden="true">↗</span>
-        </button>
-      </div>
-
       <MemberEdition
         title="Profile themes"
-        benefit="Preview four visual styles for the public profile that best represents your work."
+        benefit="Explore six complete portfolio directions and preview each one with your own work."
         isMember={isMember}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -127,18 +120,17 @@ export default function ThemeSelector({
                   : 'border-stone-200 bg-white hover:-translate-y-0.5 hover:border-stone-400'
               }`}
             >
-              <div className="mb-3 overflow-hidden rounded-sm border border-stone-200 bg-stone-50 shadow-sm">
-                <TemplatePreview
-                  templateId={item.id}
+              <div className="mb-3 overflow-hidden rounded-sm border border-stone-200 shadow-sm">
+                <TemplateMiniature
+                  template={item.id}
                   accent={selectedAccent}
-                  displayName={previewIdentity.displayName}
-                  headshotUrl={previewIdentity.headshotUrl}
+                  data={previewData}
                 />
               </div>
               <div className="flex items-baseline justify-between gap-3">
                 <p className="font-serif text-base font-medium">{item.name}</p>
                 <span className="text-[10px] uppercase tracking-[0.15em] text-stone-500">
-                  {template === item.id ? 'Previewing' : 'Preview'}
+                  {template === item.id ? 'Selected' : 'Preview'}
                 </span>
               </div>
               <p className="mt-1 font-serif text-xs italic leading-snug text-stone-500">
@@ -146,6 +138,16 @@ export default function ThemeSelector({
               </p>
             </button>
           ))}
+        </div>
+        <div className="mt-5 flex justify-end border-t border-stone-200 pt-4">
+          <button
+            type="button"
+            onClick={() => setFullPreviewOpen(true)}
+            className="k-button k-button-secondary"
+            aria-label={`Open full preview of ${TEMPLATES.find((item) => item.id === template)?.name ?? 'selected profile template'}`}
+          >
+            Open full preview <span aria-hidden="true">↗</span>
+          </button>
         </div>
       </MemberEdition>
 
@@ -165,18 +167,14 @@ export default function ThemeSelector({
               className={`cursor-pointer rounded-md border-2 p-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] ${
                 accent === item.id ? 'border-[#712B13]' : 'border-stone-200 hover:border-stone-400'
               }`}
-              style={{ backgroundColor: item.bg }}
+              style={{ backgroundColor: item.background }}
             >
               <div className="mb-2 flex justify-center gap-1">
-                {[item.accent, item.accentSoft, item.card].map((color) => (
-                  <span
-                    key={color}
-                    className="h-4 w-4 rounded-full border border-black/10"
-                    style={{ backgroundColor: color }}
-                  />
+                {[item.accent, item.accentSoft, item.surface].map((color) => (
+                  <span key={color} className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: color }} />
                 ))}
               </div>
-              <p className="text-center font-serif text-xs" style={{ color: item.text }}>{item.name}</p>
+              <p className="text-center font-serif text-xs" style={{ color: item.primaryText }}>{item.name}</p>
             </button>
           ))}
         </div>
@@ -187,10 +185,7 @@ export default function ThemeSelector({
           onClose={() => setFullPreviewOpen(false)}
           template={template}
           accent={selectedAccent}
-          displayName={previewIdentity.displayName}
-          headshotUrl={previewIdentity.headshotUrl}
-          role={previewIdentity.role}
-          location={previewIdentity.location}
+          data={previewData}
         />
       )}
     </div>
@@ -199,15 +194,14 @@ export default function ThemeSelector({
 
 function FullPreviewDialog({
   onClose,
-  ...preview
+  template,
+  accent,
+  data,
 }: {
   onClose: () => void;
   template: TemplateId;
   accent: Accent;
-  displayName: string;
-  headshotUrl?: string | null;
-  role: string;
-  location: string;
+  data: ProfilePreviewData;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -225,7 +219,7 @@ function FullPreviewDialog({
       }
       if (event.key !== 'Tab') return;
       const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
       );
       if (!focusable?.length) return;
       const first = focusable[0];
@@ -258,238 +252,235 @@ function FullPreviewDialog({
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-200 bg-white/95 px-4 py-3 backdrop-blur">
           <div>
             <p className="k-eyebrow">Preview only</p>
-            <h2 id="full-preview-title" className="font-serif text-lg font-medium">Full profile preview</h2>
+            <h2 id="full-preview-title" className="font-serif text-lg font-medium">
+              {TEMPLATES.find((item) => item.id === template)?.name}
+            </h2>
           </div>
-          <button
-            ref={closeRef}
-            type="button"
-            onClick={onClose}
-            className="k-button k-button-secondary"
-            aria-label="Close full profile preview"
-          >
+          <button ref={closeRef} type="button" onClick={onClose} className="k-button k-button-secondary" aria-label="Close full profile preview">
             Close <span aria-hidden="true">×</span>
           </button>
         </header>
-        <LiveProfilePreview {...preview} fullPage />
+        <CompleteProfileSite template={template} accent={accent} data={data} />
       </div>
     </div>
   );
 }
 
-function LiveProfilePreview({
+function TemplateMiniature({
   template,
   accent,
-  displayName,
-  headshotUrl,
-  role,
-  location,
-  fullPage = false,
+  data,
 }: {
   template: TemplateId;
   accent: Accent;
-  displayName: string;
-  headshotUrl?: string | null;
-  role: string;
-  location: string;
-  fullPage?: boolean;
+  data: ProfilePreviewData;
 }) {
-  const cinematic = template === 'cinematic';
-  return (
-    <section
-      className={`${fullPage ? 'border-0' : 'overflow-hidden rounded-md border border-stone-300 bg-white shadow-[0_24px_55px_-42px_rgba(28,25,23,0.8)]'}`}
-      aria-label="Live profile preview"
-    >
-      {!fullPage && <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#712B13]">Live preview</p>
-          <p className="mt-0.5 text-xs text-stone-500">Updates as you edit your profile</p>
-        </div>
-        <span className="rounded-full border border-stone-200 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-500">
-          {template}
-        </span>
-      </header>}
-      <div
-        className={`${fullPage ? 'min-h-[calc(100vh-5rem)] p-6 sm:p-12 lg:p-16' : 'min-h-[26rem] p-6 sm:p-9'} transition-colors`}
-        style={{ backgroundColor: cinematic ? accent.overlayBackground : accent.background, color: cinematic ? accent.overlayText : accent.primaryText }}
-      >
-        <div className="mb-10 flex items-center justify-between text-[10px] uppercase tracking-[0.18em]">
-          <span>Magiora portfolio</span>
-          <span style={{ color: cinematic ? accent.overlayText : accent.accent }}>Selected work · About</span>
-        </div>
-        <PortfolioComposition
-          template={template}
-          accent={accent}
-          displayName={displayName}
-          headshotUrl={headshotUrl}
-          role={role}
-          location={location}
-          fullPage={fullPage}
-        />
-        <div className="mt-10 grid grid-cols-3 gap-2 border-t pt-4" style={{ borderColor: accent.border }}>
-          {['Selected work', 'Practice', 'Contact'].map((label, index) => (
-            <div key={label}>
-              <span className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cinematic ? accent.overlayText : accent.secondaryText }}>{label}</span>
-              <div className="mt-2 h-1 rounded-full" style={{ backgroundColor: index === 0 ? accent.accent : accent.border }} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PortfolioComposition({
-  template,
-  accent,
-  displayName,
-  headshotUrl,
-  role,
-  location,
-  fullPage,
-}: {
-  template: TemplateId;
-  accent: Accent;
-  displayName: string;
-  headshotUrl?: string | null;
-  role: string;
-  location: string;
-  fullPage: boolean;
-}) {
-  const title = displayName || 'Professional name';
-  const practice = role || 'Creative professional';
-  const titleClass = `${fullPage ? 'text-5xl sm:text-7xl' : 'text-3xl sm:text-5xl'} font-serif font-medium leading-[0.95] tracking-[-0.03em]`;
-  const bio = 'A focused practice shaped by collaboration, craft, and a considered body of moving-image work.';
+  const name = data.displayName || 'Your name';
+  const role = data.roles[0] || 'Your practice';
+  const image = data.gallery[0] || data.headshotUrl;
+  const project = data.projects[0]?.title || data.experience[0]?.title || 'Selected work';
+  const bio = data.bio || 'Your biography will shape this page.';
+  const shared = { backgroundColor: accent.background, color: accent.primaryText };
 
   if (template === 'cinematic') {
     return (
-      <div className="relative overflow-hidden rounded-sm" style={{ backgroundColor: accent.overlayBackground }}>
-        <PreviewPortrait src={headshotUrl} name={title} className={`${fullPage ? 'h-[65vh]' : 'h-72'} w-full opacity-75`} />
-        <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10" style={{ color: accent.overlayText, background: `linear-gradient(transparent 25%, ${accent.overlayBackground} 100%)` }}>
-          <p className="mb-3 text-[10px] uppercase tracking-[0.22em]">Cinematic showcase · {practice}</p>
-          <h5 className={titleClass}>{title}</h5>
-          <p className="mt-3 max-w-lg text-xs leading-relaxed">{bio}</p>
+      <div data-template-layout="cinematic-title-sequence" className="relative aspect-[16/10] overflow-hidden" style={{ backgroundColor: accent.overlayBackground }}>
+        <PreviewImage src={image} name={name} accent={accent} className="absolute inset-0 h-full w-full opacity-70" />
+        <div className="absolute inset-0 flex flex-col justify-between p-3" style={{ color: accent.overlayText, background: `linear-gradient(transparent 20%, ${accent.overlayBackground} 100%)` }}>
+          <span className="text-[5px] uppercase tracking-[0.22em]">Reel · Projects</span>
+          <div><p className="text-[5px] uppercase tracking-[0.2em]">{role}</p><p className="mt-1 font-serif text-lg leading-none">{name}</p><p className="mt-1 text-[6px]">{project}</p></div>
         </div>
       </div>
     );
   }
-
+  if (template === 'editorial') {
+    return (
+      <div data-template-layout="editorial-columns" className="aspect-[16/10] p-3" style={shared}>
+        <div className="flex justify-between border-b pb-1 text-[5px] uppercase tracking-[0.2em]" style={{ borderColor: accent.border }}><span>Profile journal</span><span>Issue 01</span></div>
+        <div className="mt-2 grid grid-cols-[0.8fr_1.2fr] gap-3">
+          <PreviewImage src={data.headshotUrl} name={name} accent={accent} className="h-20 w-full" />
+          <div><p className="font-serif text-base leading-none">{name}</p><p className="mt-1 text-[6px]" style={{ color: accent.accent }}>{role}</p><p className="mt-2 line-clamp-3 text-[6px] leading-relaxed" style={{ color: accent.secondaryText }}>{bio}</p></div>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2 border-t pt-1 text-[5px]" style={{ borderColor: accent.border }}><span>Credits · {data.experience.length}</span><span>{project}</span></div>
+      </div>
+    );
+  }
   if (template === 'portrait') {
     return (
-      <div className="grid overflow-hidden border sm:grid-cols-[1.15fr_0.85fr]" style={{ borderColor: accent.border, backgroundColor: accent.surface }}>
-        <PreviewPortrait src={headshotUrl} name={title} className={`${fullPage ? 'min-h-[65vh]' : 'h-72 sm:h-96'} w-full`} />
-        <div className="flex flex-col justify-between p-6 sm:p-9">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: accent.accent }}>Full-bleed portrait</p>
-            <h5 className={`${titleClass} mt-4`}>{title}</h5>
-            <p className="mt-4 text-sm" style={{ color: accent.accent }}>{practice}</p>
-            {location && <p className="mt-2 text-xs" style={{ color: accent.secondaryText }}>{location}</p>}
-          </div>
-          <p className="mt-8 border-t pt-4 text-xs leading-relaxed" style={{ color: accent.secondaryText, borderColor: accent.border }}>{bio}</p>
-        </div>
+      <div data-template-layout="portrait-split" className="grid aspect-[16/10] grid-cols-[1.15fr_0.85fr]" style={shared}>
+        <PreviewImage src={data.headshotUrl} name={name} accent={accent} className="h-full w-full" />
+        <div className="flex flex-col justify-between p-3" style={{ backgroundColor: accent.surface }}><span className="text-[5px] uppercase tracking-[0.18em]" style={{ color: accent.accent }}>Portrait</span><div><p className="font-serif text-sm leading-none">{name}</p><p className="mt-1 text-[6px]" style={{ color: accent.secondaryText }}>{role}</p></div><span className="text-[5px]">{[data.city, data.state].filter(Boolean).join(', ')}</span></div>
       </div>
     );
   }
-
   if (template === 'minimalist') {
     return (
-      <div className={`${fullPage ? 'py-20' : 'py-8'} mx-auto max-w-3xl text-center`}>
-        <p className="text-[10px] uppercase tracking-[0.28em]" style={{ color: accent.secondaryText }}>Studio index / 01</p>
-        <h5 className={`${titleClass} mt-8`}>{title}</h5>
-        <p className="mt-4 text-xs uppercase tracking-[0.2em]" style={{ color: accent.accent }}>{practice}</p>
-        <div className="mx-auto my-8 h-px w-16" style={{ backgroundColor: accent.border }} />
-        <p className="mx-auto max-w-md text-xs leading-6" style={{ color: accent.secondaryText }}>{bio}</p>
-        <div className="mt-10 grid grid-cols-3 gap-3 text-left text-[9px] uppercase tracking-[0.14em]">
-          {['Selected work 04', 'Biography', 'Contact'].map((item) => <span key={item} className="border-t pt-2" style={{ borderColor: accent.border }}>{item}</span>)}
-        </div>
+      <div data-template-layout="quiet-index" className="aspect-[16/10] p-4 text-center" style={shared}>
+        <p className="text-[5px] uppercase tracking-[0.28em]">Index / 01</p><p className="mt-7 font-serif text-lg">{name}</p><p className="mt-1 text-[5px] uppercase tracking-[0.2em]" style={{ color: accent.accent }}>{role}</p>
+        <div className="mt-6 grid grid-cols-3 gap-2 border-t pt-2 text-left text-[5px]" style={{ borderColor: accent.border }}><span>Work {data.projects.length}</span><span>Credits {data.experience.length}</span><span>Contact</span></div>
       </div>
     );
   }
-
-  return (
-    <div className="grid items-start gap-8 sm:grid-cols-[0.85fr_1.15fr]">
-      <PreviewPortrait src={headshotUrl} name={title} className={`${fullPage ? 'h-[62vh]' : 'h-72'} w-full rounded-sm`} />
-      <div className="sm:pt-8">
-        <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: accent.accent }}>Editorial portfolio · Issue 01</p>
-        <h5 className={`${titleClass} mt-4`}>{title}</h5>
-        <p className="mt-4 font-serif text-lg italic" style={{ color: accent.accent }}>{practice}</p>
-        <p className="mt-8 max-w-lg border-t pt-5 text-xs leading-6" style={{ color: accent.secondaryText, borderColor: accent.border }}>{bio}</p>
-        <button type="button" tabIndex={-1} className="mt-8 px-4 py-2 text-xs font-medium" style={{ backgroundColor: accent.buttonBackground, color: accent.buttonText }}>
-          View selected work
-        </button>
+  if (template === 'stage') {
+    return (
+      <div data-template-layout="stage-bill" className="relative aspect-[16/10] overflow-hidden" style={{ backgroundColor: accent.overlayBackground, color: accent.overlayText }}>
+        <PreviewImage src={data.headshotUrl} name={name} accent={accent} className="absolute right-0 h-full w-1/2 opacity-80" />
+        <div className="relative flex h-full w-3/5 flex-col justify-between p-3"><span className="font-serif text-[7px] italic">Tonight / On stage</span><div><p className="font-serif text-xl leading-[0.85]">{name}</p><p className="mt-2 text-[6px] uppercase tracking-[0.18em]">{role}</p></div><span className="text-[5px]">{data.experience[0]?.title || 'Performance credits'}</span></div>
       </div>
+    );
+  }
+  return (
+    <div data-template-layout="studio-case-studies" className="aspect-[16/10] p-3" style={shared}>
+      <div className="flex justify-between text-[5px] uppercase tracking-[0.18em]"><span>{name} / Studio</span><span>Work · Services</span></div>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {[image, data.gallery[1], data.projects[0]?.poster_url].map((src, index) => (
+          <div key={index}><PreviewImage src={src} name={name} accent={accent} className="h-14 w-full" /><p className="mt-1 truncate text-[5px]">{index === 0 ? project : data.skills[index] || 'Case study'}</p></div>
+        ))}
+      </div>
+      <div className="mt-3 flex gap-1">{data.skills.slice(0, 4).map((skill) => <span key={skill} className="border px-1 py-0.5 text-[4px]" style={{ borderColor: accent.border }}>{skill}</span>)}</div>
     </div>
   );
 }
 
-function PreviewPortrait({
-  src,
-  name,
-  className,
+function CompleteProfileSite({
+  template,
+  accent,
+  data,
 }: {
-  src?: string | null;
-  name: string;
-  className: string;
+  template: TemplateId;
+  accent: Accent;
+  data: ProfilePreviewData;
 }) {
+  const name = data.displayName || 'Your name';
+  const role = data.roles[0] || 'Your professional practice';
+  const location = [data.city, data.state].filter(Boolean).join(', ');
+  const image = data.gallery[0] || data.headshotUrl;
+  const bio = data.bio || 'Add a biography to introduce your practice and the work that matters to you.';
+  const isDark = template === 'cinematic' || template === 'stage';
+  const pageStyle = {
+    backgroundColor: isDark ? accent.overlayBackground : accent.background,
+    color: isDark ? accent.overlayText : accent.primaryText,
+  };
+
   return (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden bg-stone-200 ${className}`}>
+    <article className="min-h-[calc(100vh-5rem)]" style={pageStyle} data-full-template={template}>
+      <header className="flex items-center justify-between border-b px-5 py-4 text-xs uppercase tracking-[0.16em] sm:px-10" style={{ borderColor: accent.border }}>
+        <span>{name}</span>
+        <span>{template === 'stage' ? 'Appearances · Credits · Contact' : 'Work · About · Contact'}</span>
+      </header>
+
+      <TemplateHero template={template} accent={accent} data={data} name={name} role={role} location={location} image={image} bio={bio} />
+
+      <div className="space-y-14 px-5 py-12 sm:px-10 lg:px-16">
+        <section className={`${template === 'editorial' ? 'grid gap-8 md:grid-cols-[0.7fr_1.3fr]' : 'max-w-3xl'}`}>
+          <p className="text-xs uppercase tracking-[0.2em]" style={{ color: isDark ? accent.overlayText : accent.accent }}>Biography</p>
+          <p className="mt-3 font-serif text-xl leading-relaxed md:mt-0 md:text-2xl">{bio}</p>
+        </section>
+
+        <section>
+          <SectionHeading label={template === 'stage' ? 'Performance & appearances' : 'Selected work'} accent={accent} />
+          {(data.projects.length > 0 || data.gallery.length > 0) ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {(data.projects.length ? data.projects : data.gallery.map((url) => ({ title: 'Gallery', tagline: null, poster_url: url }))).slice(0, 6).map((project, index) => (
+                <div key={`${project.title}-${index}`} className="overflow-hidden border" style={{ backgroundColor: accent.surface, borderColor: accent.border, color: accent.primaryText }}>
+                  <PreviewImage src={project.poster_url || data.gallery[index]} name={project.title} accent={accent} className="aspect-[4/3] w-full" />
+                  <div className="p-4"><h3 className="font-serif text-lg">{project.title}</h3>{project.tagline && <p className="mt-1 text-sm" style={{ color: accent.secondaryText }}>{project.tagline}</p>}</div>
+                </div>
+              ))}
+            </div>
+          ) : <EmptyPreview>Projects and gallery images will appear here.</EmptyPreview>}
+        </section>
+
+        <section className="grid gap-10 lg:grid-cols-2">
+          <div>
+            <SectionHeading label="Credits & experience" accent={accent} />
+            {data.experience.length ? data.experience.slice(0, 6).map((credit, index) => (
+              <div key={index} className="grid grid-cols-[4rem_1fr] gap-4 border-b py-3" style={{ borderColor: accent.border }}>
+                <span className="text-sm" style={{ color: isDark ? accent.overlayText : accent.secondaryText }}>{credit.year || '—'}</span>
+                <div><p className="font-serif">{credit.title || credit.project}</p>{credit.role && <p className="text-sm" style={{ color: isDark ? accent.overlayText : accent.secondaryText }}>{credit.role}</p>}</div>
+              </div>
+            )) : <EmptyPreview>Add credits to build your professional timeline.</EmptyPreview>}
+          </div>
+          <div>
+            <SectionHeading label="Practice" accent={accent} />
+            <TokenList values={[...data.skills, ...data.languages].slice(0, 12)} accent={accent} />
+            {data.demoReelUrl ? <p className="mt-6 font-serif text-lg">▶ Demo reel available</p> : <EmptyPreview>Your demo reel will be featured here.</EmptyPreview>}
+          </div>
+        </section>
+
+        <section>
+          <SectionHeading label="Recommendations" accent={accent} />
+          {data.recommendations.length ? (
+            <div className="grid gap-5 md:grid-cols-2">
+              {data.recommendations.slice(0, 4).map((recommendation, index) => (
+                <blockquote key={index} className="border-l-2 pl-5">
+                  <p className="font-serif text-lg italic">“{recommendation.quote}”</p>
+                  <footer className="mt-3 text-sm" style={{ color: isDark ? accent.overlayText : accent.secondaryText }}>{recommendation.from_name}{recommendation.from_role ? ` · ${recommendation.from_role}` : ''}</footer>
+                </blockquote>
+              ))}
+            </div>
+          ) : <EmptyPreview>Collaborator recommendations will appear here.</EmptyPreview>}
+        </section>
+
+        <footer className="flex flex-col gap-4 border-t pt-8 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: accent.border }}>
+          <div><p className="font-serif text-2xl">{name}</p><p className="text-sm">{location || role}</p></div>
+          {Object.entries(data.socialLinks).filter(([, value]) => value).length ? (
+            <div className="flex flex-wrap gap-3 text-sm">{Object.entries(data.socialLinks).filter(([, value]) => value).slice(0, 5).map(([network]) => <span key={network} className="capitalize">{network}</span>)}</div>
+          ) : <span className="text-sm">Social links will appear here.</span>}
+        </footer>
+      </div>
+    </article>
+  );
+}
+
+function TemplateHero({
+  template,
+  accent,
+  data,
+  name,
+  role,
+  location,
+  image,
+  bio,
+}: {
+  template: TemplateId;
+  accent: Accent;
+  data: ProfilePreviewData;
+  name: string;
+  role: string;
+  location: string;
+  image: string | null;
+  bio: string;
+}) {
+  if (template === 'cinematic') return <div className="relative min-h-[70vh]"><PreviewImage src={image} name={name} accent={accent} className="absolute inset-0 h-full w-full opacity-70" /><div className="absolute inset-0 flex items-end p-6 sm:p-12" style={{ background: `linear-gradient(transparent 25%, ${accent.overlayBackground} 100%)` }}><div><p className="text-xs uppercase tracking-[0.24em]">{role}</p><h1 className="mt-3 font-serif text-5xl leading-none sm:text-8xl">{name}</h1>{data.demoReelUrl && <p className="mt-6 text-sm uppercase tracking-[0.18em]">▶ Play reel</p>}</div></div></div>;
+  if (template === 'editorial') return <div className="grid gap-8 px-5 py-12 sm:px-10 lg:grid-cols-[0.8fr_1.2fr] lg:px-16"><PreviewImage src={data.headshotUrl} name={name} accent={accent} className="max-h-[65vh] min-h-96 w-full" /><div className="lg:pt-12"><p className="text-xs uppercase tracking-[0.22em]" style={{ color: accent.accent }}>Profile journal · {role}</p><h1 className="mt-5 font-serif text-5xl leading-[0.9] sm:text-7xl">{name}</h1><p className="mt-8 columns-1 font-serif text-lg leading-relaxed sm:columns-2" style={{ color: accent.secondaryText }}>{bio}</p></div></div>;
+  if (template === 'portrait') return <div className="grid min-h-[70vh] md:grid-cols-[1.1fr_0.9fr]"><PreviewImage src={data.headshotUrl} name={name} accent={accent} className="min-h-[60vh] w-full" /><div className="flex flex-col justify-center p-8 sm:p-14" style={{ backgroundColor: accent.surface, color: accent.primaryText }}><p className="text-xs uppercase tracking-[0.22em]" style={{ color: accent.accent }}>Portrait / Practice</p><h1 className="mt-5 font-serif text-5xl leading-none sm:text-7xl">{name}</h1><p className="mt-5 text-lg">{role}</p><p className="mt-2 text-sm" style={{ color: accent.secondaryText }}>{location}</p></div></div>;
+  if (template === 'minimalist') return <div className="mx-auto max-w-5xl px-5 py-24 text-center"><p className="text-xs uppercase tracking-[0.3em]">Studio index / 01</p><h1 className="mt-12 font-serif text-5xl sm:text-8xl">{name}</h1><p className="mt-6 text-xs uppercase tracking-[0.22em]" style={{ color: accent.accent }}>{role}</p><p className="mx-auto mt-12 max-w-xl text-base leading-relaxed" style={{ color: accent.secondaryText }}>{bio}</p></div>;
+  if (template === 'stage') return <div className="grid min-h-[72vh] md:grid-cols-[0.8fr_1.2fr]"><div className="flex flex-col justify-between p-8 sm:p-14"><p className="font-serif text-lg italic">Stage / Live practice</p><div><h1 className="font-serif text-6xl leading-[0.85] sm:text-8xl">{name}</h1><p className="mt-6 text-xs uppercase tracking-[0.22em]">{role}</p></div><p className="text-sm">{data.experience[0]?.title || 'Performance credits'}{location ? ` · ${location}` : ''}</p></div><PreviewImage src={data.headshotUrl} name={name} accent={accent} className="min-h-[60vh] w-full opacity-90" /></div>;
+  return <div className="px-5 py-14 sm:px-10 lg:px-16"><div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs uppercase tracking-[0.22em]" style={{ color: accent.accent }}>Independent creative studio</p><h1 className="mt-4 font-serif text-5xl sm:text-7xl">{name}</h1></div><p className="max-w-sm text-sm leading-relaxed" style={{ color: accent.secondaryText }}>{bio}</p></div><div className="mt-12 grid gap-4 sm:grid-cols-3">{[image, data.gallery[1], data.projects[0]?.poster_url].map((src, index) => <PreviewImage key={index} src={src} name={name} accent={accent} className={`${index === 1 ? 'sm:mt-10' : ''} aspect-[4/3] w-full`} />)}</div></div>;
+}
+
+function PreviewImage({ src, name, accent, className }: { src?: string | null; name: string; accent: Accent; className: string }) {
+  return (
+    <div className={`flex items-center justify-center overflow-hidden ${className}`} style={{ backgroundColor: accent.accentSoft, color: accent.secondaryText }}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt="" className="h-full w-full object-cover" />
       ) : (
-        <span className="font-serif text-3xl text-stone-500" aria-hidden="true">
-          {(name[0] ?? '?').toUpperCase()}
-        </span>
+        <span className="px-3 text-center font-serif text-sm">{name}</span>
       )}
     </div>
   );
 }
 
-function TemplatePreview({
-  templateId,
-  accent,
-  displayName,
-  headshotUrl,
-}: {
-  templateId: TemplateId;
-  accent: Accent;
-  displayName: string;
-  headshotUrl?: string | null;
-}) {
-  const cinematic = templateId === 'cinematic';
-  const centered = templateId === 'portrait' || templateId === 'minimalist';
-  return (
-    <div
-      data-template-preview={templateId}
-      className="aspect-[16/10] p-3"
-      style={{ backgroundColor: cinematic ? accent.text : accent.bg, color: cinematic ? accent.bg : accent.text }}
-    >
-      <div className="mb-3 flex items-center justify-between text-[5px] uppercase tracking-[0.18em]">
-        <span>Portfolio</span>
-        <span style={{ color: cinematic ? accent.textMuted : accent.accent }}>Work&nbsp;&nbsp; About&nbsp;&nbsp; Contact</span>
-      </div>
-      <div className={`${centered ? 'text-center' : 'grid grid-cols-[0.8fr_1.2fr] items-center gap-3'}`}>
-        <PreviewPortrait
-          src={headshotUrl}
-          name={displayName}
-          className={`${centered ? 'mx-auto mb-2 h-14 w-12' : 'h-20 w-full'} ${
-            templateId === 'minimalist' ? '!h-11 !w-11 rounded-full' : 'rounded-[2px]'
-          }`}
-        />
-        <div>
-          <p className="font-serif text-[11px] font-medium leading-none">{displayName || 'Professional name'}</p>
-          <p className="mt-1 text-[5px] uppercase tracking-[0.12em]" style={{ color: accent.accent }}>Selected creative work</p>
-          <div className={`${centered ? 'mx-auto' : ''} mt-2 h-px w-8`} style={{ backgroundColor: accent.accent }} />
-          <div className={`${centered ? 'mx-auto' : ''} mt-2 space-y-1`}>
-            <div className="h-0.5 w-full opacity-30" style={{ backgroundColor: accent.textMuted }} />
-            <div className={`${centered ? 'mx-auto' : ''} h-0.5 w-3/4 opacity-30`} style={{ backgroundColor: accent.textMuted }} />
-          </div>
-        </div>
-      </div>
-      <div className="mt-3 grid grid-cols-3 gap-1.5 border-t pt-2" style={{ borderColor: accent.border }}>
-        {[accent.accent, accent.accentSoft, accent.card].map((color) => (
-          <div key={color} className="h-5 rounded-[1px]" style={{ backgroundColor: color }} />
-        ))}
-      </div>
-    </div>
-  );
+function SectionHeading({ label, accent }: { label: string; accent: Accent }) {
+  return <h2 className="mb-5 border-b pb-3 text-xs uppercase tracking-[0.22em]" style={{ borderColor: accent.border, color: accent.accent }}>{label}</h2>;
+}
+
+function TokenList({ values, accent }: { values: string[]; accent: Accent }) {
+  return values.length ? <div className="flex flex-wrap gap-2">{values.map((value) => <span key={value} className="border px-3 py-1.5 text-sm" style={{ borderColor: accent.border }}>{value}</span>)}</div> : <EmptyPreview>Languages and skills will appear here.</EmptyPreview>;
+}
+
+function EmptyPreview({ children }: { children: React.ReactNode }) {
+  return <p className="border border-dashed border-current/25 p-5 font-serif text-sm italic opacity-70">{children}</p>;
 }

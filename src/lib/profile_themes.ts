@@ -1,6 +1,12 @@
 // Profile theme system — templates × color palettes.
 
-export type TemplateId = 'editorial' | 'cinematic' | 'portrait' | 'minimalist';
+export type TemplateId =
+  | 'editorial'
+  | 'cinematic'
+  | 'portrait'
+  | 'minimalist'
+  | 'stage'
+  | 'studio';
 export type AccentId = 'coral' | 'monochrome' | 'forest' | 'ocean' | 'sunset' | 'midnight';
 
 export interface Template {
@@ -49,8 +55,18 @@ export const TEMPLATES: Template[] = [
   },
   {
     id: 'minimalist',
-    name: 'Studio Minimal',
+    name: 'Quiet Index',
     description: 'A precise studio index with restrained type, generous space and structured case studies.',
+  },
+  {
+    id: 'stage',
+    name: 'Stage Presence',
+    description: 'A theatrical presentation for performance credits, appearances and live creative practice.',
+  },
+  {
+    id: 'studio',
+    name: 'Studio Portfolio',
+    description: 'A modular case-study site for directors, designers, photographers, crew and multidisciplinary work.',
   },
 ];
 

@@ -86,7 +86,7 @@ export default async function PricingPage({
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Get matched automatically</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Unlimited skills &amp; up to 10 gallery photos</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Custom profile URL (magiora.com/m/yourname)</li>
-              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> 4 profile themes &amp; 6 color palettes</li>
+              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> 6 profile themes &amp; 6 color palettes</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Up to 4 additional video links with custom labels</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Priority support</li>
             </ul>
