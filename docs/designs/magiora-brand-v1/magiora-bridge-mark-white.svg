@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" fill="none">
-  <title>Magiora Bridge mark</title>
-  <path d="M10 40V8L32 28L54 8V40"
-        stroke="#FFFFFF"
-        stroke-width="5.5"
-        stroke-linecap="square"
-        stroke-linejoin="miter"
-        vector-effect="non-scaling-stroke"/>
-</svg>

@@ -1,4 +1,5 @@
 import type { SVGProps } from 'react';
+import { MAGIORA_SYMBOL_PATH, MAGIORA_SYMBOL_VIEWBOX } from './magioraGeometry';
 
 type MagioraMarkProps = SVGProps<SVGSVGElement> & {
   decorative?: boolean;
@@ -7,13 +8,13 @@ type MagioraMarkProps = SVGProps<SVGSVGElement> & {
 
 export default function MagioraMark({
   decorative = false,
-  title = 'Magiora Bridge mark',
+  title = 'Magiora MA ligature',
   ...props
 }: MagioraMarkProps) {
   return (
     <svg
-      viewBox="0 0 64 48"
-      fill="none"
+      viewBox={MAGIORA_SYMBOL_VIEWBOX}
+      fill="currentColor"
       role={decorative ? undefined : 'img'}
       aria-hidden={decorative || undefined}
       aria-label={decorative ? undefined : title}
@@ -21,14 +22,7 @@ export default function MagioraMark({
       {...props}
     >
       {!decorative && <title>{title}</title>}
-      <path
-        d="M10 40V8L32 28L54 8V40"
-        stroke="currentColor"
-        strokeWidth="5.5"
-        strokeLinecap="square"
-        strokeLinejoin="miter"
-        vectorEffect="non-scaling-stroke"
-      />
+      <path d={MAGIORA_SYMBOL_PATH} />
     </svg>
   );
 }

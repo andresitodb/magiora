@@ -123,7 +123,7 @@ function EventCard({ event }: { event: PublicEvent }) {
       href={`/events/${event.id}`}
       className="k-card k-card-interactive group grid grid-cols-1 overflow-hidden sm:grid-cols-[minmax(220px,34%)_1fr]"
     >
-      <EventArtwork imageUrl={event.cover_image_url} title={event.title} eventDate={event.event_date} className="sm:aspect-auto sm:h-full sm:min-h-56" />
+      <EventArtwork imageUrl={event.cover_image_url} title={event.title} eventDate={event.event_date} />
       <div className="flex min-w-0 flex-col p-5 md:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>

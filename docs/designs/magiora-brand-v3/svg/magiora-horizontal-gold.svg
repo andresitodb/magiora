@@ -1,0 +1,11 @@
+<svg viewBox="0 0 360 80" xmlns="http://www.w3.org/2000/svg">
+<title>Magiora horizontal logo</title>
+<g color="#D4AF37">
+<g transform="translate(10 8) scale(1)">
+  <path d="M12 52V12L32 34L52 12V52" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 52L39 33H52" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="92" y="42" font-family="Arial, Helvetica, sans-serif" font-size="25" letter-spacing="8" fill="currentColor">MAGIORA</text>
+<text x="94" y="65" font-family="Georgia, Times, serif" font-size="9.5" fill="currentColor">Where ideas become productions.</text>
+</g>
+</svg>

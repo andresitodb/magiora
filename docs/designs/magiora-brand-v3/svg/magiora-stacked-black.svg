@@ -1,0 +1,10 @@
+<svg viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg">
+<title>Magiora stacked logo</title>
+
+<g color="#0D0D0D">
+  <g transform="translate(88 8)"><path d="M12 52V12L32 34L52 12V52" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 52L39 33H52" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <text x="120" y="88" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" letter-spacing="7" fill="currentColor">MAGIORA</text>
+  <text x="120" y="108" text-anchor="middle" font-family="Georgia, Times, serif" font-size="9" fill="currentColor">Where ideas become productions.</text>
+</g>
+</svg>

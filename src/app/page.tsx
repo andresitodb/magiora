@@ -15,6 +15,7 @@ import {
   selectUpcomingEvents,
 } from '@/lib/designPolish';
 import EventArtwork from '@/components/EventArtwork';
+import MagioraLogo from '@/components/brand/MagioraLogo';
 
 export const revalidate = 60;
 
@@ -196,7 +197,7 @@ export default async function HomePage() {
                         <img
                           src={story.hero_image_url ?? subject?.headshot_url ?? ''}
                           alt={applyPublicBrand(story.title)}
-                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
+                          className="k-card-media"
                         />
                       ) : (
                         <div className="w-full h-full bg-[var(--magiora-soft)] flex items-center justify-center font-serif italic text-4xl text-[var(--magiora-brand)]">
@@ -256,7 +257,7 @@ export default async function HomePage() {
                       <img
                         src={p.headshot_url}
                         alt={p.display_name}
-                        className="w-full h-full object-cover object-center group-hover:scale-[1.01] transition-transform duration-200"
+                        className="k-card-media object-center"
                       />
                     ) : (
                       <div className="w-full h-full bg-[var(--magiora-soft)] flex items-center justify-center text-[var(--magiora-brand)] font-serif italic text-3xl">
@@ -301,29 +302,29 @@ export default async function HomePage() {
           </div>
 
           <div className="space-y-6">
-            {homeFeaturedProjects.map((project, index) => (
+            {homeFeaturedProjects.map((project) => (
               <Link
                 key={project.id}
                 href={`/projects/${project.slug}`}
-                className={`k-card k-card-interactive grid grid-cols-1 group ${index === 0 ? 'md:grid-cols-[280px_1fr]' : 'md:grid-cols-[220px_1fr]'}`}
+                className="k-card k-card-interactive grid grid-cols-1 group md:grid-cols-[280px_1fr]"
               >
-                <div className={`${index === 0 ? 'h-64 md:h-80' : 'h-56 md:h-64'} overflow-hidden bg-[var(--magiora-soft)] w-full`}>
+                <div className="aspect-[7/8] w-full overflow-hidden bg-[var(--magiora-soft)] md:h-80 md:aspect-auto">
                   {project.poster_url ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={project.poster_url} alt={`${project.title} poster`} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" />
+                    <img src={project.poster_url} alt={`${project.title} poster`} className="k-card-media" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-[var(--magiora-brand)] font-serif italic text-2xl text-center px-4">{project.title}</div>
                   )}
                 </div>
-                <div className={`${index === 0 ? 'p-5 md:p-8' : 'p-5 md:p-7'} self-center`}>
+                <div className="self-center p-5 md:p-7">
                   <p className="font-serif italic text-sm text-[var(--magiora-copper)] mb-2">
                     {getProjectTypeLabel(project.project_type)}
                     {project.year && <span className="text-stone-500"> · {project.year}</span>}
                   </p>
-                  <h3 className={`${index === 0 ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl'} font-serif font-medium leading-tight group-hover:text-[var(--magiora-brand)] transition-colors`}>{project.title}</h3>
+                  <h3 className="font-serif text-3xl font-medium leading-tight transition-colors group-hover:text-[var(--magiora-brand)] md:text-4xl">{project.title}</h3>
                   {project.tagline && <p className="font-serif italic text-lg text-stone-600 mt-3">{project.tagline}</p>}
                   {project.status && <span className={`inline-block mt-4 text-xs px-2.5 py-1 rounded-full font-serif ${getProjectStatusColor(project.status)}`}>{getProjectStatusLabel(project.status)}</span>}
-                  <p className="k-link mt-5 group-hover:underline">View project →</p>
+                  <p className="k-link mt-4 group-hover:underline">View project →</p>
                 </div>
               </Link>
             ))}
@@ -337,6 +338,9 @@ export default async function HomePage() {
       </section>
 
       <footer className="border-t border-[var(--magiora-border)] py-10 text-center">
+        <Link href="/" aria-label="Magiora home" className="mb-4 inline-flex">
+          <MagioraLogo />
+        </Link>
         <p className="font-serif text-sm text-stone-700">
           © {new Date().getFullYear()} Magiora
         </p>

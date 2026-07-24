@@ -1,0 +1,5 @@
+// Must remain byte-for-byte aligned with the approved canonical asset:
+// docs/designs/magiora-brand-v3/svg/web/magiora-symbol.svg
+export const MAGIORA_SYMBOL_VIEWBOX = '0 0 85 80';
+export const MAGIORA_SYMBOL_PATH =
+  'M0 0 7 8 66.7 80h-8.6L7 17.7V80H0V0Zm14 80h8.4L39 60.5l-4.1-5.2L14 80Zm29.7-33.7L83.5 0v78.8L85 80h-8.4V55.6H58.8v-6.7h17.8V17.7L47.7 50.8l-4-4.5Z';

@@ -152,7 +152,7 @@ function StoryCard({ interview }: { interview: Story }) {
           <img
             src={interview.hero_image_url}
             alt={applyPublicBrand(interview.title)}
-            className="w-full h-full object-cover group-hover:scale-[1.02]"
+            className="k-card-media"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#FAECE7] to-[#FBEAF0]" />

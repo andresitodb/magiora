@@ -186,7 +186,7 @@ export default async function ProjectsListPage({
                       <img
                         src={project.poster_url}
                         alt={project.title}
-                        className="w-full h-full object-cover group-hover:scale-[1.02]"
+                        className="k-card-media"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[#712B13] font-serif italic text-xl text-center px-3">

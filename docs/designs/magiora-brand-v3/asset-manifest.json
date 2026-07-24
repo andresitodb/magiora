@@ -1,0 +1,18 @@
+{
+  "canonical_symbol": "master-symbol.svg",
+  "web_symbol": "svg/web/magiora-symbol.svg",
+  "web_variants": {
+    "gold": "svg/web/magiora-symbol-gold.svg",
+    "charcoal": "svg/web/magiora-symbol-charcoal.svg",
+    "white": "svg/web/magiora-symbol-white.svg"
+  },
+  "favicon": "svg/favicon.svg",
+  "app_icon": "svg/app-icon.svg",
+  "maskable_icon": "svg/maskable-icon.svg",
+  "colors": {
+    "gold": "#DAAF37",
+    "soft_black": "#0D0D0D",
+    "warm_beige": "#F5F2EB",
+    "white": "#FFFFFF"
+  }
+}

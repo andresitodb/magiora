@@ -2,6 +2,7 @@ import { resetPassword } from './actions';
 import LocaleSwitcher from '@/components/LocaleSwitcher';
 import { getLocale } from '@/lib/i18n';
 import Link from 'next/link';
+import MagioraLogo from '@/components/brand/MagioraLogo';
 
 const LABELS = {
   en: {
@@ -35,7 +36,7 @@ export default async function ResetPasswordPage({
     <div className="min-h-screen bg-[#f5f3ee] flex flex-col">
       <header>
         <div className="k-container py-4 flex items-center justify-between">
-          <Link href="/" className="font-serif text-2xl font-medium">Magiora</Link>
+          <Link href="/" aria-label="Magiora home"><MagioraLogo /></Link>
           <LocaleSwitcher currentLocale={locale} />
         </div>
       </header>

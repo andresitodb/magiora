@@ -6,6 +6,7 @@ import NavMobileMenu from '@/components/NavMobileMenu';
 import NotificationsBell from '@/components/NotificationsBell';
 import MagioraLogo from '@/components/brand/MagioraLogo';
 import Link from 'next/link';
+import NavLinks from '@/components/NavLinks';
 
 function UserOutlineIcon() {
   return (
@@ -86,10 +87,6 @@ export default async function Nav({
 
   const links = isAdmin ? adminLinks : publicLinks;
 
-  const linkClass = isAdmin
-    ? 'text-stone-300 hover:text-white text-sm whitespace-nowrap transition-colors'
-    : 'text-stone-700 hover:text-[var(--magiora-brand)] text-sm whitespace-nowrap transition-colors';
-
   const logoHref = '/';
 
   return (
@@ -107,11 +104,7 @@ export default async function Nav({
         </Link>
 
         <div className="hidden lg:flex items-center justify-center gap-4 flex-1 min-w-0 overflow-x-auto">
-          {links.map((link) => (
-            <Link key={link.href} href={link.href} className={linkClass}>
-              {link.label}
-            </Link>
-          ))}
+          <NavLinks links={links} variant={isAdmin ? 'admin' : 'public'} />
         </div>
 
         <div className="hidden lg:flex items-center gap-2 lg:gap-3 shrink-0">

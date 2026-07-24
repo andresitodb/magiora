@@ -248,16 +248,9 @@ export default async function DirectoryPage({
     <div className="min-h-screen bg-[#f5f3ee]">
       <Nav />
       <main className="k-container k-section">
-        <div className="flex flex-col md:flex-row md:items-baseline md:justify-between mb-2 gap-2">
-          <div>
-            <p className="k-eyebrow mb-2">Browse the community</p>
-            <h1 className="k-page-title">Directory</h1>
-          </div>
-          <p className="text-sm text-stone-500 italic font-serif">
-            {profilesError
-              ? 'Artists unavailable'
-              : `${resultCount} ${resultCount === 1 ? 'artist' : 'artists'}`}
-          </p>
+        <div className="mb-2">
+          <p className="k-eyebrow mb-2">Browse the community</p>
+          <h1 className="k-page-title">Directory</h1>
         </div>
         <p className="k-body-muted text-base md:text-lg mb-10 max-w-2xl">
           Directors, actors, cinematographers, and crew making indie cinema.
@@ -334,7 +327,7 @@ export default async function DirectoryPage({
                       <img
                         src={p.headshot_url}
                         alt={p.display_name}
-                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
+                        className="k-card-media"
                         style={{ objectPosition: '50% 25%' }}
                       />
                     ) : (

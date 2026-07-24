@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import LocaleSwitcher from '@/components/LocaleSwitcher';
+import { usePathname } from 'next/navigation';
 
 interface UserProfile {
   display_name: string;
@@ -30,6 +31,7 @@ export default function NavMobileMenu({
   signUpLabel: string;
   signOutLabel: string;
 }) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -98,16 +100,22 @@ export default function NavMobileMenu({
               )}
 
               <nav className="border-t border-stone-200 py-2">
-                {links.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className={linkClass}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                {links.map((link) => {
+                  const active = link.href === '/'
+                    ? pathname === '/'
+                    : pathname === link.href || pathname.startsWith(`${link.href}/`);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      aria-current={active ? 'page' : undefined}
+                      className={`${linkClass} ${active ? (isAdmin ? 'text-white underline underline-offset-4' : 'text-[var(--magiora-brand)] underline underline-offset-4') : ''}`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
               </nav>
 
               {isAuthed && userProfile && !isAdmin && userProfile.is_admin && (
