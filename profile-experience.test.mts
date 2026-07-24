@@ -294,3 +294,55 @@ test('chapter rhythm removes terminal form padding and verification stays separa
   assert.match(profileSource, /Verification confirms identity and professional authenticity/);
   assert.match(profileSource, /separately from Magiora membership/);
 });
+
+test('workspace navigation keeps Casting and Applications inside dashboard routes', () => {
+  const navSource = readFileSync(
+    new URL('./src/components/Nav.tsx', import.meta.url),
+    'utf8',
+  );
+  const dashboardSource = readFileSync(
+    new URL('./src/app/dashboard/page.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(navSource, /href: '\/dashboard\/casting', label: 'Casting'/);
+  assert.match(navSource, /activePrefixes: \['\/casting-calls'\]/);
+  assert.match(navSource, /href: '\/dashboard\/applications', label: 'Applications'/);
+  assert.match(dashboardSource, /href="\/dashboard\/casting"/);
+});
+
+test('casting workspace exposes applications, shared browse, and a future saved structure', () => {
+  const castingSource = readFileSync(
+    new URL('./src/app/dashboard/casting/page.tsx', import.meta.url),
+    'utf8',
+  );
+  const browseSource = readFileSync(
+    new URL('./src/app/dashboard/casting/browse/page.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(castingSource, /My Applications/);
+  assert.match(castingSource, /Browse Casting Calls/);
+  assert.match(castingSource, /Saved Casting Calls/);
+  assert.match(castingSource, /Coming later/);
+  assert.match(browseSource, /CastingCatalogue/);
+  assert.match(browseSource, /pathname="\/dashboard\/casting\/browse"/);
+});
+
+test('workspace casting details preserve dashboard navigation through apply redirects', () => {
+  const detailSource = readFileSync(
+    new URL('./src/app/casting-calls/[id]/page.tsx', import.meta.url),
+    'utf8',
+  );
+  const actionSource = readFileSync(
+    new URL('./src/app/dashboard/casting-calls/actions.ts', import.meta.url),
+    'utf8',
+  );
+  const applicationSource = readFileSync(
+    new URL('./src/app/dashboard/applications/page.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(detailSource, /query\.workspace === '1' \? 'dashboard' : 'public'/);
+  assert.match(detailSource, /workspace_context/);
+  assert.match(actionSource, /workspaceSuffix/);
+  assert.match(applicationSource, /\/dashboard\/casting\/browse/);
+  assert.match(applicationSource, /\?workspace=1/);
+});

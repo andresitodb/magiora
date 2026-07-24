@@ -122,14 +122,17 @@ export async function applyCastingCall(formData: FormData) {
   } = await supabase.auth.getUser();
 
   const callId = formData.get('casting_call_id') as string;
+  const workspaceContext = formData.get('workspace_context') === '1';
+  const workspaceSuffix = workspaceContext ? '&workspace=1' : '';
   const errorRedirect = (message: string) =>
-    `/casting-calls/${encodeURIComponent(callId)}?error=${encodeURIComponent(message)}`;
+    `/casting-calls/${encodeURIComponent(callId)}?error=${encodeURIComponent(message)}${workspaceSuffix}`;
 
   if (!user) {
-    redirect(`/login?next=${encodeURIComponent(`/casting-calls/${callId}`)}`);
+    const nextPath = `/casting-calls/${callId}${workspaceContext ? '?workspace=1' : ''}`;
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
   if (!callId) {
-    redirect('/casting-calls?error=invalid_call');
+    redirect(workspaceContext ? '/dashboard/casting/browse?error=invalid_call' : '/casting-calls?error=invalid_call');
   }
 
   const { data: call } = await supabase
@@ -139,7 +142,7 @@ export async function applyCastingCall(formData: FormData) {
     .maybeSingle();
 
   if (!call) {
-    redirect('/casting-calls?error=call_not_found');
+    redirect(workspaceContext ? '/dashboard/casting/browse?error=call_not_found' : '/casting-calls?error=call_not_found');
   }
   const { data: existingApplication } = await supabase
     .from('applications')
@@ -179,7 +182,7 @@ export async function applyCastingCall(formData: FormData) {
     redirect(errorRedirect(message));
   }
 
-  redirect(`/casting-calls/${callId}?applied=true`);
+  redirect(`/casting-calls/${callId}?applied=true${workspaceSuffix}`);
 }
 
 export async function closeCastingCall(formData: FormData) {

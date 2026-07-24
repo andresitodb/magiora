@@ -23,7 +23,7 @@ export default function NavMobileMenu({
   signOutLabel,
   showDashboardShortcut,
 }: {
-  links: { href: string; label: string; exact?: boolean }[];
+  links: { href: string; label: string; exact?: boolean; activePrefixes?: string[] }[];
   isAdmin: boolean;
   locale: 'en' | 'es';
   isAuthed: boolean;
@@ -112,11 +112,14 @@ export default function NavMobileMenu({
 
               <nav className="border-t border-stone-200 py-2">
                 {links.map((link) => {
-                  const active = link.exact || link.href === '/'
+                  const routeActive = link.exact || link.href === '/'
                     ? pathname === '/'
                       ? link.href === '/'
                       : pathname === link.href
                     : pathname === link.href || pathname.startsWith(`${link.href}/`);
+                  const active = routeActive || link.activePrefixes?.some(
+                    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+                  );
                   return (
                     <Link
                       key={link.href}

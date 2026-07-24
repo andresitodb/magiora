@@ -157,7 +157,7 @@ export default async function DashboardPage({
       title: `${call.role_name} · ${call.project_title}`,
       detail: 'Casting application deadline',
       date: deadline,
-      href: `/casting-calls/${call.id}`,
+      href: `/casting-calls/${call.id}?workspace=1`,
     });
   }
   const upcomingCommitments = [...commitments.values()]
@@ -254,11 +254,11 @@ export default async function DashboardPage({
             actionLabel="Track applications"
           />
           <DashboardCard
-            href="/casting-calls"
+            href="/dashboard/casting"
             title="Casting Calls"
             description="Discover productions looking for your particular craft."
             icon={DashboardIcons.castingCalls}
-            actionLabel="Browse casting calls"
+            actionLabel="Open casting"
           />
           <DashboardCard
             href="/dashboard/stories"

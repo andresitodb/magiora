@@ -7,16 +7,19 @@ export default function NavLinks({
   links,
   variant,
 }: {
-  links: { href: string; label: string; exact?: boolean }[];
+  links: { href: string; label: string; exact?: boolean; activePrefixes?: string[] }[];
   variant: 'public' | 'admin';
 }) {
   const pathname = usePathname();
   return links.map((link) => {
-    const active = link.exact || link.href === '/'
+    const routeActive = link.exact || link.href === '/'
       ? pathname === '/'
         ? link.href === '/'
         : pathname === link.href
       : pathname === link.href || pathname.startsWith(`${link.href}/`);
+    const active = routeActive || link.activePrefixes?.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    );
     const base = 'rounded-sm border-b text-sm whitespace-nowrap transition-colors';
     const state = variant === 'admin'
       ? active

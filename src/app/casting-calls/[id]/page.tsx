@@ -61,7 +61,7 @@ export default async function CastingCallDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; applied?: string }>;
+  searchParams: Promise<{ error?: string; applied?: string; workspace?: string }>;
 }) {
   const { id } = await params;
   const query = await searchParams;
@@ -113,9 +113,12 @@ export default async function CastingCallDetailPage({
 
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
-      <Nav />
+      <Nav variant={query.workspace === '1' ? 'dashboard' : 'public'} />
       <main className="k-container k-section max-w-3xl">
-        <BackLink href="/casting-calls" label="Casting Calls" />
+        <BackLink
+          href={query.workspace === '1' ? '/dashboard/casting/browse' : '/casting-calls'}
+          label={query.workspace === '1' ? 'Browse Casting Calls' : 'Casting Calls'}
+        />
 
         {call.status !== 'open' && (
           <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-md p-3">
@@ -265,6 +268,9 @@ export default async function CastingCallDetailPage({
           ) : (
             <form action={applyCastingCall} className="k-card p-5 space-y-4">
               <input type="hidden" name="casting_call_id" value={call.id} />
+              {query.workspace === '1' && (
+                <input type="hidden" name="workspace_context" value="1" />
+              )}
               <div>
                 <label className="block text-sm font-medium mb-1">Cover note (optional)</label>
                 <textarea

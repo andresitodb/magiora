@@ -1,0 +1,674 @@
+[33mcommit 55ec0263ec4d51a4057390f05ba0b5d9a2df1433[m[33m ([m[1;33mtag: [m[1;33mv0.9[m[33m)[m
+Author: Andrés <andres@sibilino.com>
+Date:   Fri Jul 24 02:12:34 2026 -0400
+
+    release: finalize public experience, workspace, and profile editor
+
+[1mdiff --git a/package.json b/package.json[m
+[1mindex a273b3f..a4f9dfe 100644[m
+[1m--- a/package.json[m
+[1m+++ b/package.json[m
+[36m@@ -1 +1 @@[m
+[31m-{"name":"magiora","version":"0.1.0","private":true,"scripts":{"dev":"next dev","build":"next build","start":"next start","lint":"eslint","test":"node --experimental-default-type=module --experimental-strip-types --test tests/*.test.mts","test:sprint-1.5":"node --experimental-default-type=module --experimental-strip-types --test tests/sprint-1-5.test.mts","seed:demo":"node scripts/seed-demo.mjs"},"dependencies":{"@supabase/ssr":"^0.10.3","@supabase/supabase-js":"^2.105.4","dotenv":"^17.4.2","next":"16.2.6","react":"19.2.4","react-dom":"19.2.4","stripe":"^22.1.1"},"devDependencies":{"@tailwindcss/postcss":"^4","@types/node":"^20","@types/react":"^19","@types/react-dom":"^19","eslint":"^9","eslint-config-next":"16.2.6","supabase":"^2.109.1","tailwindcss":"^4","typescript":"^5"},"overrides":{"next":{"postcss":"8.5.10"}}}[m
+[32m+[m[32m{"name":"magiora","version":"0.1.0","private":true,"scripts":{"dev":"next dev","build":"next build","start":"next start","lint":"eslint","test":"node --experimental-default-type=module --experimental-strip-types --test tests/*.test.mts profile-experience.test.mts","test:sprint-1.5":"node --experimental-default-type=module --experimental-strip-types --test tests/sprint-1-5.test.mts","seed:demo":"node scripts/seed-demo.mjs"},"dependencies":{"@supabase/ssr":"^0.10.3","@supabase/supabase-js":"^2.105.4","dotenv":"^17.4.2","next":"16.2.6","react":"19.2.4","react-dom":"19.2.4","stripe":"^22.1.1"},"devDependencies":{"@tailwindcss/postcss":"^4","@types/node":"^20","@types/react":"^19","@types/react-dom":"^19","eslint":"^9","eslint-config-next":"16.2.6","supabase":"^2.109.1","tailwindcss":"^4","typescript":"^5"},"overrides":{"next":{"postcss":"8.5.10"}}}[m
+[1mdiff --git a/profile-experience.test.mts b/profile-experience.test.mts[m
+[1mnew file mode 100644[m
+[1mindex 0000000..9f0a1a8[m
+[1m--- /dev/null[m
+[1m+++ b/profile-experience.test.mts[m
+[36m@@ -0,0 +1,127 @@[m
+[32m+[m[32mimport assert from 'node:assert/strict';[m
+[32m+[m[32mimport { readFileSync } from 'node:fs';[m
+[32m+[m[32mimport test from 'node:test';[m
+[32m+[m[32mimport { computeDashboardCompleteness } from './src/lib/dashboardFoundation.ts';[m
+[32m+[m[32mimport {[m
+[32m+[m[32m  PROFILE_CHAPTERS,[m
+[32m+[m[32m  getChapterProgress,[m
+[32m+[m[32m  getProfilePublicStatus,[m
+[32m+[m[32m  getRequestedMemberFeatures,[m
+[32m+[m[32m  shouldTrackProfileChange,[m
+[32m+[m[32m  shouldWarnForUnsavedChanges,[m
+[32m+[m[32m  validationSummary,[m
+[32m+[m[32m} from './src/lib/profileExperience.ts';[m
+[32m+[m
+[32m+[m[32mtest('profile fields are grouped into the six editorial chapters', () => {[m
+[32m+[m[32m  assert.deepEqual(PROFILE_CHAPTERS.map((chapter) => chapter.label), [[m
+[32m+[m[32m    'Profile essentials',[m
+[32m+[m[32m    'Professional practice',[m
+[32m+[m[32m    'Work',[m
+[32m+[m[32m    'Contact',[m
+[32m+[m[32m    'Public presence',[m
+[32m+[m[32m    'Trust & account',[m
+[32m+[m[32m  ]);[m
+[32m+[m
+[32m+[m[32m  const progress = getChapterProgress(computeDashboardCompleteness({[m
+[32m+[m[32m    display_name: 'Ava Stone',[m
+[32m+[m[32m    role_titles: ['Actor'],[m
+[32m+[m[32m  }));[m
+[32m+[m[32m  assert.deepEqual(progress.map(({ id, total }) => [id, total]), [[m
+[32m+[m[32m    ['profile-essentials', 5],[m
+[32m+[m[32m    ['professional-practice', 2],[m
+[32m+[m[32m    ['work', 2],[m
+[32m+[m[32m    ['contact-chapter', 1],[m
+[32m+[m[32m    ['public-presence', 0],[m
+[32m+[m[32m    ['trust-account', 0],[m
+[32m+[m[32m  ]);[m
+[32m+[m[32m  assert.equal(progress[0].completed, 2);[m
+[32m+[m[32m  assert.equal(progress[0].percent, 40);[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mtest('public profile status uses approved and visible without introducing another state', () => {[m
+[32m+[m[32m  assert.equal(getProfilePublicStatus(true, true), 'Public');[m
+[32m+[m[32m  assert.equal(getProfilePublicStatus(false, true), 'Private');[m
+[32m+[m[32m  assert.equal(getProfilePublicStatus(true, false), 'Awaiting approval');[m
+[32m+[m[32m  assert.equal(getProfilePublicStatus(false, false), 'Awaiting approval');[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mtest('dirty state tracks only main-form changes and excludes auto-saved media', () => {[m
+[32m+[m[32m  assert.equal(shouldTrackProfileChange({ formId: 'profile-form', autoSaved: false }), true);[m
+[32m+[m[32m  assert.equal(shouldTrackProfileChange({ formId: 'profile-form', autoSaved: true }), false);[m
+[32m+[m[32m  assert.equal(shouldTrackProfileChange({ formId: 'password-form', autoSaved: false }), false);[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mtest('sticky save warning ignores chapter navigation and successful submission', () => {[m
+[32m+[m[32m  assert.equal(shouldWarnForUnsavedChanges({ dirty: true, submitting: false, destination: '/dashboard' }), true);[m
+[32m+[m[32m  assert.equal(shouldWarnForUnsavedChanges({ dirty: true, submitting: false, destination: '#work' }), false);[m
+[32m+[m[32m  assert.equal(shouldWarnForUnsavedChanges({ dirty: true, submitting: true, destination: '/dashboard' }), false);[m
+[32m+[m[32m  assert.equal(shouldWarnForUnsavedChanges({ dirty: false, submitting: false, destination: '/dashboard' }), false);[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mtest('profile editor renders a sticky save region and marks media as auto-saved', () => {[m
+[32m+[m[32m  const experienceSource = readFileSync([m
+[32m+[m[32m    new URL('./src/components/ProfileEditorExperience.tsx', import.meta.url),[m
+[32m+[m[32m    'utf8',[m
+[32m+[m[32m  );[m
+[32m+[m[32m  const profileSource = readFileSync([m
+[32m+[m[32m    new URL('./src/app/dashboard/profile/page.tsx', import.meta.url),[m
+[32m+[m[32m    'utf8',[m
+[32m+[m[32m  );[m
+[32m+[m[32m  assert.match(experienceSource, /data-sticky-save/);[m
+[32m+[m[32m  assert.match(experienceSource, /fixed inset-x-4 bottom-3/);[m
+[32m+[m[32m  assert.match(profileSource, /data-auto-saved="true"/);[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mtest('validation summary maps errors to the most relevant profile section', () => {[m
+[32m+[m[32m  assert.deepEqual(validationSummary('Demo reel must be a valid URL'), {[m
+[32m+[m[32m    title: 'Your profile was not saved',[m
+[32m+[m[32m    message: 'Demo reel must be a valid URL',[m
+[32m+[m[32m    target: 'portfolio',[m
+[32m+[m[32m  });[m
+[32m+[m[32m  assert.equal(validationSummary('That link is already taken')?.target, 'public-presence');[m
+[32m+[m[32m  assert.equal(validationSummary(null), null);[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mtest('Member save gate identifies previews without changing Member submissions', () => {[m
+[32m+[m[32m  assert.deepEqual(getRequestedMemberFeatures({[m
+[32m+[m[32m    isMember: false,[m
+[32m+[m[32m    currentSlug: 'ava-stone',[m
+[32m+[m[32m    requestedSlug: 'ava-directs',[m
+[32m+[m[32m    requestedTheme: 'cinematic',[m
+[32m+[m[32m    requestedAccent: 'forest',[m
+[32m+[m[32m    skillCount: 7,[m
+[32m+[m[32m  }), [[m
+[32m+[m[32m    'Custom profile URL',[m
+[32m+[m[32m    'Profile theme',[m
+[32m+[m[32m    'Color palette',[m
+[32m+[m[32m    'Additional skills',[m
+[32m+[m[32m  ]);[m
+[32m+[m[32m  assert.deepEqual(getRequestedMemberFeatures({[m
+[32m+[m[32m    isMember: true,[m
+[32m+[m[32m    currentSlug: 'ava-stone',[m
+[32m+[m[32m    requestedSlug: 'ava-directs',[m
+[32m+[m[32m    requestedTheme: 'cinematic',[m
+[32m+[m[32m    requestedAccent: 'forest',[m
+[32m+[m[32m    skillCount: 7,[m
+[32m+[m[32m  }), []);[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mtest('Member presentation remains interactive and pricing copy matches actual limits', () => {[m
+[32m+[m[32m  const themeSource = readFileSync([m
+[32m+[m[32m    new URL('./src/components/ThemeSelector.tsx', import.meta.url),[m
+[32m+[m[32m    'utf8',[m
+[32m+[m[32m  );[m
+[32m+[m[32m  const slugSource = readFileSync([m
+[32m+[m[32m    new URL('./src/components/SlugEditor.tsx', import.meta.url),[m
+[32m+[m[32m    'utf8',[m
+[32m+[m[32m  );[m
+[32m+[m[32m  const pricingSource = readFileSync([m
+[32m+[m[32m    new URL('./src/app/pricing/page.tsx', import.meta.url),[m
+[32m+[m[32m    'utf8',[m
+[32m+[m[32m  );[m
+[32m+[m[32m  assert.doesNotMatch(themeSource, /disabled=\{!isMember\}/);[m
+[32m+[m[32m  assert.doesNotMatch(slugSource, /disabled=\{!isMember\}/);[m
+[32m+[m[32m  assert.match(pricingSource, /up to 10 gallery photos/i);[m
+[32m+[m[32m  assert.match(pricingSource, /4 profile themes &amp; 6 color palettes/i);[m
+[32m+[m[32m  assert.match(pricingSource, /Up to 4 additional video links/i);[m
+[32m+[m[32m});[m
+[1mdiff --git a/src/app/dashboard/profile/ProfileMediaSection.tsx b/src/app/dashboard/profile/ProfileMediaSection.tsx[m
+[1mindex 6267904..c7d982a 100644[m
+[1m--- a/src/app/dashboard/profile/ProfileMediaSection.tsx[m
+[1m+++ b/src/app/dashboard/profile/ProfileMediaSection.tsx[m
+[36m@@ -3,8 +3,10 @@[m
+ import { useState, useRef } from 'react';[m
+ import { createClient } from '@/lib/supabase/client';[m
+ import { useRouter } from 'next/navigation';[m
+[32m+[m[32mimport MemberEdition from '@/components/MemberEdition';[m
+ [m
+ const MAX_GALLERY = 10;[m
+[32m+[m[32mconst FREE_GALLERY_LIMIT = 3;[m
+ const MAX_IMAGE_BYTES = 10 * 1024 * 1024;[m
+ const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);[m
+ [m
+[36m@@ -22,10 +24,12 @@[m [mexport default function ProfileMediaSection({[m
+   userId,[m
+   initialHeadshot,[m
+   initialGallery,[m
+[32m+[m[32m  isMember,[m
+ }: {[m
+   userId: string;[m
+   initialHeadshot: string | null;[m
+   initialGallery: string[];[m
+[32m+[m[32m  isMember: boolean;[m
+ }) {[m
+   const supabase = createClient();[m
+   const router = useRouter();[m
+[36m@@ -45,6 +49,7 @@[m [mexport default function ProfileMediaSection({[m
+     }[m
+     setUploading(true);[m
+     const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';[m
+[32m+[m[32m    // eslint-disable-next-line react-hooks/purity -- generated only inside the user-triggered upload handler[m
+     const path = `${userId}/headshot-${Date.now()}.${ext}`;[m
+ [m
+     const { error: upErr } = await supabase.storage[m
+[36m@@ -92,6 +97,7 @@[m [mexport default function ProfileMediaSection({[m
+ [m
+     for (const file of Array.from(files)) {[m
+       const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';[m
+[32m+[m[32m      // eslint-disable-next-line react-hooks/purity -- generated only inside the user-triggered upload handler[m
+       const path = `${userId}/gallery-${Date.now()}-${Math.random()[m
+         .toString(36)[m
+         .slice(2, 7)}.${ext}`;[m
+[36m@@ -135,6 +141,36 @@[m [mexport default function ProfileMediaSection({[m
+     router.refresh();[m
+   }[m
+ [m
+[32m+[m[32m  async function saveGalleryOrder(next: string[]) {[m
+[32m+[m[32m    setError(null);[m
+[32m+[m[32m    const { error: updErr } = await supabase[m
+[32m+[m[32m      .from('profiles')[m
+[32m+[m[32m      .update({ gallery: next })[m
+[32m+[m[32m      .eq('id', userId);[m
+[32m+[m[32m    if (updErr) {[m
+[32m+[m[32m      setError(updErr.message);[m
+[32m+[m[32m      return;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    setGallery(next);[m
+[32m+[m[32m    router.refresh();[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  function moveGalleryImage(index: number, direction: -1 | 1) {[m
+[32m+[m[32m    const nextIndex = index + direction;[m
+[32m+[m[32m    if (nextIndex < 0 || nextIndex >= gallery.length) return;[m
+[32m+[m[32m    const next = [...gallery];[m
+[32m+[m[32m    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];[m
+[32m+[m[32m    void saveGalleryOrder(next);[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  function makeImagePublic(index: number) {[m
+[32m+[m[32m    if (index < FREE_GALLERY_LIMIT) return;[m
+[32m+[m[32m    const next = [...gallery];[m
+[32m+[m[32m    const [selected] = next.splice(index, 1);[m
+[32m+[m[32m    next.splice(FREE_GALLERY_LIMIT - 1, 0, selected);[m
+[32m+[m[32m    void saveGalleryOrder(next);[m
+[32m+[m[32m  }[m
+[32m+[m
+   return ([m
+     <div className="space-y-8">[m
+       {error && ([m
+[36m@@ -144,8 +180,13 @@[m [mexport default function ProfileMediaSection({[m
+       )}[m
+ [m
+       <div>[m
+[31m-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Photo</p>[m
+[31m-        <h2 className="font-serif text-xl font-medium mb-4">Headshot</h2>[m
+[32m+[m[32m        <div className="mb-4 flex items-end justify-between gap-3">[m
+[32m+[m[32m          <div>[m
+[32m+[m[32m            <p className="font-serif italic text-sm text-[#993C1D] mb-2">Photo</p>[m
+[32m+[m[32m            <h3 className="font-serif text-xl font-medium">Headshot</h3>[m
+[32m+[m[32m          </div>[m
+[32m+[m[32m          <p className="text-xs font-medium text-stone-500">Saved automatically</p>[m
+[32m+[m[32m        </div>[m
+         <div className="flex gap-6 items-start">[m
+           <div className="w-32 aspect-[4/5] bg-[#FAECE7] rounded-md overflow-hidden flex items-center justify-center">[m
+             {headshot ? ([m
+[36m@@ -184,33 +225,78 @@[m [mexport default function ProfileMediaSection({[m
+       </div>[m
+ [m
+       <div>[m
+[31m-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Gallery</p>[m
+[31m-        <h2 className="font-serif text-xl font-medium mb-1">[m
+[31m-          More photos[m
+[31m-          <span className="text-sm text-stone-500 font-normal ml-2">[m
+[31m-            {gallery.length} / {MAX_GALLERY}[m
+[31m-          </span>[m
+[31m-        </h2>[m
+[32m+[m[32m        <div className="flex items-end justify-between gap-3">[m
+[32m+[m[32m          <div>[m
+[32m+[m[32m            <p className="font-serif italic text-sm text-[#993C1D] mb-2">Gallery</p>[m
+[32m+[m[32m            <h3 className="font-serif text-xl font-medium mb-1">[m
+[32m+[m[32m              More photos[m
+[32m+[m[32m              <span className="text-sm text-stone-500 font-normal ml-2">[m
+[32m+[m[32m                {gallery.length} / {MAX_GALLERY}[m
+[32m+[m[32m              </span>[m
+[32m+[m[32m            </h3>[m
+[32m+[m[32m          </div>[m
+[32m+[m[32m          <p className="mb-1 text-xs font-medium text-stone-500">Saved automatically</p>[m
+[32m+[m[32m        </div>[m
+         <p className="text-xs text-stone-500 italic font-serif mb-4">[m
+           Behind-the-scenes, stills, lifestyle, alternate headshots.[m
+         </p>[m
+ [m
+[31m-        <div className="grid grid-cols-4 gap-3">[m
+[31m-          {gallery.map((url) => ([m
+[32m+[m[32m        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">[m
+[32m+[m[32m          {gallery.map((url, index) => ([m
+             <div[m
+               key={url}[m
+[31m-              className="relative aspect-[4/5] bg-stone-100 rounded-md overflow-hidden group"[m
+[32m+[m[32m              className="group relative aspect-[4/5] overflow-hidden rounded-md bg-stone-100"[m
+             >[m
+               {/* eslint-disable-next-line @next/next/no-img-element */}[m
+[31m-              <img src={url} alt="Profile gallery image" className="w-full h-full object-cover" />[m
+[31m-              <button[m
+[31m-                type="button"[m
+[31m-                onClick={() => removeGalleryImage(url)}[m
+[31m-                className="absolute top-1 right-1 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"[m
+[31m-                aria-label="Remove gallery image"[m
+[31m-              >[m
+[31m-                Remove[m
+[31m-              </button>[m
+[32m+[m[32m              <img src={url} alt={`Profile gallery image ${index + 1}`} className="h-full w-full object-cover" />[m
+[32m+[m[32m              <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-1 p-1.5">[m
+[32m+[m[32m                <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${[m
+[32m+[m[32m                  isMember || index < FREE_GALLERY_LIMIT[m
+[32m+[m[32m                    ? 'bg-white/95 text-stone-800'[m
+[32m+[m[32m                    : 'bg-stone-900/90 text-white'[m
+[32m+[m[32m                }`}>[m
+[32m+[m[32m                  {isMember || index < FREE_GALLERY_LIMIT ? 'Published' : 'Visible with Member'}[m
+[32m+[m[32m                </span>[m
+[32m+[m[32m                <button[m
+[32m+[m[32m                  type="button"[m
+[32m+[m[32m                  onClick={() => removeGalleryImage(url)}[m
+[32m+[m[32m                  className="rounded bg-black/75 px-2 py-1 text-xs text-white opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100"[m
+[32m+[m[32m                  aria-label={`Remove gallery image ${index + 1}`}[m
+[32m+[m[32m                >[m
+[32m+[m[32m                  Remove[m
+[32m+[m[32m                </button>[m
+[32m+[m[32m              </div>[m
+[32m+[m[32m              <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/75 to-transparent px-2 pb-2 pt-6">[m
+[32m+[m[32m                {index > 0 && ([m
+[32m+[m[32m                  <button[m
+[32m+[m[32m                    type="button"[m
+[32m+[m[32m                    onClick={() => moveGalleryImage(index, -1)}[m
+[32m+[m[32m                    className="rounded bg-white/95 px-2 py-1 text-xs font-medium text-stone-800 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"[m
+[32m+[m[32m                    aria-label={`Move gallery image ${index + 1} earlier`}[m
+[32m+[m[32m                  >[m
+[32m+[m[32m                    ←[m
+[32m+[m[32m                  </button>[m
+[32m+[m[32m                )}[m
+[32m+[m[32m                {!isMember && index >= FREE_GALLERY_LIMIT && ([m
+[32m+[m[32m                  <button[m
+[32m+[m[32m                    type="button"[m
+[32m+[m[32m                    onClick={() => makeImagePublic(index)}[m
+[32m+[m[32m                    className="rounded bg-white/95 px-2 py-1 text-xs font-medium text-[#712B13] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"[m
+[32m+[m[32m                  >[m
+[32m+[m[32m                    Make public[m
+[32m+[m[32m                  </button>[m
+[32m+[m[32m                )}[m
+[32m+[m[32m                {index < gallery.length - 1 && ([m
+[32m+[m[32m                  <button[m
+[32m+[m[32m                    type="button"[m
+[32m+[m[32m                    onClick={() => moveGalleryImage(index, 1)}[m
+[32m+[m[32m                    className="rounded bg-white/95 px-2 py-1 text-xs font-medium text-stone-800 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"[m
+[32m+[m[32m                    aria-label={`Move gallery image ${index + 1} later`}[m
+[32m+[m[32m                  >[m
+[32m+[m[32m                    →[m
+[32m+[m[32m                  </button>[m
+[32m+[m[32m                )}[m
+[32m+[m[32m              </div>[m
+             </div>[m
+           ))}[m
+           {gallery.length < MAX_GALLERY && ([m
+[36m@@ -236,6 +322,19 @@[m [mexport default function ProfileMediaSection({[m
+             if (e.target.files) uploadGalleryImages(e.target.files);[m
+           }}[m
+         />[m
+[32m+[m
+[32m+[m[32m        <MemberEdition[m
+[32m+[m[32m          title="Expanded gallery"[m
+[32m+[m[32m          benefit="Publish images four through ten and give collaborators a richer view of your work."[m
+[32m+[m[32m          isMember={isMember}[m
+[32m+[m[32m          className="mt-4"[m
+[32m+[m[32m        >[m
+[32m+[m[32m          <p className="text-sm text-stone-600">[m
+[32m+[m[32m            {isMember[m
+[32m+[m[32m              ? `All ${gallery.length} gallery images are published.`[m
+[32m+[m[32m              : `Your first ${Math.min(gallery.length, FREE_GALLERY_LIMIT)} images are published. Additional uploads remain saved and become visible with Member.`}[m
+[32m+[m[32m          </p>[m
+[32m+[m[32m        </MemberEdition>[m
+       </div>[m
+     </div>[m
+   );[m
+[1mdiff --git a/src/app/dashboard/profile/actions.ts b/src/app/dashboard/profile/actions.ts[m
+[1mindex f607d0e..ce3dc93 100644[m
+[1m--- a/src/app/dashboard/profile/actions.ts[m
+[1m+++ b/src/app/dashboard/profile/actions.ts[m
+[36m@@ -114,30 +114,56 @@[m [mexport async function updateProfile(formData: FormData) {[m
+   let skills = formData.getAll('skills').map(String).map((s) => s.trim()).filter(Boolean);[m
+   if (!isMember && skills.length > FREE_SKILL_LIMIT) skills = skills.slice(0, FREE_SKILL_LIMIT);[m
+ [m
+[31m-  const parseJSON = <T,>(key: string, fallback: T): T => {[m
+[32m+[m[32m  const malformedFieldLabels: Record<string, string> = {[m
+[32m+[m[32m    video_links: 'video links',[m
+[32m+[m[32m    experience: 'experience',[m
+[32m+[m[32m    recommendations: 'recommendations',[m
+[32m+[m[32m    equipment: 'equipment',[m
+[32m+[m[32m    physical_details: 'professional details',[m
+[32m+[m[32m    social_links: 'social links',[m
+[32m+[m[32m    representation: 'representation',[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  const parseJSON = <T,>([m
+[32m+[m[32m    key: string,[m
+[32m+[m[32m    fallback: T,[m
+[32m+[m[32m    expected: 'array' | 'object',[m
+[32m+[m[32m  ): T => {[m
+     try {[m
+       const raw = formData.get(key) as string | null;[m
+[31m-      return raw ? (JSON.parse(raw) as T) : fallback;[m
+[32m+[m[32m      if (!raw) return fallback;[m
+[32m+[m[32m      const parsed = JSON.parse(raw) as unknown;[m
+[32m+[m[32m      const valid =[m
+[32m+[m[32m        expected === 'array'[m
+[32m+[m[32m          ? Array.isArray(parsed)[m
+[32m+[m[32m          : typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);[m
+[32m+[m[32m      if (!valid) throw new Error('Unexpected JSON shape');[m
+[32m+[m[32m      return parsed as T;[m
+     } catch {[m
+[31m-      return fallback;[m
+[32m+[m[32m      redirect([m
+[32m+[m[32m        '/dashboard/profile?error=' +[m
+[32m+[m[32m          encodeURIComponent([m
+[32m+[m[32m            `We could not read your ${malformedFieldLabels[key] ?? key}. Review that section and try again.`,[m
+[32m+[m[32m          ),[m
+[32m+[m[32m      );[m
+     }[m
+   };[m
+ [m
+   let videoLinks: VideoLink[] = [];[m
+   if (isMember) {[m
+[31m-    videoLinks = parseJSON<VideoLink[]>('video_links', []).filter((link) =>[m
+[32m+[m[32m    videoLinks = parseJSON<VideoLink[]>('video_links', [], 'array').filter((link) =>[m
+       link.url?.trim()[m
+     );[m
+   }[m
+ [m
+[31m-  const experienceRaw = parseJSON<ExperienceItem[]>('experience', []);[m
+[32m+[m[32m  const experienceRaw = parseJSON<ExperienceItem[]>('experience', [], 'array');[m
+   const experience = sortExperienceByYear(experienceRaw);[m
+ [m
+[31m-  const recommendations = parseJSON('recommendations', []);[m
+[31m-  const equipment = parseJSON('equipment', []);[m
+[31m-  const physicalDetails = parseJSON('physical_details', {});[m
+[31m-  const socialLinks = parseJSON('social_links', {});[m
+[31m-  const representation = parseJSON('representation', {});[m
+[32m+[m[32m  const recommendations = parseJSON('recommendations', [], 'array');[m
+[32m+[m[32m  const equipment = parseJSON('equipment', [], 'array');[m
+[32m+[m[32m  const physicalDetails = parseJSON('physical_details', {}, 'object');[m
+[32m+[m[32m  const socialLinks = parseJSON('social_links', {}, 'object');[m
+[32m+[m[32m  const representation = parseJSON('representation', {}, 'object');[m
+ [m
+   const ageMin = formData.get('age_range_min') as string | null;[m
+   const ageMax = formData.get('age_range_max') as string | null;[m
+[1mdiff --git a/src/app/dashboard/profile/page.tsx b/src/app/dashboard/profile/page.tsx[m
+[1mindex 813036e..a241df7 100644[m
+[1m--- a/src/app/dashboard/profile/page.tsx[m
+[1m+++ b/src/app/dashboard/profile/page.tsx[m
+[36m@@ -1,4 +1,12 @@[m
+[32m+[m[32mimport { Suspense } from 'react';[m
+[32m+[m[32mimport Link from 'next/link';[m
+ import { createClient } from '@/lib/supabase/server';[m
+[32m+[m[32mimport { hasPaidMembership } from '@/lib/billingServer';[m
+[32m+[m[32mimport { computeDashboardCompleteness } from '@/lib/dashboardFoundation';[m
+[32m+[m[32mimport {[m
+[32m+[m[32m  getChapterProgress,[m
+[32m+[m[32m  getProfilePublicStatus,[m
+[32m+[m[32m} from '@/lib/profileExperience';[m
+ import { updateProfile, changePassword, requestVerified } from './actions';[m
+ import ProfileMediaSection from './ProfileMediaSection';[m
+ import AutoGrowTextarea from '@/components/AutoGrowTextarea';[m
+[36m@@ -16,349 +24,468 @@[m [mimport ThemeSelector from '@/components/ThemeSelector';[m
+ import VerifiedRequestForm from '@/components/VerifiedRequestForm';[m
+ import BackLink from '@/components/BackLink';[m
+ import Toast from '@/components/Toast';[m
+[32m+[m[32mimport {[m
+[32m+[m[32m  ProfileChapterNavigation,[m
+[32m+[m[32m} from '@/components/ProfileEditorExperience';[m
+[32m+[m[32mimport ProfileMainForm from '@/components/ProfileEditorExperience';[m
+ import { SectionIcons } from '@/components/SectionIcons';[m
+[31m-import { Suspense } from 'react';[m
+[31m-import Link from 'next/link';[m
+[31m-import { hasPaidMembership } from '@/lib/billingServer';[m
+[32m+[m[32mimport MemberEdition from '@/components/MemberEdition';[m
+ [m
+ const FREE_SKILL_LIMIT = 5;[m
+[31m-const FREE_GALLERY_LIMIT = 3;[m
+ [m
+ function SectionLabel({ icon, label }: { icon: React.ReactNode; label: string }) {[m
+   return ([m
+[31m-    <div className="flex items-center gap-2 mb-2">[m
+[32m+[m[32m    <div className="mb-2 flex items-center gap-2">[m
+       <span className="text-[#993C1D]">{icon}</span>[m
+[31m-      <p className="font-serif italic text-sm text-[#993C1D]">{label}</p>[m
+[32m+[m[32m      <h3 className="font-serif text-sm italic text-[#993C1D]">{label}</h3>[m
+     </div>[m
+   );[m
+ }[m
+ [m
+[31m-export default async function ProfileEditPage() {[m
+[32m+[m[32mfunction ChapterHeader({[m
+[32m+[m[32m  number,[m
+[32m+[m[32m  title,[m
+[32m+[m[32m  description,[m
+[32m+[m[32m}: {[m
+[32m+[m[32m  number: string;[m
+[32m+[m[32m  title: string;[m
+[32m+[m[32m  description: string;[m
+[32m+[m[32m}) {[m
+[32m+[m[32m  return ([m
+[32m+[m[32m    <header className="mb-6 border-b border-stone-200 pb-4">[m
+[32m+[m[32m      <p className="k-eyebrow mb-2">Chapter {number}</p>[m
+[32m+[m[32m      <h2 className="font-serif text-2xl font-medium">{title}</h2>[m
+[32m+[m[32m      <p className="mt-1 max-w-xl text-sm leading-relaxed text-stone-600">{description}</p>[m
+[32m+[m[32m    </header>[m
+[32m+[m[32m  );[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mexport default async function ProfileEditPage({[m
+[32m+[m[32m  searchParams,[m
+[32m+[m[32m}: {[m
+[32m+[m[32m  searchParams: Promise<{ error?: string; toast?: string }>;[m
+[32m+[m[32m}) {[m
+[32m+[m[32m  const params = await searchParams;[m
+   const supabase = await createClient();[m
+   const {[m
+     data: { user },[m
+   } = await supabase.auth.getUser();[m
+ [m
+[31m-  const { data: profile } = await supabase[m
+[31m-    .from('profiles')[m
+[31m-    .select('*')[m
+[31m-    .eq('id', user!.id)[m
+[31m-    .single();[m
+[32m+[m[32m  const [{ data: profile }, { count: linkedCreditCount }] = await Promise.all([[m
+[32m+[m[32m    supabase[m
+[32m+[m[32m      .from('profiles')[m
+[32m+[m[32m      .select('*')[m
+[32m+[m[32m      .eq('id', user!.id)[m
+[32m+[m[32m      .single(),[m
+[32m+[m[32m    supabase[m
+[32m+[m[32m      .from('project_credits')[m
+[32m+[m[32m      .select('id', { count: 'exact', head: true })[m
+[32m+[m[32m      .eq('profile_id', user!.id),[m
+[32m+[m[32m  ]);[m
+ [m
+   if (!profile) return null;[m
+ [m
+   const isMember = await hasPaidMembership(user!.id);[m
+   const isActorPrimary =[m
+     profile.role_category === 'actor' ||[m
+[31m-    (profile.role_titles?.[0] && ['actor', 'lead actor', 'supporting actor', 'background actor', 'voice actor'].includes((profile.role_titles[0] as string).toLowerCase()));[m
+[31m-  const isCrew = !isActorPrimary && profile.role_category && profile.role_category !== 'writer';[m
+[32m+[m[32m    (profile.role_titles?.[0] &&[m
+[32m+[m[32m      ['actor', 'lead actor', 'supporting actor', 'background actor', 'voice actor'][m
+[32m+[m[32m        .includes((profile.role_titles[0] as string).toLowerCase()));[m
+[32m+[m[32m  const isCrew =[m
+[32m+[m[32m    !isActorPrimary &&[m
+[32m+[m[32m    profile.role_category &&[m
+[32m+[m[32m    profile.role_category !== 'writer';[m
+[32m+[m[32m  const completeness = computeDashboardCompleteness(profile, linkedCreditCount ?? 0);[m
+[32m+[m[32m  const chapters = getChapterProgress(completeness);[m
+[32m+[m[32m  const publicStatus = getProfilePublicStatus(profile.visible, profile.approved);[m
+[32m+[m[32m  const primaryRole =[m
+[32m+[m[32m    profile.role_titles?.[0] || profile.role_category || 'Creative professional';[m
+[32m+[m[32m  const profileLocation = [profile.location_city, profile.location_state][m
+[32m+[m[32m    .filter(Boolean)[m
+[32m+[m[32m    .join(', ');[m
+[32m+[m[32m  const statusStyles = {[m
+[32m+[m[32m    Public: 'border-green-200 bg-green-50 text-green-900',[m
+[32m+[m[32m    Private: 'border-stone-200 bg-stone-50 text-stone-800',[m
+[32m+[m[32m    'Awaiting approval': 'border-amber-200 bg-amber-50 text-amber-900',[m
+[32m+[m[32m  }[publicStatus];[m
+ [m
+   return ([m
+[31m-    <div className="max-w-2xl pb-12">[m
+[32m+[m[32m    <div className="mx-auto max-w-6xl pb-12">[m
+       <Suspense fallback={null}>[m
+         <Toast />[m
+       </Suspense>[m
+ [m
+       <BackLink href="/dashboard" label="Dashboard" />[m
+ [m
+[31m-      <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-8 gap-3">[m
+[32m+[m[32m      <header className="mb-8 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">[m
+         <div>[m
+           <p className="k-eyebrow mb-2">Your profile</p>[m
+           <h1 className="k-section-title">Edit profile</h1>[m
+[32m+[m[32m          <p className="mt-2 max-w-xl text-sm leading-relaxed text-stone-600">[m
+[32m+[m[32m            Shape the professional presence collaborators see across Magiora.[m
+[32m+[m[32m          </p>[m
+         </div>[m
+         {profile.slug && ([m
+           <Link[m
+             href={`/m/${profile.slug}`}[m
+[31m-            className="text-sm text-[#712B13] italic font-serif hover:underline md:mt-2 whitespace-nowrap"[m
+[32m+[m[32m            className="k-link whitespace-nowrap text-sm md:mt-2"[m
+           >[m
+             View public profile →[m
+           </Link>[m
+         )}[m
+[31m-      </div>[m
+[32m+[m[32m      </header>[m
+ [m
+[31m-      {/* PHOTOS — with icon header */}[m
+[31m-      <div id="photos" className="mb-3 scroll-mt-24">[m
+[31m-        <SectionLabel icon={SectionIcons.photo} label="Photos" />[m
+[31m-        <p className="text-xs text-stone-500 italic font-serif">[m
+[31m-          Headshot and gallery — first impressions matter.[m
+[31m-        </p>[m
+[31m-      </div>[m
+[31m-      <ProfileMediaSection[m
+[31m-        userId={user!.id}[m
+[31m-        initialHeadshot={profile.headshot_url}[m
+[31m-        initialGallery={profile.gallery ?? []}[m
+[31m-      />[m
+[31m-      {!isMember && (profile.gallery?.length ?? 0) >= FREE_GALLERY_LIMIT && ([m
+[31m-        <p className="text-xs italic text-[#993C1D] font-serif mt-2">[m
+[31m-          🔒 Free plan shows the first {FREE_GALLERY_LIMIT} gallery photos publicly.{' '}[m
+[31m-          <Link href="/pricing" className="underline">Upgrade for unlimited →</Link>[m
+[31m-        </p>[m
+[31m-      )}[m
+[31m-[m
+[31m-      <form action={updateProfile} className="space-y-8 mt-12" id="profile-form">[m
+[31m-        {/* IDENTITY */}[m
+[31m-        <section id="identity" className="space-y-4 scroll-mt-24">[m
+[31m-          <SectionLabel icon={SectionIcons.identity} label="Identity" />[m
+[31m-          <div>[m
+[31m-            <label className="block text-sm font-medium mb-1">Display name</label>[m
+[31m-            <input[m
+[31m-              type="text"[m
+[31m-              name="display_name"[m
+[31m-              defaultValue={profile.display_name ?? ''}[m
+[31m-              required[m
+[31m-              className="k-control"[m
+[31m-            />[m
+[31m-          </div>[m
+[31m-        </section>[m
+[31m-[m
+[31m-        {/* ROLES */}[m
+[31m-        <section id="roles" className="space-y-4 pt-6 border-t border-stone-200 scroll-mt-24">[m
+[31m-          <RoleSection[m
+[31m-            defaultRoleTitles={profile.role_titles ?? []}[m
+[31m-            defaultPhysicalDetails={profile.physical_details ?? {}}[m
+[31m-            defaultGender={profile.gender}[m
+[31m-            defaultAgeMin={profile.age_range_min}[m
+[31m-            defaultAgeMax={profile.age_range_max}[m
+[31m-          />[m
+[31m-        </section>[m
+[31m-[m
+[31m-        {/* DEMO REEL */}[m
+[31m-        <section id="portfolio" className="space-y-4 pt-6 border-t border-stone-200 scroll-mt-24">[m
+[31m-          <SectionLabel icon={SectionIcons.demoReel} label="Demo reel & videos" />[m
+[31m-          {isMember ? ([m
+[31m-            <>[m
+[31m-              <VideoLinksManager[m
+[31m-                initialDemoReel={profile.demo_reel_url}[m
+[31m-                initialLinks={profile.video_links ?? []}[m
+[32m+[m[32m      <div className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">[m
+[32m+[m[32m        <div>[m
+[32m+[m[32m          <ProfileChapterNavigation chapters={chapters} />[m
+[32m+[m[32m        </div>[m
+[32m+[m
+[32m+[m[32m        <div className="min-w-0">[m
+[32m+[m[32m          <ProfileMainForm[m
+[32m+[m[32m            key={params.toast === 'saved' ? 'profile-saved' : 'profile-editor'}[m
+[32m+[m[32m            action={updateProfile}[m
+[32m+[m[32m            error={params.error ?? null}[m
+[32m+[m[32m            isMember={isMember}[m
+[32m+[m[32m            currentSlug={profile.slug ?? ''}[m
+[32m+[m[32m          >[m
+[32m+[m[32m            <section[m
+[32m+[m[32m              id="profile-essentials"[m
+[32m+[m[32m              tabIndex={-1}[m
+[32m+[m[32m              className="scroll-mt-24 rounded-md border border-stone-200 bg-white p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] sm:p-7"[m
+[32m+[m[32m            >[m
+[32m+[m[32m              <ChapterHeader[m
+[32m+[m[32m                number="01"[m
+[32m+[m[32m                title="Profile essentials"[m
+[32m+[m[32m                description="The portrait, identity, location, and introduction that establish your professional presence."[m
+               />[m
+[31m-              <p className="text-xs italic text-stone-500 font-serif">[m
+[31m-                Tip: YouTube and Vimeo links are embedded directly on your public profile.[m
+[31m-              </p>[m
+[31m-            </>[m
+[31m-          ) : ([m
+[31m-            <div>[m
+[31m-              <label className="block text-sm font-medium mb-1">Demo reel</label>[m
+[31m-              <input[m
+[31m-                type="url"[m
+[31m-                name="demo_reel_url"[m
+[31m-                defaultValue={profile.demo_reel_url ?? ''}[m
+[31m-                placeholder="https://vimeo.com/yourreel"[m
+[31m-                className="k-control"[m
+[32m+[m
+[32m+[m[32m              <div i

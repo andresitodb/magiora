@@ -73,7 +73,7 @@ export default async function MyApplicationsPage() {
           icon="application"
           title="No applications yet"
           body="You haven't applied to any casting calls yet. Browse open roles and apply — your applications and their status will appear here."
-          ctaHref="/casting-calls"
+          ctaHref="/dashboard/casting/browse"
           ctaLabel="Browse casting calls"
         />
       ) : (
@@ -118,7 +118,7 @@ function ApplicationCard({ app }: { app: ApplicationRow }) {
 
   return (
     <Link
-      href={`/casting-calls/${call.id}`}
+      href={`/casting-calls/${call.id}?workspace=1`}
       className="k-card k-card-interactive block p-4"
     >
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">

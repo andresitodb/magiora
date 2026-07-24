@@ -91,7 +91,7 @@ export default async function Nav({
     { href: '/dashboard', label: 'Dashboard', exact: true },
     { href: '/dashboard/profile', label: 'Profile' },
     { href: '/dashboard/projects', label: 'Projects' },
-    { href: '/casting-calls', label: 'Casting' },
+    { href: '/dashboard/casting', label: 'Casting', activePrefixes: ['/casting-calls'] },
     { href: '/dashboard/applications', label: 'Applications' },
   ];
 
