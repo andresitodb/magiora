@@ -76,7 +76,12 @@ export default function ProfileMediaSection({
       .eq('id', userId);
 
     if (updErr) setError(updErr.message);
-    else setHeadshot(newUrl);
+    else {
+      setHeadshot(newUrl);
+      window.dispatchEvent(
+        new CustomEvent('magiora:profile-preview', { detail: { headshotUrl: newUrl } })
+      );
+    }
     setUploading(false);
     router.refresh();
   }

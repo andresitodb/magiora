@@ -58,6 +58,7 @@ export default async function Nav({
   const locale = await getLocale();
 
   const isAdmin = variant === 'admin';
+  const isAuthenticatedNavigation = !isAdmin && Boolean(user);
 
   const tr = (key: string, fallback: string) => {
     const val = t(key);
@@ -86,14 +87,15 @@ export default async function Nav({
   ];
 
   const dashboardLinks = [
-    { href: '/dashboard', label: 'Dashboard', exact: true },
+    { href: '/', label: 'Home', exact: true },
+    { href: '/dashboard', label: 'Workspace', exact: true },
     { href: '/dashboard/profile', label: 'Profile' },
     { href: '/dashboard/projects', label: 'Projects' },
     { href: '/casting-calls', label: 'Casting' },
     { href: '/dashboard/applications', label: 'Applications' },
   ];
 
-  const links = isAdmin ? adminLinks : variant === 'dashboard' ? dashboardLinks : publicLinks;
+  const links = isAdmin ? adminLinks : isAuthenticatedNavigation ? dashboardLinks : publicLinks;
 
   const logoHref = '/';
 
@@ -204,7 +206,7 @@ export default async function Nav({
           signInLabel={tr('nav.sign_in', 'Sign in')}
           signUpLabel={tr('nav.sign_up', 'Join')}
           signOutLabel={tr('nav.sign_out', 'Sign out')}
-          showDashboardShortcut={variant === 'public'}
+          showDashboardShortcut={false}
         />
       </div>
     </nav>

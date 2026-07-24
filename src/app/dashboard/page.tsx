@@ -208,8 +208,7 @@ export default async function DashboardPage({
               publicState.canView && dashboardProfile.slug
                 ? {
                     href: `/m/${dashboardProfile.slug}`,
-                    label: 'View public profile',
-                    icon: DashboardIcons.externalLink,
+                    label: 'View Public Profile',
                   }
                 : undefined
             }

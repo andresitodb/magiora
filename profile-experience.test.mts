@@ -125,3 +125,45 @@ test('Member presentation remains interactive and pricing copy matches actual li
   assert.match(pricingSource, /4 profile themes &amp; 6 color palettes/i);
   assert.match(pricingSource, /Up to 4 additional video links/i);
 });
+
+test('profile presentation uses page-like previews and keeps Member styling intentional', () => {
+  const themeSource = readFileSync(
+    new URL('./src/components/ThemeSelector.tsx', import.meta.url),
+    'utf8',
+  );
+  const memberSource = readFileSync(
+    new URL('./src/components/MemberEdition.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(themeSource, /aria-label="Live profile preview"/);
+  assert.match(themeSource, /data-template-preview=\{templateId\}/);
+  assert.match(themeSource, /magiora:profile-preview/);
+  assert.doesNotMatch(memberSource, /yellow|opacity-50|pointer-events-none|\block\b/i);
+  assert.match(memberSource, /Member edition/);
+});
+
+test('authenticated navigation exposes the full workspace path and public Home shortcut', () => {
+  const navSource = readFileSync(
+    new URL('./src/components/Nav.tsx', import.meta.url),
+    'utf8',
+  );
+  for (const label of ['Home', 'Workspace', 'Profile', 'Projects', 'Casting', 'Applications']) {
+    assert.match(navSource, new RegExp(`label: '${label}'`));
+  }
+  assert.match(navSource, /isAuthenticatedNavigation \? dashboardLinks : publicLinks/);
+});
+
+test('dashboard public profile action is visible, secondary, and not icon-only', () => {
+  const cardSource = readFileSync(
+    new URL('./src/components/DashboardCard.tsx', import.meta.url),
+    'utf8',
+  );
+  const dashboardSource = readFileSync(
+    new URL('./src/app/dashboard/page.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(dashboardSource, /label: 'View Public Profile'/);
+  assert.match(cardSource, /\{secondaryAction\.label\}/);
+  assert.match(cardSource, /ml-auto text-right/);
+  assert.doesNotMatch(cardSource, /secondaryAction\.icon/);
+});

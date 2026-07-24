@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MemberEdition from '@/components/MemberEdition';
 import {
   TEMPLATES,
@@ -10,6 +10,8 @@ import {
   type TemplateId,
   type AccentId,
 } from '@/lib/profile_themes';
+
+type Accent = (typeof ACCENTS)[number];
 
 export default function ThemeSelector({
   defaultTemplate = DEFAULT_TEMPLATE,
@@ -28,20 +30,61 @@ export default function ThemeSelector({
   role: string;
   location: string;
 }) {
-  // Map legacy 'polaroid' → 'portrait'
   const normalizedDefault =
     defaultTemplate === 'polaroid' ? 'portrait' : (defaultTemplate as TemplateId);
-
   const [template, setTemplate] = useState<TemplateId>(
     isMember ? (normalizedDefault ?? DEFAULT_TEMPLATE) : DEFAULT_TEMPLATE
   );
   const [accent, setAccent] = useState<AccentId>(
     isMember ? ((defaultAccent as AccentId) ?? DEFAULT_ACCENT) : DEFAULT_ACCENT
   );
+  const [previewIdentity, setPreviewIdentity] = useState({
+    displayName,
+    headshotUrl,
+    role,
+    location,
+  });
   const selectedAccent = ACCENTS.find((item) => item.id === accent) ?? ACCENTS[0];
 
+  useEffect(() => {
+    const form = document.getElementById('profile-form');
+    if (!(form instanceof HTMLFormElement)) return;
+
+    let frame = 0;
+    const readProfileFields = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const nameField = form.elements.namedItem('display_name');
+        const cityField = form.elements.namedItem('location_city');
+        const roleFields = form.querySelectorAll<HTMLInputElement>('input[name="role_titles"]');
+        setPreviewIdentity((current) => ({
+          ...current,
+          displayName: nameField instanceof HTMLInputElement ? nameField.value : current.displayName,
+          role: Array.from(roleFields).map((field) => field.value).filter(Boolean).join(' · ') || role,
+          location: cityField instanceof HTMLInputElement ? cityField.value : current.location,
+        }));
+      });
+    };
+    const handlePortrait = (event: Event) => {
+      const detail = (event as CustomEvent<{ headshotUrl?: string }>).detail;
+      if (detail?.headshotUrl) {
+        setPreviewIdentity((current) => ({ ...current, headshotUrl: detail.headshotUrl }));
+      }
+    };
+
+    form.addEventListener('input', readProfileFields);
+    form.addEventListener('change', readProfileFields);
+    window.addEventListener('magiora:profile-preview', handlePortrait);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      form.removeEventListener('input', readProfileFields);
+      form.removeEventListener('change', readProfileFields);
+      window.removeEventListener('magiora:profile-preview', handlePortrait);
+    };
+  }, [location, role]);
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <input type="hidden" name="profile_theme" value={template} />
       <input type="hidden" name="profile_accent" value={accent} />
 
@@ -49,10 +92,10 @@ export default function ThemeSelector({
         <LiveProfilePreview
           template={template}
           accent={selectedAccent}
-          displayName={displayName}
-          headshotUrl={headshotUrl}
-          role={role}
-          location={location}
+          displayName={previewIdentity.displayName}
+          headshotUrl={previewIdentity.headshotUrl}
+          role={previewIdentity.role}
+          location={previewIdentity.location}
         />
       </div>
 
@@ -61,25 +104,35 @@ export default function ThemeSelector({
         benefit="Preview four visual styles for the public profile that best represents your work."
         isMember={isMember}
       >
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {TEMPLATES.map((t) => (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {TEMPLATES.map((item) => (
             <button
-              key={t.id}
+              key={item.id}
               type="button"
-              onClick={() => setTemplate(t.id)}
-              aria-pressed={template === t.id}
-              className={`cursor-pointer rounded-md border-2 p-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] ${
-                template === t.id
-                  ? 'border-[#712B13] bg-[#FAECE7]'
-                  : 'border-stone-200 bg-white hover:border-stone-300'
+              onClick={() => setTemplate(item.id)}
+              aria-pressed={template === item.id}
+              className={`group cursor-pointer rounded-md border p-3 text-left transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] ${
+                template === item.id
+                  ? 'border-[#712B13] bg-[#FAECE7]/50 shadow-[0_10px_25px_-22px_rgba(113,43,19,0.7)]'
+                  : 'border-stone-200 bg-white hover:-translate-y-0.5 hover:border-stone-400'
               }`}
             >
-              <div className="mb-2 aspect-[4/5] overflow-hidden rounded border border-stone-200 bg-stone-50">
-                <TemplatePreview templateId={t.id} />
+              <div className="mb-3 overflow-hidden rounded-sm border border-stone-200 bg-stone-50 shadow-sm">
+                <TemplatePreview
+                  templateId={item.id}
+                  accent={selectedAccent}
+                  displayName={previewIdentity.displayName}
+                  headshotUrl={previewIdentity.headshotUrl}
+                />
               </div>
-              <p className="font-serif font-medium text-sm">{t.name}</p>
-              <p className="font-serif italic text-xs text-stone-500 mt-1 leading-snug">
-                {t.description}
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="font-serif text-base font-medium">{item.name}</p>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-stone-500">
+                  {template === item.id ? 'Previewing' : 'Preview'}
+                </span>
+              </div>
+              <p className="mt-1 font-serif text-xs italic leading-snug text-stone-500">
+                {item.description}
               </p>
             </button>
           ))}
@@ -91,27 +144,29 @@ export default function ThemeSelector({
         benefit="Explore six restrained palettes and see the mood of your profile change instantly."
         isMember={isMember}
       >
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-          {ACCENTS.map((a) => (
+        <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
+          {ACCENTS.map((item) => (
             <button
-              key={a.id}
+              key={item.id}
               type="button"
-              onClick={() => setAccent(a.id)}
-              aria-pressed={accent === a.id}
-              aria-label={`${a.name} color palette`}
+              onClick={() => setAccent(item.id)}
+              aria-pressed={accent === item.id}
+              aria-label={`${item.name} color palette`}
               className={`cursor-pointer rounded-md border-2 p-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] ${
-                accent === a.id ? 'border-[#712B13]' : 'border-stone-200 hover:border-stone-300'
+                accent === item.id ? 'border-[#712B13]' : 'border-stone-200 hover:border-stone-400'
               }`}
-              style={{ backgroundColor: a.bg }}
+              style={{ backgroundColor: item.bg }}
             >
-              <div className="flex gap-1 justify-center mb-2">
-                <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: a.accent }} />
-                <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: a.accentSoft }} />
-                <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: a.card }} />
+              <div className="mb-2 flex justify-center gap-1">
+                {[item.accent, item.accentSoft, item.card].map((color) => (
+                  <span
+                    key={color}
+                    className="h-4 w-4 rounded-full border border-black/10"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
               </div>
-              <p className="font-serif text-xs text-center" style={{ color: a.text }}>
-                {a.name}
-              </p>
+              <p className="text-center font-serif text-xs" style={{ color: item.text }}>{item.name}</p>
             </button>
           ))}
         </div>
@@ -129,7 +184,7 @@ function LiveProfilePreview({
   location,
 }: {
   template: TemplateId;
-  accent: (typeof ACCENTS)[number];
+  accent: Accent;
   displayName: string;
   headshotUrl?: string | null;
   role: string;
@@ -137,114 +192,136 @@ function LiveProfilePreview({
 }) {
   const cinematic = template === 'cinematic';
   const centered = template === 'portrait' || template === 'minimalist';
+  const foreground = cinematic ? accent.bg : accent.text;
 
   return (
-    <div
-      className={`overflow-hidden rounded-md border p-5 transition-colors sm:p-6 ${
-        cinematic ? 'min-h-64' : 'min-h-52'
-      }`}
-      style={{
-        backgroundColor: cinematic ? accent.text : accent.bg,
-        borderColor: accent.border,
-        color: cinematic ? accent.bg : accent.text,
-      }}
+    <section
+      className="overflow-hidden rounded-md border border-stone-300 bg-white shadow-[0_24px_55px_-42px_rgba(28,25,23,0.8)]"
+      aria-label="Live profile preview"
     >
-      <p
-        className="mb-5 text-xs uppercase tracking-[0.16em]"
-        style={{ color: cinematic ? accent.textMuted : accent.accent }}
-      >
-        Live profile preview · {template}
-      </p>
-      <div className={`${centered ? 'text-center' : 'sm:flex sm:items-center sm:gap-5'}`}>
-        <div
-          className={`mx-auto flex shrink-0 items-center justify-center overflow-hidden bg-stone-200 ${
-            template === 'minimalist' ? 'h-20 w-20 rounded-full' : 'h-28 w-24 rounded-md'
-          } ${centered ? 'mb-4' : 'mb-4 sm:mx-0 sm:mb-0'}`}
-        >
-          {headshotUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={headshotUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="font-serif text-2xl text-stone-500" aria-hidden="true">
-              {(displayName[0] ?? '?').toUpperCase()}
-            </span>
-          )}
-        </div>
+      <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3">
         <div>
-          <h5 className="font-serif text-2xl font-medium">{displayName || 'Professional name'}</h5>
-          <p className="mt-1 text-sm" style={{ color: cinematic ? accent.textMuted : accent.accent }}>
-            {role}
-          </p>
-          {location && <p className="mt-2 text-xs opacity-70">{location}</p>}
-          <div
-            className={`mt-4 h-px w-16 ${centered ? 'mx-auto' : ''}`}
-            style={{ backgroundColor: accent.accent }}
-            aria-hidden="true"
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#712B13]">Live preview</p>
+          <p className="mt-0.5 text-xs text-stone-500">Updates as you edit your profile</p>
+        </div>
+        <span className="rounded-full border border-stone-200 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-500">
+          {template}
+        </span>
+      </header>
+      <div
+        className="min-h-[26rem] p-6 transition-colors sm:p-9"
+        style={{ backgroundColor: cinematic ? accent.text : accent.bg, color: foreground }}
+      >
+        <div className="mb-10 flex items-center justify-between text-[10px] uppercase tracking-[0.18em]">
+          <span>Magiora portfolio</span>
+          <span style={{ color: cinematic ? accent.textMuted : accent.accent }}>Selected work · About</span>
+        </div>
+        <div className={`${centered ? 'mx-auto max-w-xl text-center' : 'grid items-center gap-8 sm:grid-cols-[0.8fr_1.2fr]'}`}>
+          <PreviewPortrait
+            src={headshotUrl}
+            name={displayName}
+            className={`${centered ? 'mx-auto mb-6 h-44 w-36' : 'h-64 w-full'} ${
+              template === 'minimalist' ? 'rounded-full !h-36 !w-36' : 'rounded-sm'
+            }`}
           />
+          <div>
+            <p className="mb-3 text-[10px] uppercase tracking-[0.2em]" style={{ color: accent.accent }}>
+              Creative profile
+            </p>
+            <h5 className={`${cinematic ? 'text-4xl sm:text-6xl' : 'text-3xl sm:text-5xl'} font-serif font-medium leading-[0.95] tracking-[-0.03em]`}>
+              {displayName || 'Professional name'}
+            </h5>
+            <p className="mt-4 text-sm" style={{ color: cinematic ? accent.textMuted : accent.accent }}>
+              {role || 'Creative professional'}
+            </p>
+            {location && <p className="mt-2 text-xs" style={{ color: accent.textMuted }}>{location}</p>}
+            <p className="mx-auto mt-6 max-w-md text-xs leading-relaxed" style={{ color: accent.textMuted }}>
+              Selected work, professional practice, and the stories behind a creative career.
+            </p>
+          </div>
+        </div>
+        <div className="mt-10 grid grid-cols-3 gap-2 border-t pt-4" style={{ borderColor: accent.border }}>
+          {['Selected work', 'Practice', 'Contact'].map((label, index) => (
+            <div key={label}>
+              <span className="text-[9px] uppercase tracking-[0.14em]" style={{ color: accent.textMuted }}>{label}</span>
+              <div className="mt-2 h-1 rounded-full" style={{ backgroundColor: index === 0 ? accent.accent : accent.border }} />
+            </div>
+          ))}
         </div>
       </div>
+    </section>
+  );
+}
+
+function PreviewPortrait({
+  src,
+  name,
+  className,
+}: {
+  src?: string | null;
+  name: string;
+  className: string;
+}) {
+  return (
+    <div className={`flex shrink-0 items-center justify-center overflow-hidden bg-stone-200 ${className}`}>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <span className="font-serif text-3xl text-stone-500" aria-hidden="true">
+          {(name[0] ?? '?').toUpperCase()}
+        </span>
+      )}
     </div>
   );
 }
 
-function TemplatePreview({ templateId }: { templateId: TemplateId }) {
-  switch (templateId) {
-    case 'editorial':
-      return (
-        <svg viewBox="0 0 100 125" className="w-full h-full">
-          <rect x="8" y="8" width="38" height="48" fill="#e7e5e4" />
-          <line x1="52" y1="14" x2="86" y2="14" stroke="#1c1917" strokeWidth="3" />
-          <line x1="52" y1="24" x2="80" y2="24" stroke="#a8a29e" strokeWidth="1.5" />
-          <line x1="52" y1="32" x2="86" y2="32" stroke="#d6d3d1" strokeWidth="1.5" />
-          <line x1="52" y1="38" x2="84" y2="38" stroke="#d6d3d1" strokeWidth="1.5" />
-          <line x1="8" y1="70" x2="92" y2="70" stroke="#d6d3d1" strokeWidth="1" />
-          <line x1="8" y1="82" x2="80" y2="82" stroke="#d6d3d1" strokeWidth="1.5" />
-          <line x1="8" y1="90" x2="86" y2="90" stroke="#d6d3d1" strokeWidth="1.5" />
-          <line x1="8" y1="98" x2="74" y2="98" stroke="#d6d3d1" strokeWidth="1.5" />
-        </svg>
-      );
-    case 'cinematic':
-      return (
-        <svg viewBox="0 0 100 125" className="w-full h-full">
-          <rect x="0" y="0" width="100" height="70" fill="#1c1917" />
-          <rect x="0" y="50" width="100" height="20" fill="#1c1917" opacity="0.5" />
-          <line x1="8" y1="60" x2="60" y2="60" stroke="#ffffff" strokeWidth="3" />
-          <line x1="8" y1="66" x2="42" y2="66" stroke="#a8a29e" strokeWidth="1.5" />
-          <line x1="8" y1="82" x2="92" y2="82" stroke="#d6d3d1" strokeWidth="1.5" />
-          <line x1="8" y1="90" x2="86" y2="90" stroke="#d6d3d1" strokeWidth="1.5" />
-          <line x1="8" y1="98" x2="78" y2="98" stroke="#d6d3d1" strokeWidth="1.5" />
-        </svg>
-      );
-    case 'portrait':
-      return (
-        <svg viewBox="0 0 100 125" className="w-full h-full">
-          {/* photo card with thin border */}
-          <rect x="25" y="10" width="50" height="64" fill="#ffffff" stroke="#d6d3d1" strokeWidth="1" />
-          <rect x="29" y="14" width="42" height="50" fill="#e7e5e4" />
-          {/* name */}
-          <line x1="30" y1="84" x2="70" y2="84" stroke="#1c1917" strokeWidth="2.5" />
-          {/* role with em-dashes */}
-          <line x1="22" y1="92" x2="26" y2="92" stroke="#a8a29e" strokeWidth="1" />
-          <line x1="32" y1="92" x2="68" y2="92" stroke="#a8a29e" strokeWidth="1" />
-          <line x1="74" y1="92" x2="78" y2="92" stroke="#a8a29e" strokeWidth="1" />
-          {/* location */}
-          <line x1="38" y1="100" x2="62" y2="100" stroke="#d6d3d1" strokeWidth="1" />
-          {/* divider */}
-          <line x1="44" y1="110" x2="56" y2="110" stroke="#d6d3d1" strokeWidth="1" />
-        </svg>
-      );
-    case 'minimalist':
-      return (
-        <svg viewBox="0 0 100 125" className="w-full h-full">
-          <circle cx="50" cy="32" r="16" fill="#e7e5e4" />
-          <line x1="30" y1="58" x2="70" y2="58" stroke="#1c1917" strokeWidth="2.5" />
-          <line x1="35" y1="66" x2="65" y2="66" stroke="#a8a29e" strokeWidth="1" />
-          <line x1="40" y1="80" x2="60" y2="80" stroke="#d6d3d1" strokeWidth="1" />
-          <line x1="30" y1="92" x2="70" y2="92" stroke="#d6d3d1" strokeWidth="1.5" />
-          <line x1="35" y1="100" x2="65" y2="100" stroke="#d6d3d1" strokeWidth="1.5" />
-          <line x1="30" y1="108" x2="70" y2="108" stroke="#d6d3d1" strokeWidth="1.5" />
-          <line x1="40" y1="116" x2="60" y2="116" stroke="#d6d3d1" strokeWidth="1.5" />
-        </svg>
-      );
-  }
+function TemplatePreview({
+  templateId,
+  accent,
+  displayName,
+  headshotUrl,
+}: {
+  templateId: TemplateId;
+  accent: Accent;
+  displayName: string;
+  headshotUrl?: string | null;
+}) {
+  const cinematic = templateId === 'cinematic';
+  const centered = templateId === 'portrait' || templateId === 'minimalist';
+  return (
+    <div
+      data-template-preview={templateId}
+      className="aspect-[16/10] p-3"
+      style={{ backgroundColor: cinematic ? accent.text : accent.bg, color: cinematic ? accent.bg : accent.text }}
+    >
+      <div className="mb-3 flex items-center justify-between text-[5px] uppercase tracking-[0.18em]">
+        <span>Portfolio</span>
+        <span style={{ color: cinematic ? accent.textMuted : accent.accent }}>Work&nbsp;&nbsp; About&nbsp;&nbsp; Contact</span>
+      </div>
+      <div className={`${centered ? 'text-center' : 'grid grid-cols-[0.8fr_1.2fr] items-center gap-3'}`}>
+        <PreviewPortrait
+          src={headshotUrl}
+          name={displayName}
+          className={`${centered ? 'mx-auto mb-2 h-14 w-12' : 'h-20 w-full'} ${
+            templateId === 'minimalist' ? '!h-11 !w-11 rounded-full' : 'rounded-[2px]'
+          }`}
+        />
+        <div>
+          <p className="font-serif text-[11px] font-medium leading-none">{displayName || 'Professional name'}</p>
+          <p className="mt-1 text-[5px] uppercase tracking-[0.12em]" style={{ color: accent.accent }}>Selected creative work</p>
+          <div className={`${centered ? 'mx-auto' : ''} mt-2 h-px w-8`} style={{ backgroundColor: accent.accent }} />
+          <div className={`${centered ? 'mx-auto' : ''} mt-2 space-y-1`}>
+            <div className="h-0.5 w-full opacity-30" style={{ backgroundColor: accent.textMuted }} />
+            <div className={`${centered ? 'mx-auto' : ''} h-0.5 w-3/4 opacity-30`} style={{ backgroundColor: accent.textMuted }} />
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-1.5 border-t pt-2" style={{ borderColor: accent.border }}>
+        {[accent.accent, accent.accentSoft, accent.card].map((color) => (
+          <div key={color} className="h-5 rounded-[1px]" style={{ backgroundColor: color }} />
+        ))}
+      </div>
+    </div>
+  );
 }

@@ -10,7 +10,6 @@ interface DashboardCardProps {
   secondaryAction?: {
     href: string;
     label: string;
-    icon: React.ReactNode;
   };
 }
 
@@ -46,21 +45,12 @@ export default function DashboardCard({
           {actionLabel} <span aria-hidden="true">→</span>
         </Link>
         {secondaryAction && (
-          <span className="group/profile-action relative">
-            <Link
-              href={secondaryAction.href}
-              aria-label={secondaryAction.label}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 text-stone-600 transition-colors hover:border-[#712B13]/40 hover:text-[#712B13] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13]"
-            >
-              {secondaryAction.icon}
-            </Link>
-            <span
-              role="tooltip"
-              className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-max max-w-40 -translate-x-1/2 rounded bg-stone-900 px-2 py-1 text-center text-xs text-white opacity-0 transition-opacity group-hover/profile-action:opacity-100 group-focus-within/profile-action:opacity-100"
-            >
-              {secondaryAction.label}
-            </span>
-          </span>
+          <Link
+            href={secondaryAction.href}
+            className="ml-auto text-right text-xs font-medium text-stone-500 underline decoration-stone-300 underline-offset-4 transition-colors hover:text-[#712B13] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#712B13] sm:text-sm"
+          >
+            {secondaryAction.label} <span aria-hidden="true">↗</span>
+          </Link>
         )}
       </div>
     </article>
@@ -69,13 +59,6 @@ export default function DashboardCard({
 
 // Icon set — inline SVG for editorial consistency.
 export const DashboardIcons = {
-  externalLink: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M15 3h6v6" />
-      <path d="M10 14 21 3" />
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-    </svg>
-  ),
   profile: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />

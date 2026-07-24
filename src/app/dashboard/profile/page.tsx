@@ -424,7 +424,7 @@ export default async function ProfileEditPage({
           <section
             id="trust-account"
             tabIndex={-1}
-            className="mt-10 scroll-mt-24 rounded-md border border-stone-200 bg-white p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] sm:p-7"
+            className="mt-8 scroll-mt-24 rounded-md border border-stone-200 bg-white p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] sm:p-7"
           >
             <ChapterHeader
               number="06"
