@@ -104,6 +104,12 @@ export const SectionIcons = {
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   ),
+  pricing: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20.59 13.41 11 23l-9-9V2h12l6.59 6.59a3.41 3.41 0 0 1 0 4.82Z" />
+      <circle cx="7" cy="7" r="1.25" />
+    </svg>
+  ),
   visibility: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />

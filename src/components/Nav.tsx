@@ -7,6 +7,7 @@ import NotificationsBell from '@/components/NotificationsBell';
 import MagioraLogo from '@/components/brand/MagioraLogo';
 import Link from 'next/link';
 import NavLinks from '@/components/NavLinks';
+import { SectionIcons } from '@/components/SectionIcons';
 
 function UserOutlineIcon() {
   return (
@@ -71,8 +72,8 @@ export default async function Nav({
     { href: '/projects', label: 'Projects' },
     { href: '/events', label: tr('nav.events', 'Events') },
     { href: '/stories', label: 'Spotlight' },
-    { href: '/pricing', label: tr('nav.pricing', 'Pricing') },
     { href: '/casting-calls', label: 'Casting' },
+    { href: '/pricing', label: tr('nav.pricing', 'Pricing'), icon: SectionIcons.pricing },
   ];
 
   const adminLinks = [
@@ -146,22 +147,12 @@ export default async function Nav({
               )}
 
               {!isAdmin && (
-                <>
-                  {variant === 'public' && (
-                    <Link
-                      href="/dashboard/applications"
-                      className="text-xs font-medium text-stone-600 hover:text-[#712B13] whitespace-nowrap"
-                    >
-                      My Applications
-                    </Link>
-                  )}
-                  <Link
-                    href="/dashboard"
-                    className="k-button k-button-primary min-h-0 px-3 lg:px-4 py-1.5 lg:py-2 whitespace-nowrap"
-                  >
-                    {tr('nav.dashboard', 'Dashboard')}
-                  </Link>
-                </>
+                <Link
+                  href="/dashboard"
+                  className="k-button k-button-primary min-h-0 px-3 lg:px-4 py-1.5 lg:py-2 whitespace-nowrap"
+                >
+                  {tr('nav.dashboard', 'Dashboard')}
+                </Link>
               )}
 
               {!isAdmin && profile.is_admin && (

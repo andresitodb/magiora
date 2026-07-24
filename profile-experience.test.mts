@@ -154,8 +154,8 @@ test('navigation keeps discovery public and uses the dashboard model only inside
   }
   assert.match(navSource, /variant === 'dashboard'/);
   assert.match(navSource, /showDashboardShortcut=\{variant === 'public'\}/);
-  assert.match(navSource, /href="\/dashboard\/applications"/);
-  assert.match(navSource, /My Applications/);
+  assert.match(navSource, /\{ href: '\/dashboard\/applications', label: 'Applications' \}/);
+  assert.doesNotMatch(navSource, /My Applications/);
   assert.doesNotMatch(navSource, /label: 'Workspace'/);
 });
 
@@ -345,4 +345,19 @@ test('workspace casting details preserve dashboard navigation through apply redi
   assert.match(actionSource, /workspaceSuffix/);
   assert.match(applicationSource, /\/dashboard\/casting\/browse/);
   assert.match(applicationSource, /\?workspace=1/);
+});
+
+test('public navigation ends with Pricing and removes the redundant applications shortcut', () => {
+  const nav = readFileSync(new URL('./src/components/Nav.tsx', import.meta.url), 'utf8');
+  const mobile = readFileSync(new URL('./src/components/NavMobileMenu.tsx', import.meta.url), 'utf8');
+  const spotlightIndex = nav.indexOf("{ href: '/stories', label: 'Spotlight' }");
+  const castingIndex = nav.indexOf("{ href: '/casting-calls', label: 'Casting' }");
+  const pricingIndex = nav.indexOf("{ href: '/pricing', label:");
+
+  assert.ok(spotlightIndex < castingIndex);
+  assert.ok(castingIndex < pricingIndex);
+  assert.match(nav, /icon: SectionIcons\.pricing/);
+  assert.doesNotMatch(nav, />\s*My Applications\s*</);
+  assert.doesNotMatch(mobile, />\s*My Applications\s*</);
+  assert.match(nav, /href="\/dashboard"/);
 });

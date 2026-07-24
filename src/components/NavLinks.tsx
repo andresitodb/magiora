@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -7,7 +8,7 @@ export default function NavLinks({
   links,
   variant,
 }: {
-  links: { href: string; label: string; exact?: boolean; activePrefixes?: string[] }[];
+  links: { href: string; label: string; icon?: ReactNode; exact?: boolean; activePrefixes?: string[] }[];
   variant: 'public' | 'admin';
 }) {
   const pathname = usePathname();
@@ -20,7 +21,7 @@ export default function NavLinks({
     const active = routeActive || link.activePrefixes?.some(
       (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
     );
-    const base = 'rounded-sm border-b text-sm whitespace-nowrap transition-colors';
+    const base = 'inline-flex items-center gap-1.5 rounded-sm border-b text-sm whitespace-nowrap transition-colors';
     const state = variant === 'admin'
       ? active
         ? 'border-stone-100 text-white'
@@ -36,6 +37,7 @@ export default function NavLinks({
         aria-current={active ? 'page' : undefined}
         className={`${base} ${state}`}
       >
+        {link.icon && <span className="shrink-0" aria-hidden="true">{link.icon}</span>}
         {link.label}
       </Link>
     );

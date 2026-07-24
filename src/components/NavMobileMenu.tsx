@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import LocaleSwitcher from '@/components/LocaleSwitcher';
 import { usePathname } from 'next/navigation';
@@ -23,7 +23,7 @@ export default function NavMobileMenu({
   signOutLabel,
   showDashboardShortcut,
 }: {
-  links: { href: string; label: string; exact?: boolean; activePrefixes?: string[] }[];
+  links: { href: string; label: string; icon?: ReactNode; exact?: boolean; activePrefixes?: string[] }[];
   isAdmin: boolean;
   locale: 'en' | 'es';
   isAuthed: boolean;
@@ -92,20 +92,13 @@ export default function NavMobileMenu({
               </div>
 
               {isAuthed && userProfile && !isAdmin && showDashboardShortcut && (
-                <div className="mb-4 grid gap-2">
+                <div className="mb-4">
                   <Link
                     href="/dashboard"
                     onClick={() => setOpen(false)}
                     className="k-button k-button-primary w-full"
                   >
                     Dashboard
-                  </Link>
-                  <Link
-                    href="/dashboard/applications"
-                    onClick={() => setOpen(false)}
-                    className="k-button k-button-secondary w-full"
-                  >
-                    My Applications
                   </Link>
                 </div>
               )}
@@ -126,8 +119,9 @@ export default function NavMobileMenu({
                       href={link.href}
                       onClick={() => setOpen(false)}
                       aria-current={active ? 'page' : undefined}
-                      className={`${linkClass} ${active ? (isAdmin ? 'text-white underline underline-offset-4' : 'text-[var(--magiora-brand)] underline underline-offset-4') : ''}`}
+                      className={`${linkClass} ${link.icon ? 'flex items-center gap-2' : ''} ${active ? (isAdmin ? 'text-white underline underline-offset-4' : 'text-[var(--magiora-brand)] underline underline-offset-4') : ''}`}
                     >
+                      {link.icon && <span className="shrink-0" aria-hidden="true">{link.icon}</span>}
                       {link.label}
                     </Link>
                   );
