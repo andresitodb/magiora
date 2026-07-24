@@ -92,13 +92,22 @@ export default function NavMobileMenu({
               </div>
 
               {isAuthed && userProfile && !isAdmin && showDashboardShortcut && (
-                <Link
-                  href="/dashboard"
-                  onClick={() => setOpen(false)}
-                  className="k-button k-button-primary w-full mb-4"
-                >
-                  Dashboard
-                </Link>
+                <div className="mb-4 grid gap-2">
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setOpen(false)}
+                    className="k-button k-button-primary w-full"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    href="/dashboard/applications"
+                    onClick={() => setOpen(false)}
+                    className="k-button k-button-secondary w-full"
+                  >
+                    My Applications
+                  </Link>
+                </div>
               )}
 
               <nav className="border-t border-stone-200 py-2">

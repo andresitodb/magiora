@@ -58,7 +58,7 @@ export default async function Nav({
   const locale = await getLocale();
 
   const isAdmin = variant === 'admin';
-  const isAuthenticatedNavigation = !isAdmin && Boolean(user);
+  const isAuthenticatedNavigation = variant === 'dashboard';
 
   const tr = (key: string, fallback: string) => {
     const val = t(key);
@@ -69,10 +69,10 @@ export default async function Nav({
     { href: '/', label: tr('nav.home', 'Home') },
     { href: '/directory', label: tr('nav.directory', 'Directory') },
     { href: '/projects', label: 'Projects' },
-    { href: '/casting-calls', label: 'Casting Calls' },
     { href: '/events', label: tr('nav.events', 'Events') },
     { href: '/stories', label: 'Spotlight' },
     { href: '/pricing', label: tr('nav.pricing', 'Pricing') },
+    { href: '/casting-calls', label: 'Casting' },
   ];
 
   const adminLinks = [
@@ -88,7 +88,7 @@ export default async function Nav({
 
   const dashboardLinks = [
     { href: '/', label: 'Home', exact: true },
-    { href: '/dashboard', label: 'Workspace', exact: true },
+    { href: '/dashboard', label: 'Dashboard', exact: true },
     { href: '/dashboard/profile', label: 'Profile' },
     { href: '/dashboard/projects', label: 'Projects' },
     { href: '/casting-calls', label: 'Casting' },
@@ -146,12 +146,22 @@ export default async function Nav({
               )}
 
               {!isAdmin && (
-                <Link
-                  href="/dashboard"
-                  className="k-button k-button-primary min-h-0 px-3 lg:px-4 py-1.5 lg:py-2 whitespace-nowrap"
-                >
-                  {tr('nav.dashboard', 'Dashboard')}
-                </Link>
+                <>
+                  {variant === 'public' && (
+                    <Link
+                      href="/dashboard/applications"
+                      className="text-xs font-medium text-stone-600 hover:text-[#712B13] whitespace-nowrap"
+                    >
+                      My Applications
+                    </Link>
+                  )}
+                  <Link
+                    href="/dashboard"
+                    className="k-button k-button-primary min-h-0 px-3 lg:px-4 py-1.5 lg:py-2 whitespace-nowrap"
+                  >
+                    {tr('nav.dashboard', 'Dashboard')}
+                  </Link>
+                </>
               )}
 
               {!isAdmin && profile.is_admin && (
@@ -206,7 +216,7 @@ export default async function Nav({
           signInLabel={tr('nav.sign_in', 'Sign in')}
           signUpLabel={tr('nav.sign_up', 'Join')}
           signOutLabel={tr('nav.sign_out', 'Sign out')}
-          showDashboardShortcut={false}
+          showDashboardShortcut={variant === 'public'}
         />
       </div>
     </nav>

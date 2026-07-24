@@ -153,7 +153,7 @@ export default function VerifiedRequestForm({
                   Apply for verified ✓
                 </p>
                 <p className="text-xs italic text-stone-500 font-serif leading-snug">
-                  Confirm you&apos;re a real working artist with an IMDb link, a couple of credit URLs, and a photo of your government ID. A Magiora editor will review.
+                  Confirm your identity and professional authenticity with an IMDb link, credit URLs, and a photo of your government ID. Verification is separate from membership and reviewed by a Magiora editor.
                 </p>
               </div>
               <span className="text-stone-400 group-hover:text-[#712B13] text-lg">→</span>

@@ -12,6 +12,15 @@ export interface Template {
 export interface Accent {
   id: AccentId;
   name: string;
+  background: string;
+  surface: string;
+  primaryText: string;
+  secondaryText: string;
+  buttonBackground: string;
+  buttonText: string;
+  overlayText: string;
+  overlayBackground: string;
+  /** Backwards-compatible aliases consumed by the existing public profile. */
   bg: string;
   card: string;
   accent: string;
@@ -25,23 +34,23 @@ export interface Accent {
 export const TEMPLATES: Template[] = [
   {
     id: 'editorial',
-    name: 'Editorial',
-    description: 'Magazine-style. Photo left, bio right. Serif heavy. The default.',
+    name: 'Editorial Portfolio',
+    description: 'A considered masthead, asymmetric portrait, selected work and long-form biography.',
   },
   {
     id: 'cinematic',
-    name: 'Cinematic',
-    description: 'Big hero photo. Name overlay. Modern, dramatic.',
+    name: 'Cinematic Showcase',
+    description: 'A full-bleed image-led opening with bold titles and a sequence of featured projects.',
   },
   {
     id: 'portrait',
-    name: 'Portrait',
-    description: 'Gallery-card style. Photo framed, name and role below. Formal.',
+    name: 'Full-bleed Portrait',
+    description: 'An immersive portrait-led introduction with credentials and work arranged alongside.',
   },
   {
     id: 'minimalist',
-    name: 'Minimalist',
-    description: 'Centered, sparse. Lots of whitespace. Resume-style.',
+    name: 'Studio Minimal',
+    description: 'A precise studio index with restrained type, generous space and structured case studies.',
   },
 ];
 
@@ -49,6 +58,8 @@ export const ACCENTS: Accent[] = [
   {
     id: 'coral',
     name: 'Coral',
+    background: '#f5f3ee', surface: '#ffffff', primaryText: '#1c1917', secondaryText: '#57534e',
+    buttonBackground: '#712B13', buttonText: '#ffffff', overlayText: '#ffffff', overlayBackground: '#1c1917',
     bg: '#f5f3ee',
     card: '#ffffff',
     accent: '#712B13',
@@ -61,6 +72,8 @@ export const ACCENTS: Accent[] = [
   {
     id: 'monochrome',
     name: 'Monochrome',
+    background: '#fafaf9', surface: '#ffffff', primaryText: '#1c1917', secondaryText: '#57534e',
+    buttonBackground: '#1c1917', buttonText: '#ffffff', overlayText: '#ffffff', overlayBackground: '#1c1917',
     bg: '#fafaf9',
     card: '#ffffff',
     accent: '#1c1917',
@@ -73,6 +86,8 @@ export const ACCENTS: Accent[] = [
   {
     id: 'forest',
     name: 'Forest',
+    background: '#f4f6f3', surface: '#ffffff', primaryText: '#1a2410', secondaryText: '#46523f',
+    buttonBackground: '#2d5016', buttonText: '#ffffff', overlayText: '#ffffff', overlayBackground: '#1a3009',
     bg: '#f4f6f3',
     card: '#ffffff',
     accent: '#2d5016',
@@ -85,6 +100,8 @@ export const ACCENTS: Accent[] = [
   {
     id: 'ocean',
     name: 'Ocean',
+    background: '#f2f5f8', surface: '#ffffff', primaryText: '#101e30', secondaryText: '#475569',
+    buttonBackground: '#1e3a5f', buttonText: '#ffffff', overlayText: '#ffffff', overlayBackground: '#0f2238',
     bg: '#f2f5f8',
     card: '#ffffff',
     accent: '#1e3a5f',
@@ -97,6 +114,8 @@ export const ACCENTS: Accent[] = [
   {
     id: 'sunset',
     name: 'Sunset',
+    background: '#fef5ee', surface: '#ffffff', primaryText: '#1c1207', secondaryText: '#6b4f45',
+    buttonBackground: '#9a3412', buttonText: '#ffffff', overlayText: '#ffffff', overlayBackground: '#431407',
     bg: '#fef5ee',
     card: '#ffffff',
     accent: '#c2410c',
@@ -109,6 +128,8 @@ export const ACCENTS: Accent[] = [
   {
     id: 'midnight',
     name: 'Midnight',
+    background: '#1a1816', surface: '#252220', primaryText: '#f5f3ee', secondaryText: '#d6d3d1',
+    buttonBackground: '#facc15', buttonText: '#1c1917', overlayText: '#ffffff', overlayBackground: '#0c0a09',
     bg: '#1a1816',
     card: '#252220',
     accent: '#facc15',
@@ -131,4 +152,17 @@ export function getTemplate(id: string | null | undefined): Template {
 
 export function getAccent(id: string | null | undefined): Accent {
   return ACCENTS.find((a) => a.id === id) ?? ACCENTS[0];
+}
+
+export function contrastRatio(foreground: string, background: string): number {
+  const luminance = (hex: string) => {
+    const rgb = hex.slice(1).match(/.{2}/g)?.map((channel) => {
+      const value = Number.parseInt(channel, 16) / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    }) ?? [0, 0, 0];
+    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+  };
+  const first = luminance(foreground);
+  const second = luminance(background);
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
 }

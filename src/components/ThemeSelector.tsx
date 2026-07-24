@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MemberEdition from '@/components/MemberEdition';
 import {
   TEMPLATES,
@@ -44,6 +44,7 @@ export default function ThemeSelector({
     role,
     location,
   });
+  const [fullPreviewOpen, setFullPreviewOpen] = useState(false);
   const selectedAccent = ACCENTS.find((item) => item.id === accent) ?? ACCENTS[0];
 
   useEffect(() => {
@@ -97,6 +98,15 @@ export default function ThemeSelector({
           role={previewIdentity.role}
           location={previewIdentity.location}
         />
+      </div>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setFullPreviewOpen(true)}
+          className="k-button k-button-secondary"
+        >
+          Open full preview <span aria-hidden="true">↗</span>
+        </button>
       </div>
 
       <MemberEdition
@@ -171,6 +181,97 @@ export default function ThemeSelector({
           ))}
         </div>
       </MemberEdition>
+
+      {fullPreviewOpen && (
+        <FullPreviewDialog
+          onClose={() => setFullPreviewOpen(false)}
+          template={template}
+          accent={selectedAccent}
+          displayName={previewIdentity.displayName}
+          headshotUrl={previewIdentity.headshotUrl}
+          role={previewIdentity.role}
+          location={previewIdentity.location}
+        />
+      )}
+    </div>
+  );
+}
+
+function FullPreviewDialog({
+  onClose,
+  ...preview
+}: {
+  onClose: () => void;
+  template: TemplateId;
+  accent: Accent;
+  displayName: string;
+  headshotUrl?: string | null;
+  role: string;
+  location: string;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] overflow-y-auto bg-stone-950/80 p-2 sm:p-5"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="full-preview-title"
+      ref={dialogRef}
+    >
+      <div className="mx-auto min-h-full max-w-6xl bg-white shadow-2xl">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-200 bg-white/95 px-4 py-3 backdrop-blur">
+          <div>
+            <p className="k-eyebrow">Preview only</p>
+            <h2 id="full-preview-title" className="font-serif text-lg font-medium">Full profile preview</h2>
+          </div>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            className="k-button k-button-secondary"
+            aria-label="Close full profile preview"
+          >
+            Close <span aria-hidden="true">×</span>
+          </button>
+        </header>
+        <LiveProfilePreview {...preview} fullPage />
+      </div>
     </div>
   );
 }
@@ -182,6 +283,7 @@ function LiveProfilePreview({
   headshotUrl,
   role,
   location,
+  fullPage = false,
 }: {
   template: TemplateId;
   accent: Accent;
@@ -189,17 +291,15 @@ function LiveProfilePreview({
   headshotUrl?: string | null;
   role: string;
   location: string;
+  fullPage?: boolean;
 }) {
   const cinematic = template === 'cinematic';
-  const centered = template === 'portrait' || template === 'minimalist';
-  const foreground = cinematic ? accent.bg : accent.text;
-
   return (
     <section
-      className="overflow-hidden rounded-md border border-stone-300 bg-white shadow-[0_24px_55px_-42px_rgba(28,25,23,0.8)]"
+      className={`${fullPage ? 'border-0' : 'overflow-hidden rounded-md border border-stone-300 bg-white shadow-[0_24px_55px_-42px_rgba(28,25,23,0.8)]'}`}
       aria-label="Live profile preview"
     >
-      <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3">
+      {!fullPage && <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#712B13]">Live preview</p>
           <p className="mt-0.5 text-xs text-stone-500">Updates as you edit your profile</p>
@@ -207,49 +307,117 @@ function LiveProfilePreview({
         <span className="rounded-full border border-stone-200 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-stone-500">
           {template}
         </span>
-      </header>
+      </header>}
       <div
-        className="min-h-[26rem] p-6 transition-colors sm:p-9"
-        style={{ backgroundColor: cinematic ? accent.text : accent.bg, color: foreground }}
+        className={`${fullPage ? 'min-h-[calc(100vh-5rem)] p-6 sm:p-12 lg:p-16' : 'min-h-[26rem] p-6 sm:p-9'} transition-colors`}
+        style={{ backgroundColor: cinematic ? accent.overlayBackground : accent.background, color: cinematic ? accent.overlayText : accent.primaryText }}
       >
         <div className="mb-10 flex items-center justify-between text-[10px] uppercase tracking-[0.18em]">
           <span>Magiora portfolio</span>
-          <span style={{ color: cinematic ? accent.textMuted : accent.accent }}>Selected work · About</span>
+          <span style={{ color: cinematic ? accent.overlayText : accent.accent }}>Selected work · About</span>
         </div>
-        <div className={`${centered ? 'mx-auto max-w-xl text-center' : 'grid items-center gap-8 sm:grid-cols-[0.8fr_1.2fr]'}`}>
-          <PreviewPortrait
-            src={headshotUrl}
-            name={displayName}
-            className={`${centered ? 'mx-auto mb-6 h-44 w-36' : 'h-64 w-full'} ${
-              template === 'minimalist' ? 'rounded-full !h-36 !w-36' : 'rounded-sm'
-            }`}
-          />
-          <div>
-            <p className="mb-3 text-[10px] uppercase tracking-[0.2em]" style={{ color: accent.accent }}>
-              Creative profile
-            </p>
-            <h5 className={`${cinematic ? 'text-4xl sm:text-6xl' : 'text-3xl sm:text-5xl'} font-serif font-medium leading-[0.95] tracking-[-0.03em]`}>
-              {displayName || 'Professional name'}
-            </h5>
-            <p className="mt-4 text-sm" style={{ color: cinematic ? accent.textMuted : accent.accent }}>
-              {role || 'Creative professional'}
-            </p>
-            {location && <p className="mt-2 text-xs" style={{ color: accent.textMuted }}>{location}</p>}
-            <p className="mx-auto mt-6 max-w-md text-xs leading-relaxed" style={{ color: accent.textMuted }}>
-              Selected work, professional practice, and the stories behind a creative career.
-            </p>
-          </div>
-        </div>
+        <PortfolioComposition
+          template={template}
+          accent={accent}
+          displayName={displayName}
+          headshotUrl={headshotUrl}
+          role={role}
+          location={location}
+          fullPage={fullPage}
+        />
         <div className="mt-10 grid grid-cols-3 gap-2 border-t pt-4" style={{ borderColor: accent.border }}>
           {['Selected work', 'Practice', 'Contact'].map((label, index) => (
             <div key={label}>
-              <span className="text-[9px] uppercase tracking-[0.14em]" style={{ color: accent.textMuted }}>{label}</span>
+              <span className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cinematic ? accent.overlayText : accent.secondaryText }}>{label}</span>
               <div className="mt-2 h-1 rounded-full" style={{ backgroundColor: index === 0 ? accent.accent : accent.border }} />
             </div>
           ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function PortfolioComposition({
+  template,
+  accent,
+  displayName,
+  headshotUrl,
+  role,
+  location,
+  fullPage,
+}: {
+  template: TemplateId;
+  accent: Accent;
+  displayName: string;
+  headshotUrl?: string | null;
+  role: string;
+  location: string;
+  fullPage: boolean;
+}) {
+  const title = displayName || 'Professional name';
+  const practice = role || 'Creative professional';
+  const titleClass = `${fullPage ? 'text-5xl sm:text-7xl' : 'text-3xl sm:text-5xl'} font-serif font-medium leading-[0.95] tracking-[-0.03em]`;
+  const bio = 'A focused practice shaped by collaboration, craft, and a considered body of moving-image work.';
+
+  if (template === 'cinematic') {
+    return (
+      <div className="relative overflow-hidden rounded-sm" style={{ backgroundColor: accent.overlayBackground }}>
+        <PreviewPortrait src={headshotUrl} name={title} className={`${fullPage ? 'h-[65vh]' : 'h-72'} w-full opacity-75`} />
+        <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10" style={{ color: accent.overlayText, background: `linear-gradient(transparent 25%, ${accent.overlayBackground} 100%)` }}>
+          <p className="mb-3 text-[10px] uppercase tracking-[0.22em]">Cinematic showcase · {practice}</p>
+          <h5 className={titleClass}>{title}</h5>
+          <p className="mt-3 max-w-lg text-xs leading-relaxed">{bio}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (template === 'portrait') {
+    return (
+      <div className="grid overflow-hidden border sm:grid-cols-[1.15fr_0.85fr]" style={{ borderColor: accent.border, backgroundColor: accent.surface }}>
+        <PreviewPortrait src={headshotUrl} name={title} className={`${fullPage ? 'min-h-[65vh]' : 'h-72 sm:h-96'} w-full`} />
+        <div className="flex flex-col justify-between p-6 sm:p-9">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: accent.accent }}>Full-bleed portrait</p>
+            <h5 className={`${titleClass} mt-4`}>{title}</h5>
+            <p className="mt-4 text-sm" style={{ color: accent.accent }}>{practice}</p>
+            {location && <p className="mt-2 text-xs" style={{ color: accent.secondaryText }}>{location}</p>}
+          </div>
+          <p className="mt-8 border-t pt-4 text-xs leading-relaxed" style={{ color: accent.secondaryText, borderColor: accent.border }}>{bio}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (template === 'minimalist') {
+    return (
+      <div className={`${fullPage ? 'py-20' : 'py-8'} mx-auto max-w-3xl text-center`}>
+        <p className="text-[10px] uppercase tracking-[0.28em]" style={{ color: accent.secondaryText }}>Studio index / 01</p>
+        <h5 className={`${titleClass} mt-8`}>{title}</h5>
+        <p className="mt-4 text-xs uppercase tracking-[0.2em]" style={{ color: accent.accent }}>{practice}</p>
+        <div className="mx-auto my-8 h-px w-16" style={{ backgroundColor: accent.border }} />
+        <p className="mx-auto max-w-md text-xs leading-6" style={{ color: accent.secondaryText }}>{bio}</p>
+        <div className="mt-10 grid grid-cols-3 gap-3 text-left text-[9px] uppercase tracking-[0.14em]">
+          {['Selected work 04', 'Biography', 'Contact'].map((item) => <span key={item} className="border-t pt-2" style={{ borderColor: accent.border }}>{item}</span>)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid items-start gap-8 sm:grid-cols-[0.85fr_1.15fr]">
+      <PreviewPortrait src={headshotUrl} name={title} className={`${fullPage ? 'h-[62vh]' : 'h-72'} w-full rounded-sm`} />
+      <div className="sm:pt-8">
+        <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: accent.accent }}>Editorial portfolio · Issue 01</p>
+        <h5 className={`${titleClass} mt-4`}>{title}</h5>
+        <p className="mt-4 font-serif text-lg italic" style={{ color: accent.accent }}>{practice}</p>
+        <p className="mt-8 max-w-lg border-t pt-5 text-xs leading-6" style={{ color: accent.secondaryText, borderColor: accent.border }}>{bio}</p>
+        <button type="button" tabIndex={-1} className="mt-8 px-4 py-2 text-xs font-medium" style={{ backgroundColor: accent.buttonBackground, color: accent.buttonText }}>
+          View selected work
+        </button>
+      </div>
+    </div>
   );
 }
 

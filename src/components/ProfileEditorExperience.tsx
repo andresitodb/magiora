@@ -202,7 +202,7 @@ export default function ProfileMainForm({
     <form
       ref={formRef}
       action={action}
-      className="space-y-10 pb-20"
+      className="space-y-10"
       id="profile-form"
       noValidate={false}
       onChangeCapture={trackChange}

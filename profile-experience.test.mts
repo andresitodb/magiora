@@ -11,6 +11,7 @@ import {
   shouldWarnForUnsavedChanges,
   validationSummary,
 } from './src/lib/profileExperience.ts';
+import { ACCENTS, TEMPLATES, contrastRatio } from './src/lib/profile_themes.ts';
 
 test('profile fields are grouped into the six editorial chapters', () => {
   assert.deepEqual(PROFILE_CHAPTERS.map((chapter) => chapter.label), [
@@ -142,15 +143,19 @@ test('profile presentation uses page-like previews and keeps Member styling inte
   assert.match(memberSource, /Member edition/);
 });
 
-test('authenticated navigation exposes the full workspace path and public Home shortcut', () => {
+test('navigation keeps discovery public and uses the dashboard model only inside dashboard routes', () => {
   const navSource = readFileSync(
     new URL('./src/components/Nav.tsx', import.meta.url),
     'utf8',
   );
-  for (const label of ['Home', 'Workspace', 'Profile', 'Projects', 'Casting', 'Applications']) {
+  for (const label of ['Home', 'Dashboard', 'Profile', 'Projects', 'Casting', 'Applications']) {
     assert.match(navSource, new RegExp(`label: '${label}'`));
   }
-  assert.match(navSource, /isAuthenticatedNavigation \? dashboardLinks : publicLinks/);
+  assert.match(navSource, /variant === 'dashboard'/);
+  assert.match(navSource, /showDashboardShortcut=\{variant === 'public'\}/);
+  assert.match(navSource, /href="\/dashboard\/applications"/);
+  assert.match(navSource, /My Applications/);
+  assert.doesNotMatch(navSource, /label: 'Workspace'/);
 });
 
 test('dashboard public profile action is visible, secondary, and not icon-only', () => {
@@ -166,4 +171,44 @@ test('dashboard public profile action is visible, secondary, and not icon-only',
   assert.match(cardSource, /\{secondaryAction\.label\}/);
   assert.match(cardSource, /ml-auto text-right/);
   assert.doesNotMatch(cardSource, /secondaryAction\.icon/);
+});
+
+test('every palette provides readable semantic text, buttons, and overlays for every template', () => {
+  assert.equal(TEMPLATES.length, 4);
+  for (const palette of ACCENTS) {
+    assert.ok(contrastRatio(palette.primaryText, palette.background) >= 4.5, `${palette.name} primary text`);
+    assert.ok(contrastRatio(palette.secondaryText, palette.background) >= 4.5, `${palette.name} secondary text`);
+    assert.ok(contrastRatio(palette.buttonText, palette.buttonBackground) >= 4.5, `${palette.name} button`);
+    assert.ok(contrastRatio(palette.overlayText, palette.overlayBackground) >= 4.5, `${palette.name} overlay`);
+    for (const template of TEMPLATES) {
+      assert.ok(template.id && palette.surface && palette.border, `${palette.name}/${template.name} tokens`);
+    }
+  }
+});
+
+test('full profile preview is local, keyboard dismissible, and focus trapped', () => {
+  const themeSource = readFileSync(
+    new URL('./src/components/ThemeSelector.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(themeSource, /Open full preview/);
+  assert.match(themeSource, /aria-modal="true"/);
+  assert.match(themeSource, /event\.key === 'Escape'/);
+  assert.match(themeSource, /event\.key !== 'Tab'/);
+  assert.match(themeSource, /fullPreviewOpen/);
+});
+
+test('chapter rhythm removes terminal form padding and verification stays separate from membership', () => {
+  const formSource = readFileSync(
+    new URL('./src/components/ProfileEditorExperience.tsx', import.meta.url),
+    'utf8',
+  );
+  const profileSource = readFileSync(
+    new URL('./src/app/dashboard/profile/page.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(formSource, /className="space-y-10"/);
+  assert.doesNotMatch(formSource, /space-y-10 pb-20/);
+  assert.match(profileSource, /Verification confirms identity and professional authenticity/);
+  assert.match(profileSource, /separately from Magiora membership/);
 });
