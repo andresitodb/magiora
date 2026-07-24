@@ -1,4 +1,12 @@
+import { Suspense } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { hasPaidMembership } from '@/lib/billingServer';
+import { computeDashboardCompleteness } from '@/lib/dashboardFoundation';
+import {
+  getChapterProgress,
+  getProfilePublicStatus,
+} from '@/lib/profileExperience';
 import { updateProfile, changePassword, requestVerified } from './actions';
 import ProfileMediaSection from './ProfileMediaSection';
 import AutoGrowTextarea from '@/components/AutoGrowTextarea';
@@ -16,349 +24,468 @@ import ThemeSelector from '@/components/ThemeSelector';
 import VerifiedRequestForm from '@/components/VerifiedRequestForm';
 import BackLink from '@/components/BackLink';
 import Toast from '@/components/Toast';
+import {
+  ProfileChapterNavigation,
+} from '@/components/ProfileEditorExperience';
+import ProfileMainForm from '@/components/ProfileEditorExperience';
 import { SectionIcons } from '@/components/SectionIcons';
-import { Suspense } from 'react';
-import Link from 'next/link';
-import { hasPaidMembership } from '@/lib/billingServer';
+import MemberEdition from '@/components/MemberEdition';
 
 const FREE_SKILL_LIMIT = 5;
-const FREE_GALLERY_LIMIT = 3;
 
 function SectionLabel({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <div className="flex items-center gap-2 mb-2">
+    <div className="mb-2 flex items-center gap-2">
       <span className="text-[#993C1D]">{icon}</span>
-      <p className="font-serif italic text-sm text-[#993C1D]">{label}</p>
+      <h3 className="font-serif text-sm italic text-[#993C1D]">{label}</h3>
     </div>
   );
 }
 
-export default async function ProfileEditPage() {
+function ChapterHeader({
+  number,
+  title,
+  description,
+}: {
+  number: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <header className="mb-6 border-b border-stone-200 pb-4">
+      <p className="k-eyebrow mb-2">Chapter {number}</p>
+      <h2 className="font-serif text-2xl font-medium">{title}</h2>
+      <p className="mt-1 max-w-xl text-sm leading-relaxed text-stone-600">{description}</p>
+    </header>
+  );
+}
+
+export default async function ProfileEditPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; toast?: string }>;
+}) {
+  const params = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user!.id)
-    .single();
+  const [{ data: profile }, { count: linkedCreditCount }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user!.id)
+      .single(),
+    supabase
+      .from('project_credits')
+      .select('id', { count: 'exact', head: true })
+      .eq('profile_id', user!.id),
+  ]);
 
   if (!profile) return null;
 
   const isMember = await hasPaidMembership(user!.id);
   const isActorPrimary =
     profile.role_category === 'actor' ||
-    (profile.role_titles?.[0] && ['actor', 'lead actor', 'supporting actor', 'background actor', 'voice actor'].includes((profile.role_titles[0] as string).toLowerCase()));
-  const isCrew = !isActorPrimary && profile.role_category && profile.role_category !== 'writer';
+    (profile.role_titles?.[0] &&
+      ['actor', 'lead actor', 'supporting actor', 'background actor', 'voice actor']
+        .includes((profile.role_titles[0] as string).toLowerCase()));
+  const isCrew =
+    !isActorPrimary &&
+    profile.role_category &&
+    profile.role_category !== 'writer';
+  const completeness = computeDashboardCompleteness(profile, linkedCreditCount ?? 0);
+  const chapters = getChapterProgress(completeness);
+  const publicStatus = getProfilePublicStatus(profile.visible, profile.approved);
+  const primaryRole =
+    profile.role_titles?.[0] || profile.role_category || 'Creative professional';
+  const profileLocation = [profile.location_city, profile.location_state]
+    .filter(Boolean)
+    .join(', ');
+  const statusStyles = {
+    Public: 'border-green-200 bg-green-50 text-green-900',
+    Private: 'border-stone-200 bg-stone-50 text-stone-800',
+    'Awaiting approval': 'border-amber-200 bg-amber-50 text-amber-900',
+  }[publicStatus];
 
   return (
-    <div className="max-w-2xl pb-12">
+    <div className="mx-auto max-w-6xl pb-12">
       <Suspense fallback={null}>
         <Toast />
       </Suspense>
 
       <BackLink href="/dashboard" label="Dashboard" />
 
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-8 gap-3">
+      <header className="mb-8 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="k-eyebrow mb-2">Your profile</p>
           <h1 className="k-section-title">Edit profile</h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-stone-600">
+            Shape the professional presence collaborators see across Magiora.
+          </p>
         </div>
         {profile.slug && (
           <Link
             href={`/m/${profile.slug}`}
-            className="text-sm text-[#712B13] italic font-serif hover:underline md:mt-2 whitespace-nowrap"
+            className="k-link whitespace-nowrap text-sm md:mt-2"
           >
             View public profile →
           </Link>
         )}
-      </div>
+      </header>
 
-      {/* PHOTOS — with icon header */}
-      <div id="photos" className="mb-3 scroll-mt-24">
-        <SectionLabel icon={SectionIcons.photo} label="Photos" />
-        <p className="text-xs text-stone-500 italic font-serif">
-          Headshot and gallery — first impressions matter.
-        </p>
-      </div>
-      <ProfileMediaSection
-        userId={user!.id}
-        initialHeadshot={profile.headshot_url}
-        initialGallery={profile.gallery ?? []}
-      />
-      {!isMember && (profile.gallery?.length ?? 0) >= FREE_GALLERY_LIMIT && (
-        <p className="text-xs italic text-[#993C1D] font-serif mt-2">
-          🔒 Free plan shows the first {FREE_GALLERY_LIMIT} gallery photos publicly.{' '}
-          <Link href="/pricing" className="underline">Upgrade for unlimited →</Link>
-        </p>
-      )}
-
-      <form action={updateProfile} className="space-y-8 mt-12" id="profile-form">
-        {/* IDENTITY */}
-        <section id="identity" className="space-y-4 scroll-mt-24">
-          <SectionLabel icon={SectionIcons.identity} label="Identity" />
-          <div>
-            <label className="block text-sm font-medium mb-1">Display name</label>
-            <input
-              type="text"
-              name="display_name"
-              defaultValue={profile.display_name ?? ''}
-              required
-              className="k-control"
-            />
-          </div>
-        </section>
-
-        {/* ROLES */}
-        <section id="roles" className="space-y-4 pt-6 border-t border-stone-200 scroll-mt-24">
-          <RoleSection
-            defaultRoleTitles={profile.role_titles ?? []}
-            defaultPhysicalDetails={profile.physical_details ?? {}}
-            defaultGender={profile.gender}
-            defaultAgeMin={profile.age_range_min}
-            defaultAgeMax={profile.age_range_max}
-          />
-        </section>
-
-        {/* DEMO REEL */}
-        <section id="portfolio" className="space-y-4 pt-6 border-t border-stone-200 scroll-mt-24">
-          <SectionLabel icon={SectionIcons.demoReel} label="Demo reel & videos" />
-          {isMember ? (
-            <>
-              <VideoLinksManager
-                initialDemoReel={profile.demo_reel_url}
-                initialLinks={profile.video_links ?? []}
-              />
-              <p className="text-xs italic text-stone-500 font-serif">
-                Tip: YouTube and Vimeo links are embedded directly on your public profile.
-              </p>
-            </>
-          ) : (
-            <div>
-              <label className="block text-sm font-medium mb-1">Demo reel</label>
-              <input
-                type="url"
-                name="demo_reel_url"
-                defaultValue={profile.demo_reel_url ?? ''}
-                placeholder="https://vimeo.com/yourreel"
-                className="k-control"
-              />
-              <p className="text-xs italic text-stone-500 font-serif mt-1">
-                YouTube and Vimeo links are embedded on your public profile.
-              </p>
-              <input type="hidden" name="video_links" value="[]" />
-              <p className="mt-3 text-xs italic text-[#993C1D] font-serif">
-                🔒 Members can add up to 4 additional videos with custom labels.{' '}
-                <Link href="/pricing" className="underline">Upgrade →</Link>
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* BIO */}
-        <section id="bio" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
-          <SectionLabel icon={SectionIcons.bio} label="Bio" />
-          <AutoGrowTextarea
-            name="bio"
-            defaultValue={profile.bio ?? ''}
-            placeholder="Tell people about your work, training, and what kind of projects you're drawn to..."
-            minRows={4}
-          />
-        </section>
-
-        {/* CONTACT */}
-        <section id="contact" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
-          <SectionLabel icon={SectionIcons.contact} label="Contact & representation" />
-          <ContactEditor
-            defaultContactEmail={profile.contact_email ?? ''}
-            defaultPhone={profile.phone ?? ''}
-            defaultWebsiteUrl={profile.website_url ?? ''}
-            defaultSocial={profile.social_links ?? {}}
-            defaultRep={profile.representation ?? {}}
-          />
-        </section>
-
-        {/* CITY */}
-        <section id="location" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
-          <SectionLabel icon={SectionIcons.city} label="Location" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">City</label>
-              <input
-                type="text"
-                name="location_city"
-                defaultValue={profile.location_city ?? ''}
-                placeholder="Your city"
-                className="k-control"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">State</label>
-              <StateSelector defaultValue={profile.location_state ?? ''} />
-            </div>
-          </div>
-        </section>
-
-        {/* LANGUAGES */}
-        <section id="languages" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
-          <SectionLabel icon={SectionIcons.language} label="Languages" />
-          <LanguageSelector defaultValue={profile.languages ?? []} />
-        </section>
-
-        {/* SKILLS */}
-        <section id="skills" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
-          <SectionLabel
-            icon={SectionIcons.skills}
-            label={`Skills${!isMember ? ` — free plan limit ${FREE_SKILL_LIMIT}` : ''}`}
-          />
-          <SkillsAutocomplete
-            defaultValue={profile.skills ?? []}
-            maxAllowed={isMember ? undefined : FREE_SKILL_LIMIT}
-          />
-        </section>
-
-        {/* EXPERIENCE */}
-        <section id="experience" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
-          <SectionLabel icon={SectionIcons.experience} label="Experience" />
-          <p className="text-xs italic text-stone-500 font-serif">
-            Auto-sorted by year (newest first), no matter the order you enter.
-          </p>
-          <ExperienceEditor defaultValue={profile.experience ?? []} />
-        </section>
-
-        {/* RECOMMENDATIONS */}
-        <section className="space-y-3 pt-6 border-t border-stone-200">
-          <SectionLabel icon={SectionIcons.recommendations} label="Recommendations" />
-          <RecommendationsEditor defaultValue={profile.recommendations ?? []} />
-        </section>
-
-        {/* EQUIPMENT */}
-        {isCrew && (
-          <section className="space-y-3 pt-6 border-t border-stone-200">
-            <SectionLabel icon={SectionIcons.equipment} label="Equipment you own" />
-            <p className="text-xs italic text-stone-500 font-serif">
-              Cameras, lights, sound gear — anything you can bring to a production.
-            </p>
-            <EquipmentEditor defaultValue={profile.equipment ?? []} />
-          </section>
-        )}
-        {!isCrew && (
-          <input
-            type="hidden"
-            name="equipment"
-            value={JSON.stringify(profile.equipment ?? [])}
-          />
-        )}
-
-        {/* PREMIUM */}
-        <section className="space-y-4 pt-6 border-t border-stone-200">
-          <SectionLabel icon={SectionIcons.premium} label="Premium customization" />
-
-          {!isMember && (
-            <div className="bg-[#FAEEDA] border border-[#FAC775] rounded-md p-4 text-sm">
-              <p className="font-serif italic text-[#993C1D] mb-1">🔒 Members only</p>
-              <p className="font-serif text-stone-700">
-                Get a custom URL like <strong className="font-mono not-italic">yourname.magiora.com</strong> and choose a template &amp; color palette for your profile.
-              </p>
-              <Link
-                href="/pricing"
-                className="inline-block mt-2 text-[#712B13] hover:underline font-medium"
-              >
-                See member benefits →
-              </Link>
-            </div>
-          )}
-
-          <div className={!isMember ? 'opacity-50 pointer-events-none select-none' : ''}>
-            <div className="mb-6">
-              <SlugEditor currentSlug={profile.slug} isMember={isMember} />
-            </div>
-            <ThemeSelector
-              defaultTemplate={profile.profile_theme}
-              defaultAccent={profile.profile_accent}
-              isMember={isMember}
-            />
-          </div>
-        </section>
-
-        {/* VISIBILITY */}
-        <section className="pt-6 border-t border-stone-200">
-          <SectionLabel icon={SectionIcons.visibility} label="Visibility" />
-          <div className="flex flex-col md:flex-row items-stretch md:items-center md:justify-between gap-3">
-            <p className="text-xs text-stone-500 italic font-serif max-w-xs">
-              Public profiles appear in the directory and receive casting call matches.
-            </p>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                name="visible"
-                defaultChecked={profile.visible}
-                value="true"
-                className="w-4 h-4 cursor-pointer accent-[#712B13]"
-              />
-              <span className="text-sm font-medium">Public</span>
-            </label>
-          </div>
-        </section>
-
-        <div className="pt-6 border-t border-stone-200 flex justify-end">
-          <button
-            type="submit"
-            className="k-button k-button-primary w-full md:w-auto"
-          >
-            Save changes
-          </button>
-        </div>
-      </form>
-
-      {/* VERIFIED REQUEST — outside the main form (uses its own server action) */}
-      <section className="mt-12 pt-8 border-t border-stone-200 space-y-3">
-        <SectionLabel icon={SectionIcons.verified} label="Verification" />
-        <VerifiedRequestForm
-          userId={user!.id}
-          verified={profile.verified}
-          verificationStatus={profile.verification_status ?? 'not_requested'}
-          verificationData={profile.verification_data ?? {}}
-          onSubmit={requestVerified}
-        />
-      </section>
-
-      <form action={changePassword} className="space-y-4 mt-16 pt-12 border-t border-stone-200">
+      <div className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
         <div>
-          <p className="font-serif italic text-sm text-[#993C1D] mb-2">Security</p>
-          <h2 className="font-serif text-2xl font-medium">Change password</h2>
+          <ProfileChapterNavigation chapters={chapters} />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg">
-          <div>
-            <label className="block text-sm font-medium mb-1">New password</label>
-            <input
-              type="password"
-              name="new_password"
-              required
-              minLength={6}
-              className="k-control"
+
+        <div className="min-w-0">
+          <ProfileMainForm
+            key={params.toast === 'saved' ? 'profile-saved' : 'profile-editor'}
+            action={updateProfile}
+            error={params.error ?? null}
+            isMember={isMember}
+            currentSlug={profile.slug ?? ''}
+          >
+            <section
+              id="profile-essentials"
+              tabIndex={-1}
+              className="scroll-mt-24 rounded-md border border-stone-200 bg-white p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] sm:p-7"
+            >
+              <ChapterHeader
+                number="01"
+                title="Profile essentials"
+                description="The portrait, identity, location, and introduction that establish your professional presence."
+              />
+
+              <div id="photos" className="scroll-mt-24" data-auto-saved="true">
+                <SectionLabel icon={SectionIcons.photo} label="Photos" />
+                <p className="mb-5 font-serif text-xs italic text-stone-500">
+                  Headshot and gallery — first impressions matter.
+                </p>
+                <ProfileMediaSection
+                  userId={user!.id}
+                  initialHeadshot={profile.headshot_url}
+                  initialGallery={profile.gallery ?? []}
+                  isMember={isMember}
+                />
+              </div>
+
+              <section id="identity" className="mt-8 scroll-mt-24 border-t border-stone-200 pt-6">
+                <SectionLabel icon={SectionIcons.identity} label="Identity" />
+                <label htmlFor="display-name" className="mb-1 block text-sm font-medium">
+                  Display name
+                </label>
+                <input
+                  id="display-name"
+                  type="text"
+                  name="display_name"
+                  defaultValue={profile.display_name ?? ''}
+                  required
+                  className="k-control"
+                />
+              </section>
+
+              <section id="roles" className="mt-8 scroll-mt-24 border-t border-stone-200 pt-6">
+                <RoleSection
+                  defaultRoleTitles={profile.role_titles ?? []}
+                  defaultPhysicalDetails={profile.physical_details ?? {}}
+                  defaultGender={profile.gender}
+                  defaultAgeMin={profile.age_range_min}
+                  defaultAgeMax={profile.age_range_max}
+                />
+              </section>
+
+              <section id="location" className="mt-8 scroll-mt-24 border-t border-stone-200 pt-6">
+                <SectionLabel icon={SectionIcons.city} label="Location" />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="profile-city" className="mb-1 block text-sm font-medium">City</label>
+                    <input
+                      id="profile-city"
+                      type="text"
+                      name="location_city"
+                      defaultValue={profile.location_city ?? ''}
+                      placeholder="Your city"
+                      className="k-control"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">State</label>
+                    <StateSelector defaultValue={profile.location_state ?? ''} />
+                  </div>
+                </div>
+              </section>
+
+              <section id="bio" className="mt-8 scroll-mt-24 border-t border-stone-200 pt-6">
+                <SectionLabel icon={SectionIcons.bio} label="Bio" />
+                <AutoGrowTextarea
+                  name="bio"
+                  defaultValue={profile.bio ?? ''}
+                  placeholder="Tell people about your work, training, and what kind of projects you're drawn to..."
+                  minRows={4}
+                />
+              </section>
+            </section>
+
+            <section
+              id="professional-practice"
+              tabIndex={-1}
+              className="scroll-mt-24 rounded-md border border-stone-200 bg-white p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] sm:p-7"
+            >
+              <ChapterHeader
+                number="02"
+                title="Professional practice"
+                description="Languages, skills, and practical capabilities that describe how you work."
+              />
+
+              <section id="languages" className="scroll-mt-24">
+                <SectionLabel icon={SectionIcons.language} label="Languages" />
+                <LanguageSelector defaultValue={profile.languages ?? []} />
+              </section>
+
+              <section id="skills" className="mt-8 scroll-mt-24 border-t border-stone-200 pt-6">
+                <SectionLabel
+                  icon={SectionIcons.skills}
+                  label="Skills"
+                />
+                <SkillsAutocomplete
+                  defaultValue={profile.skills ?? []}
+                  maxAllowed={isMember ? undefined : FREE_SKILL_LIMIT}
+                />
+                <MemberEdition
+                  title="Expanded skills"
+                  benefit="Five professional skills are included. Member lets your full range of capabilities appear on your profile."
+                  isMember={isMember}
+                  className="mt-4"
+                >
+                  <p className="text-sm text-stone-600">
+                    {isMember
+                      ? `${profile.skills?.length ?? 0} skills currently shape your professional profile.`
+                      : `${Math.min(profile.skills?.length ?? 0, FREE_SKILL_LIMIT)} of ${FREE_SKILL_LIMIT} included skills are currently used.`}
+                  </p>
+                </MemberEdition>
+              </section>
+
+              {isCrew ? (
+                <section id="equipment" className="mt-8 scroll-mt-24 border-t border-stone-200 pt-6">
+                  <SectionLabel icon={SectionIcons.equipment} label="Equipment you own" />
+                  <p className="mb-3 font-serif text-xs italic text-stone-500">
+                    Cameras, lights, sound gear — anything you can bring to a production.
+                  </p>
+                  <EquipmentEditor defaultValue={profile.equipment ?? []} />
+                </section>
+              ) : (
+                <input
+                  type="hidden"
+                  name="equipment"
+                  value={JSON.stringify(profile.equipment ?? [])}
+                />
+              )}
+            </section>
+
+            <section
+              id="work"
+              tabIndex={-1}
+              className="scroll-mt-24 rounded-md border border-stone-200 bg-white p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] sm:p-7"
+            >
+              <ChapterHeader
+                number="03"
+                title="Work"
+                description="Moving-image work, professional credits, and recommendations from collaborators."
+              />
+
+              <section id="portfolio" className="scroll-mt-24">
+                <SectionLabel icon={SectionIcons.demoReel} label="Demo reel & videos" />
+                <VideoLinksManager
+                  initialDemoReel={profile.demo_reel_url}
+                  initialLinks={profile.video_links ?? []}
+                  isMember={isMember}
+                />
+                <p className="mt-2 font-serif text-xs italic text-stone-500">
+                  Tip: YouTube and Vimeo links are embedded directly on your public profile.
+                </p>
+              </section>
+
+              <section id="experience" className="mt-8 scroll-mt-24 border-t border-stone-200 pt-6">
+                <SectionLabel icon={SectionIcons.experience} label="Experience" />
+                <p className="mb-3 font-serif text-xs italic text-stone-500">
+                  Auto-sorted by year (newest first), no matter the order you enter.
+                </p>
+                <ExperienceEditor defaultValue={profile.experience ?? []} />
+              </section>
+
+              <section id="recommendations" className="mt-8 scroll-mt-24 border-t border-stone-200 pt-6">
+                <SectionLabel icon={SectionIcons.recommendations} label="Recommendations" />
+                <RecommendationsEditor defaultValue={profile.recommendations ?? []} />
+              </section>
+            </section>
+
+            <section
+              id="contact-chapter"
+              tabIndex={-1}
+              className="scroll-mt-24 rounded-md border border-stone-200 bg-white p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] sm:p-7"
+            >
+              <ChapterHeader
+                number="04"
+                title="Contact"
+                description="Professional contact details, representation, and the links collaborators can follow."
+              />
+              <section id="contact" className="scroll-mt-24">
+                <SectionLabel icon={SectionIcons.contact} label="Contact & representation" />
+                <ContactEditor
+                  defaultContactEmail={profile.contact_email ?? ''}
+                  defaultPhone={profile.phone ?? ''}
+                  defaultWebsiteUrl={profile.website_url ?? ''}
+                  defaultSocial={profile.social_links ?? {}}
+                  defaultRep={profile.representation ?? {}}
+                />
+              </section>
+            </section>
+
+            <section
+              id="public-presence"
+              tabIndex={-1}
+              className="scroll-mt-24 rounded-md border border-stone-200 bg-white p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] sm:p-7"
+            >
+              <ChapterHeader
+                number="05"
+                title="Public presence"
+                description="Control whether your profile can be discovered and how it appears publicly."
+              />
+
+              <div className={`rounded-md border p-4 ${statusStyles}`} role="status">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="k-eyebrow mb-1 text-current">Profile status</p>
+                    <h3 className="font-serif text-xl font-medium">{publicStatus}</h3>
+                    <p className="mt-1 max-w-lg text-sm">
+                      {publicStatus === 'Public' &&
+                        'Your approved profile is visible in the directory and can receive casting matches.'}
+                      {publicStatus === 'Private' &&
+                        'Your approved profile is hidden from the directory until you make it public.'}
+                      {publicStatus === 'Awaiting approval' &&
+                        'Your profile will become publicly discoverable after editorial approval.'}
+                    </p>
+                  </div>
+                  {profile.slug && (
+                    <Link href={`/m/${profile.slug}`} className="text-sm font-medium underline underline-offset-4">
+                      View preview
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              <section className="mt-8 border-t border-stone-200 pt-6">
+                <SectionLabel icon={SectionIcons.premium} label="Profile presentation" />
+
+                <div className="space-y-5">
+                  <MemberEdition
+                    title="Custom profile URL"
+                    benefit="Choose a memorable Magiora link that is easy to share with collaborators."
+                    isMember={isMember}
+                  >
+                    <SlugEditor currentSlug={profile.slug} isMember={isMember} />
+                  </MemberEdition>
+                  <ThemeSelector
+                    defaultTemplate={profile.profile_theme}
+                    defaultAccent={profile.profile_accent}
+                    isMember={isMember}
+                    displayName={profile.display_name ?? 'Professional name'}
+                    headshotUrl={profile.headshot_url}
+                    role={primaryRole}
+                    location={profileLocation}
+                  />
+                </div>
+              </section>
+
+              <section className="mt-8 border-t border-stone-200 pt-6">
+                <SectionLabel icon={SectionIcons.visibility} label="Visibility" />
+                <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-center md:justify-between">
+                  <p className="max-w-sm font-serif text-xs italic text-stone-500">
+                    Public profiles appear in the directory and receive casting call matches.
+                  </p>
+                  <label className="flex min-h-11 cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="visible"
+                      defaultChecked={profile.visible}
+                      value="true"
+                      className="h-4 w-4 cursor-pointer accent-[#712B13]"
+                    />
+                    <span className="text-sm font-medium">Public</span>
+                  </label>
+                </div>
+              </section>
+            </section>
+          </ProfileMainForm>
+
+          <section
+            id="trust-account"
+            tabIndex={-1}
+            className="mt-10 scroll-mt-24 rounded-md border border-stone-200 bg-white p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] sm:p-7"
+          >
+            <ChapterHeader
+              number="06"
+              title="Trust & account"
+              description="Verification and account security live here, separate from your public profile content."
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Confirm</label>
-            <input
-              type="password"
-              name="confirm_password"
-              required
-              minLength={6}
-              className="k-control"
-            />
-          </div>
+
+            <section>
+              <SectionLabel icon={SectionIcons.verified} label="Verification" />
+              <VerifiedRequestForm
+                userId={user!.id}
+                verified={profile.verified}
+                verificationStatus={profile.verification_status ?? 'not_requested'}
+                verificationData={profile.verification_data ?? {}}
+                onSubmit={requestVerified}
+              />
+            </section>
+
+            <form
+              id="password-form"
+              action={changePassword}
+              className="mt-10 space-y-4 border-t border-stone-200 pt-8"
+            >
+              <div>
+                <p className="mb-2 font-serif text-sm italic text-[#993C1D]">Security</p>
+                <h3 className="font-serif text-xl font-medium">Change password</h3>
+              </div>
+              <div className="grid max-w-lg grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="new-password" className="mb-1 block text-sm font-medium">New password</label>
+                  <input
+                    id="new-password"
+                    type="password"
+                    name="new_password"
+                    required
+                    minLength={6}
+                    className="k-control"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="confirm-password" className="mb-1 block text-sm font-medium">Confirm</label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    name="confirm_password"
+                    required
+                    minLength={6}
+                    className="k-control"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="k-button w-full bg-stone-800 text-white hover:bg-stone-900 md:w-auto"
+              >
+                Update password
+              </button>
+            </form>
+          </section>
         </div>
-        <button
-          type="submit"
-          className="k-button bg-stone-800 text-white hover:bg-stone-900 w-full md:w-auto"
-        >
-          Update password
-        </button>
-      </form>
+      </div>
     </div>
   );
 }

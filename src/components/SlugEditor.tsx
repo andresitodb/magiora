@@ -48,8 +48,8 @@ export default function SlugEditor({
       <label className="block text-sm font-medium mb-1">
         Your link
         {!isMember && (
-          <span className="text-xs text-[#993C1D] ml-2 italic font-serif font-normal">
-            🔒 Custom link is a member feature
+          <span className="text-xs text-stone-500 ml-2 italic font-serif font-normal">
+            Preview
           </span>
         )}
       </label>
@@ -66,15 +66,20 @@ export default function SlugEditor({
           name="slug"
           value={slug}
           onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-          disabled={!isMember}
-          className="flex-1 px-3 py-2 bg-white text-sm focus:outline-none disabled:bg-stone-50 disabled:text-stone-500"
+          className="min-w-0 flex-1 bg-white px-3 py-2 text-sm focus:outline-none"
           minLength={3}
           maxLength={30}
+          aria-describedby={!isMember ? 'member-url-note' : undefined}
         />
       </div>
 
-      {isMember && (
-        <div className="mt-1 text-xs italic font-serif min-h-[16px]">
+      <div className="mt-1 min-h-[16px] font-serif text-xs italic">
+        {!isMember ? (
+          <span id="member-url-note" className="text-stone-500">
+            Try your preferred URL. Custom profile URLs are included with Member.
+          </span>
+        ) : (
+          <>
           {status === 'unchanged' && <span className="text-stone-500">Current link.</span>}
           {status === 'checking' && <span className="text-stone-500">Checking availability…</span>}
           {status === 'available' && <span className="text-green-700">✓ Available</span>}
@@ -84,8 +89,9 @@ export default function SlugEditor({
               3–30 chars, lowercase letters, numbers, hyphens. Must start &amp; end with a letter or number.
             </span>
           )}
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

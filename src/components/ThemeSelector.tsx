@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import MemberEdition from '@/components/MemberEdition';
 import {
   TEMPLATES,
   ACCENTS,
@@ -14,52 +15,66 @@ export default function ThemeSelector({
   defaultTemplate = DEFAULT_TEMPLATE,
   defaultAccent = DEFAULT_ACCENT,
   isMember,
+  displayName,
+  headshotUrl,
+  role,
+  location,
 }: {
   defaultTemplate?: TemplateId | string;
   defaultAccent?: AccentId | string;
   isMember: boolean;
+  displayName: string;
+  headshotUrl?: string | null;
+  role: string;
+  location: string;
 }) {
   // Map legacy 'polaroid' → 'portrait'
   const normalizedDefault =
     defaultTemplate === 'polaroid' ? 'portrait' : (defaultTemplate as TemplateId);
 
   const [template, setTemplate] = useState<TemplateId>(
-    normalizedDefault ?? DEFAULT_TEMPLATE
+    isMember ? (normalizedDefault ?? DEFAULT_TEMPLATE) : DEFAULT_TEMPLATE
   );
   const [accent, setAccent] = useState<AccentId>(
-    (defaultAccent as AccentId) ?? DEFAULT_ACCENT
+    isMember ? ((defaultAccent as AccentId) ?? DEFAULT_ACCENT) : DEFAULT_ACCENT
   );
+  const selectedAccent = ACCENTS.find((item) => item.id === accent) ?? ACCENTS[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <input type="hidden" name="profile_theme" value={template} />
       <input type="hidden" name="profile_accent" value={accent} />
 
-      {!isMember && (
-        <div className="bg-[#FAEEDA] border border-[#FAC775] rounded-md p-4 text-sm">
-          <p className="font-serif italic text-[#993C1D] mb-1">🔒 Member feature</p>
-          <p className="font-serif text-stone-700">
-            Free profiles use the default Editorial template with Coral colors. Upgrade to choose your own.
-          </p>
-        </div>
-      )}
+      <div aria-live="polite">
+        <LiveProfilePreview
+          template={template}
+          accent={selectedAccent}
+          displayName={displayName}
+          headshotUrl={headshotUrl}
+          role={role}
+          location={location}
+        />
+      </div>
 
-      <div>
-        <p className="text-sm font-medium mb-3">Template</p>
+      <MemberEdition
+        title="Profile themes"
+        benefit="Preview four visual styles for the public profile that best represents your work."
+        isMember={isMember}
+      >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {TEMPLATES.map((t) => (
             <button
               key={t.id}
               type="button"
-              disabled={!isMember}
               onClick={() => setTemplate(t.id)}
-              className={`text-left p-4 border-2 rounded-md transition-all ${
+              aria-pressed={template === t.id}
+              className={`cursor-pointer rounded-md border-2 p-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] ${
                 template === t.id
                   ? 'border-[#712B13] bg-[#FAECE7]'
                   : 'border-stone-200 bg-white hover:border-stone-300'
-              } ${!isMember ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              }`}
             >
-              <div className="aspect-[4/5] mb-3 bg-stone-50 rounded border border-stone-200 overflow-hidden">
+              <div className="mb-2 aspect-[4/5] overflow-hidden rounded border border-stone-200 bg-stone-50">
                 <TemplatePreview templateId={t.id} />
               </div>
               <p className="font-serif font-medium text-sm">{t.name}</p>
@@ -69,20 +84,24 @@ export default function ThemeSelector({
             </button>
           ))}
         </div>
-      </div>
+      </MemberEdition>
 
-      <div>
-        <p className="text-sm font-medium mb-3">Color palette</p>
+      <MemberEdition
+        title="Color palettes"
+        benefit="Explore six restrained palettes and see the mood of your profile change instantly."
+        isMember={isMember}
+      >
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
           {ACCENTS.map((a) => (
             <button
               key={a.id}
               type="button"
-              disabled={!isMember}
               onClick={() => setAccent(a.id)}
-              className={`p-3 border-2 rounded-md transition-all ${
+              aria-pressed={accent === a.id}
+              aria-label={`${a.name} color palette`}
+              className={`cursor-pointer rounded-md border-2 p-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] ${
                 accent === a.id ? 'border-[#712B13]' : 'border-stone-200 hover:border-stone-300'
-              } ${!isMember ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              }`}
               style={{ backgroundColor: a.bg }}
             >
               <div className="flex gap-1 justify-center mb-2">
@@ -95,6 +114,73 @@ export default function ThemeSelector({
               </p>
             </button>
           ))}
+        </div>
+      </MemberEdition>
+    </div>
+  );
+}
+
+function LiveProfilePreview({
+  template,
+  accent,
+  displayName,
+  headshotUrl,
+  role,
+  location,
+}: {
+  template: TemplateId;
+  accent: (typeof ACCENTS)[number];
+  displayName: string;
+  headshotUrl?: string | null;
+  role: string;
+  location: string;
+}) {
+  const cinematic = template === 'cinematic';
+  const centered = template === 'portrait' || template === 'minimalist';
+
+  return (
+    <div
+      className={`overflow-hidden rounded-md border p-5 transition-colors sm:p-6 ${
+        cinematic ? 'min-h-64' : 'min-h-52'
+      }`}
+      style={{
+        backgroundColor: cinematic ? accent.text : accent.bg,
+        borderColor: accent.border,
+        color: cinematic ? accent.bg : accent.text,
+      }}
+    >
+      <p
+        className="mb-5 text-xs uppercase tracking-[0.16em]"
+        style={{ color: cinematic ? accent.textMuted : accent.accent }}
+      >
+        Live profile preview · {template}
+      </p>
+      <div className={`${centered ? 'text-center' : 'sm:flex sm:items-center sm:gap-5'}`}>
+        <div
+          className={`mx-auto flex shrink-0 items-center justify-center overflow-hidden bg-stone-200 ${
+            template === 'minimalist' ? 'h-20 w-20 rounded-full' : 'h-28 w-24 rounded-md'
+          } ${centered ? 'mb-4' : 'mb-4 sm:mx-0 sm:mb-0'}`}
+        >
+          {headshotUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={headshotUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="font-serif text-2xl text-stone-500" aria-hidden="true">
+              {(displayName[0] ?? '?').toUpperCase()}
+            </span>
+          )}
+        </div>
+        <div>
+          <h5 className="font-serif text-2xl font-medium">{displayName || 'Professional name'}</h5>
+          <p className="mt-1 text-sm" style={{ color: cinematic ? accent.textMuted : accent.accent }}>
+            {role}
+          </p>
+          {location && <p className="mt-2 text-xs opacity-70">{location}</p>}
+          <div
+            className={`mt-4 h-px w-16 ${centered ? 'mx-auto' : ''}`}
+            style={{ backgroundColor: accent.accent }}
+            aria-hidden="true"
+          />
         </div>
       </div>
     </div>

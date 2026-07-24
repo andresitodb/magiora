@@ -36,7 +36,7 @@ export default async function PricingPage({
             Two ways to be on Magiora
           </h1>
           <p className="k-body-muted text-base md:text-lg max-w-2xl mx-auto">
-            Get listed for free. Upgrade when you&apos;re ready to apply, get matched, and stand out.
+            Get listed for free. Unlock Member when you&apos;re ready to apply, get matched, and stand out.
           </p>
         </div>
 
@@ -84,10 +84,10 @@ export default async function PricingPage({
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Everything in Listed</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Apply to casting calls</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Get matched automatically</li>
-              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Unlimited skills &amp; gallery</li>
-              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Custom profile URL (yourname.magiora.com)</li>
-              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Profile templates &amp; colors</li>
-              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Multiple video links with custom labels</li>
+              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Unlimited skills &amp; up to 10 gallery photos</li>
+              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Custom profile URL (magiora.com/m/yourname)</li>
+              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> 4 profile themes &amp; 6 color palettes</li>
+              <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Up to 4 additional video links with custom labels</li>
               <li className="flex gap-2"><span className="text-[#712B13]">✓</span> Priority support</li>
             </ul>
 

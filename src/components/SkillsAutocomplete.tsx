@@ -80,7 +80,8 @@ export default function SkillsAutocomplete({
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  const atLimit = maxAllowed !== undefined && skills.length >= maxAllowed;
+  const includedLimitReached = maxAllowed !== undefined && skills.length >= maxAllowed;
+  const hasMemberPreviewSkills = maxAllowed !== undefined && skills.length > maxAllowed;
 
   const suggestions = input.trim()
     ? ALL_SKILLS.filter(
@@ -93,7 +94,6 @@ export default function SkillsAutocomplete({
     const trimmed = skill.trim();
     if (!trimmed) return;
     if (skills.includes(trimmed)) return;
-    if (atLimit) return;
     setSkills([...skills, trimmed]);
     setInput('');
   }
@@ -123,16 +123,25 @@ export default function SkillsAutocomplete({
 
       <div
         className={`flex flex-wrap items-center gap-2 px-3 py-2 border rounded-md bg-white min-h-[44px] cursor-text ${
-          atLimit ? 'border-amber-300' : 'border-stone-300'
+          hasMemberPreviewSkills ? 'border-[#712B13]/40' : 'border-stone-300'
         }`}
         onClick={() => inputRef.current?.focus()}
       >
-        {skills.map((s) => (
+        {skills.map((s, index) => (
           <span
             key={s}
-            className="bg-[#FAECE7] text-[#712B13] text-xs px-2 py-1 rounded-full flex items-center gap-1.5"
+            className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-xs ${
+              maxAllowed !== undefined && index >= maxAllowed
+                ? 'border border-stone-200 bg-white text-stone-700'
+                : 'bg-[#FAECE7] text-[#712B13]'
+            }`}
           >
             {s}
+            {maxAllowed !== undefined && index >= maxAllowed && (
+              <span className="text-[10px] font-medium uppercase tracking-wide text-[#712B13]">
+                Member
+              </span>
+            )}
             <button
               type="button"
               onClick={(e) => {
@@ -154,18 +163,19 @@ export default function SkillsAutocomplete({
           onKeyDown={onKeyDown}
           onFocus={() => setShowSuggestions(true)}
           placeholder={skills.length === 0 ? 'Type a skill and press Enter…' : ''}
-          disabled={atLimit}
-          className="flex-1 min-w-[140px] outline-none text-sm bg-transparent disabled:opacity-50"
+          className="flex-1 min-w-[140px] outline-none text-sm bg-transparent"
         />
       </div>
 
-      {atLimit && (
-        <p className="text-xs italic text-amber-700 font-serif mt-1">
-          You&apos;ve reached the limit of {maxAllowed} skills. Remove one to add another.
+      {maxAllowed !== undefined && (
+        <p className="mt-1 font-serif text-xs italic text-stone-600" aria-live="polite">
+          {Math.min(skills.length, maxAllowed)} / {maxAllowed} included
+          {includedLimitReached && !hasMemberPreviewSkills && '. Keep exploring—additional skills are available with Member.'}
+          {hasMemberPreviewSkills && ` · ${skills.length - maxAllowed} previewed with Member`}
         </p>
       )}
 
-      {showSuggestions && suggestions.length > 0 && !atLimit && (
+      {showSuggestions && suggestions.length > 0 && (
         <div className="relative">
           <div className="absolute z-10 left-0 right-0 mt-1 max-h-64 overflow-y-auto border border-stone-200 rounded-md bg-white shadow-lg">
             {suggestions.map((s) => (

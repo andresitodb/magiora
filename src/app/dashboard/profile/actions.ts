@@ -114,30 +114,56 @@ export async function updateProfile(formData: FormData) {
   let skills = formData.getAll('skills').map(String).map((s) => s.trim()).filter(Boolean);
   if (!isMember && skills.length > FREE_SKILL_LIMIT) skills = skills.slice(0, FREE_SKILL_LIMIT);
 
-  const parseJSON = <T,>(key: string, fallback: T): T => {
+  const malformedFieldLabels: Record<string, string> = {
+    video_links: 'video links',
+    experience: 'experience',
+    recommendations: 'recommendations',
+    equipment: 'equipment',
+    physical_details: 'professional details',
+    social_links: 'social links',
+    representation: 'representation',
+  };
+
+  const parseJSON = <T,>(
+    key: string,
+    fallback: T,
+    expected: 'array' | 'object',
+  ): T => {
     try {
       const raw = formData.get(key) as string | null;
-      return raw ? (JSON.parse(raw) as T) : fallback;
+      if (!raw) return fallback;
+      const parsed = JSON.parse(raw) as unknown;
+      const valid =
+        expected === 'array'
+          ? Array.isArray(parsed)
+          : typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+      if (!valid) throw new Error('Unexpected JSON shape');
+      return parsed as T;
     } catch {
-      return fallback;
+      redirect(
+        '/dashboard/profile?error=' +
+          encodeURIComponent(
+            `We could not read your ${malformedFieldLabels[key] ?? key}. Review that section and try again.`,
+          ),
+      );
     }
   };
 
   let videoLinks: VideoLink[] = [];
   if (isMember) {
-    videoLinks = parseJSON<VideoLink[]>('video_links', []).filter((link) =>
+    videoLinks = parseJSON<VideoLink[]>('video_links', [], 'array').filter((link) =>
       link.url?.trim()
     );
   }
 
-  const experienceRaw = parseJSON<ExperienceItem[]>('experience', []);
+  const experienceRaw = parseJSON<ExperienceItem[]>('experience', [], 'array');
   const experience = sortExperienceByYear(experienceRaw);
 
-  const recommendations = parseJSON('recommendations', []);
-  const equipment = parseJSON('equipment', []);
-  const physicalDetails = parseJSON('physical_details', {});
-  const socialLinks = parseJSON('social_links', {});
-  const representation = parseJSON('representation', {});
+  const recommendations = parseJSON('recommendations', [], 'array');
+  const equipment = parseJSON('equipment', [], 'array');
+  const physicalDetails = parseJSON('physical_details', {}, 'object');
+  const socialLinks = parseJSON('social_links', {}, 'object');
+  const representation = parseJSON('representation', {}, 'object');
 
   const ageMin = formData.get('age_range_min') as string | null;
   const ageMax = formData.get('age_range_max') as string | null;

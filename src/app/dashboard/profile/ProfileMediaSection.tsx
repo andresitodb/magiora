@@ -3,8 +3,10 @@
 import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import MemberEdition from '@/components/MemberEdition';
 
 const MAX_GALLERY = 10;
+const FREE_GALLERY_LIMIT = 3;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
@@ -22,10 +24,12 @@ export default function ProfileMediaSection({
   userId,
   initialHeadshot,
   initialGallery,
+  isMember,
 }: {
   userId: string;
   initialHeadshot: string | null;
   initialGallery: string[];
+  isMember: boolean;
 }) {
   const supabase = createClient();
   const router = useRouter();
@@ -45,6 +49,7 @@ export default function ProfileMediaSection({
     }
     setUploading(true);
     const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+    // eslint-disable-next-line react-hooks/purity -- generated only inside the user-triggered upload handler
     const path = `${userId}/headshot-${Date.now()}.${ext}`;
 
     const { error: upErr } = await supabase.storage
@@ -92,6 +97,7 @@ export default function ProfileMediaSection({
 
     for (const file of Array.from(files)) {
       const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+      // eslint-disable-next-line react-hooks/purity -- generated only inside the user-triggered upload handler
       const path = `${userId}/gallery-${Date.now()}-${Math.random()
         .toString(36)
         .slice(2, 7)}.${ext}`;
@@ -135,6 +141,36 @@ export default function ProfileMediaSection({
     router.refresh();
   }
 
+  async function saveGalleryOrder(next: string[]) {
+    setError(null);
+    const { error: updErr } = await supabase
+      .from('profiles')
+      .update({ gallery: next })
+      .eq('id', userId);
+    if (updErr) {
+      setError(updErr.message);
+      return;
+    }
+    setGallery(next);
+    router.refresh();
+  }
+
+  function moveGalleryImage(index: number, direction: -1 | 1) {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= gallery.length) return;
+    const next = [...gallery];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    void saveGalleryOrder(next);
+  }
+
+  function makeImagePublic(index: number) {
+    if (index < FREE_GALLERY_LIMIT) return;
+    const next = [...gallery];
+    const [selected] = next.splice(index, 1);
+    next.splice(FREE_GALLERY_LIMIT - 1, 0, selected);
+    void saveGalleryOrder(next);
+  }
+
   return (
     <div className="space-y-8">
       {error && (
@@ -144,8 +180,13 @@ export default function ProfileMediaSection({
       )}
 
       <div>
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Photo</p>
-        <h2 className="font-serif text-xl font-medium mb-4">Headshot</h2>
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <p className="font-serif italic text-sm text-[#993C1D] mb-2">Photo</p>
+            <h3 className="font-serif text-xl font-medium">Headshot</h3>
+          </div>
+          <p className="text-xs font-medium text-stone-500">Saved automatically</p>
+        </div>
         <div className="flex gap-6 items-start">
           <div className="w-32 aspect-[4/5] bg-[#FAECE7] rounded-md overflow-hidden flex items-center justify-center">
             {headshot ? (
@@ -184,33 +225,78 @@ export default function ProfileMediaSection({
       </div>
 
       <div>
-        <p className="font-serif italic text-sm text-[#993C1D] mb-2">Gallery</p>
-        <h2 className="font-serif text-xl font-medium mb-1">
-          More photos
-          <span className="text-sm text-stone-500 font-normal ml-2">
-            {gallery.length} / {MAX_GALLERY}
-          </span>
-        </h2>
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="font-serif italic text-sm text-[#993C1D] mb-2">Gallery</p>
+            <h3 className="font-serif text-xl font-medium mb-1">
+              More photos
+              <span className="text-sm text-stone-500 font-normal ml-2">
+                {gallery.length} / {MAX_GALLERY}
+              </span>
+            </h3>
+          </div>
+          <p className="mb-1 text-xs font-medium text-stone-500">Saved automatically</p>
+        </div>
         <p className="text-xs text-stone-500 italic font-serif mb-4">
           Behind-the-scenes, stills, lifestyle, alternate headshots.
         </p>
 
-        <div className="grid grid-cols-4 gap-3">
-          {gallery.map((url) => (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {gallery.map((url, index) => (
             <div
               key={url}
-              className="relative aspect-[4/5] bg-stone-100 rounded-md overflow-hidden group"
+              className="group relative aspect-[4/5] overflow-hidden rounded-md bg-stone-100"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="Profile gallery image" className="w-full h-full object-cover" />
-              <button
-                type="button"
-                onClick={() => removeGalleryImage(url)}
-                className="absolute top-1 right-1 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
-                aria-label="Remove gallery image"
-              >
-                Remove
-              </button>
+              <img src={url} alt={`Profile gallery image ${index + 1}`} className="h-full w-full object-cover" />
+              <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-1 p-1.5">
+                <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${
+                  isMember || index < FREE_GALLERY_LIMIT
+                    ? 'bg-white/95 text-stone-800'
+                    : 'bg-stone-900/90 text-white'
+                }`}>
+                  {isMember || index < FREE_GALLERY_LIMIT ? 'Published' : 'Visible with Member'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeGalleryImage(url)}
+                  className="rounded bg-black/75 px-2 py-1 text-xs text-white opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100"
+                  aria-label={`Remove gallery image ${index + 1}`}
+                >
+                  Remove
+                </button>
+              </div>
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/75 to-transparent px-2 pb-2 pt-6">
+                {index > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => moveGalleryImage(index, -1)}
+                    className="rounded bg-white/95 px-2 py-1 text-xs font-medium text-stone-800 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                    aria-label={`Move gallery image ${index + 1} earlier`}
+                  >
+                    ←
+                  </button>
+                )}
+                {!isMember && index >= FREE_GALLERY_LIMIT && (
+                  <button
+                    type="button"
+                    onClick={() => makeImagePublic(index)}
+                    className="rounded bg-white/95 px-2 py-1 text-xs font-medium text-[#712B13] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                  >
+                    Make public
+                  </button>
+                )}
+                {index < gallery.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => moveGalleryImage(index, 1)}
+                    className="rounded bg-white/95 px-2 py-1 text-xs font-medium text-stone-800 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                    aria-label={`Move gallery image ${index + 1} later`}
+                  >
+                    →
+                  </button>
+                )}
+              </div>
             </div>
           ))}
           {gallery.length < MAX_GALLERY && (
@@ -236,6 +322,19 @@ export default function ProfileMediaSection({
             if (e.target.files) uploadGalleryImages(e.target.files);
           }}
         />
+
+        <MemberEdition
+          title="Expanded gallery"
+          benefit="Publish images four through ten and give collaborators a richer view of your work."
+          isMember={isMember}
+          className="mt-4"
+        >
+          <p className="text-sm text-stone-600">
+            {isMember
+              ? `All ${gallery.length} gallery images are published.`
+              : `Your first ${Math.min(gallery.length, FREE_GALLERY_LIMIT)} images are published. Additional uploads remain saved and become visible with Member.`}
+          </p>
+        </MemberEdition>
       </div>
     </div>
   );

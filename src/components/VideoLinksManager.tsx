@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import MemberEdition from '@/components/MemberEdition';
 
 type VideoLink = { label: string; url: string };
 const MAX_EXTRA = 4;
@@ -8,9 +9,11 @@ const MAX_EXTRA = 4;
 export default function VideoLinksManager({
   initialDemoReel,
   initialLinks,
+  isMember,
 }: {
   initialDemoReel: string | null;
   initialLinks: VideoLink[];
+  isMember: boolean;
 }) {
   const [demoReel, setDemoReel] = useState(initialDemoReel ?? '');
   const [links, setLinks] = useState<VideoLink[]>(initialLinks ?? []);
@@ -47,7 +50,36 @@ export default function VideoLinksManager({
         />
       </div>
 
-      <div>
+      <MemberEdition
+        title="Additional clips"
+        benefit="Add up to four labeled scenes, music videos, commercials, or behind-the-scenes clips."
+        isMember={isMember}
+      >
+        <input
+          type="hidden"
+          name="video_links"
+          value={JSON.stringify(isMember ? links : [])}
+        />
+
+        {!isMember ? (
+          <div className="grid gap-2 sm:grid-cols-2" aria-label="Preview of four additional portfolio clips">
+            {Array.from({ length: MAX_EXTRA }, (_, index) => (
+              <div
+                key={index}
+                className="flex min-h-16 items-center gap-3 rounded-md border border-dashed border-stone-300 bg-white px-3 py-2"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-sm text-stone-500" aria-hidden="true">
+                  {index + 1}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-stone-700">Portfolio clip</p>
+                  <p className="text-xs text-stone-500">Label and video link</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-sm font-medium">
             More work
@@ -65,9 +97,6 @@ export default function VideoLinksManager({
             </button>
           )}
         </div>
-
-        {/* Hidden field carrying the serialized links */}
-        <input type="hidden" name="video_links" value={JSON.stringify(links)} />
 
         {links.length === 0 ? (
           <p className="text-xs text-stone-400 italic font-serif">
@@ -103,7 +132,9 @@ export default function VideoLinksManager({
             ))}
           </div>
         )}
-      </div>
+          </div>
+        )}
+      </MemberEdition>
     </div>
   );
 }
