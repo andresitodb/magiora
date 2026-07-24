@@ -1,63 +1,61 @@
 import Link from 'next/link';
-import {
-  computeCompleteness,
-  type ProfileCompletenessData,
-} from '@/lib/profileCompleteness';
+import type { DashboardCompleteness } from '@/lib/dashboardFoundation';
 
 export default function CompletenessBar({
-  profile,
+  completeness,
 }: {
-  profile: ProfileCompletenessData;
+  completeness: DashboardCompleteness;
 }) {
-  const { percent, missing } = computeCompleteness(profile);
-
-  if (percent === 100) {
-    return (
-      <div className="bg-green-50 border border-green-200 rounded-md px-4 py-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="font-serif text-lg font-medium text-green-700">100%</span>
-          <p className="font-serif text-sm text-green-900">
-            Profile complete. 🎉
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show only the top 1 missing item — keep it compact
-  const topMissing = missing[0];
+  const { percent, completed, total, missing } = completeness;
 
   return (
-    <div className="bg-white border border-stone-200 rounded-md px-4 py-3">
-      <div className="flex items-center justify-between gap-3 mb-2">
-        <div className="flex items-baseline gap-3 min-w-0">
-          <span className="font-serif text-xl font-medium text-[#712B13]">{percent}%</span>
-          <p className="font-serif text-sm text-stone-700 truncate">
-            {percent < 40 && 'Just getting started'}
-            {percent >= 40 && percent < 70 && 'Looking good'}
-            {percent >= 70 && percent < 100 && 'Almost there'}
+    <section className="rounded-md border border-stone-200 bg-stone-50/70 p-4 sm:p-5" aria-labelledby="profile-completeness-title">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 id="profile-completeness-title" className="k-eyebrow">PROFILE COMPLETENESS</h2>
+          <p className="mt-1 text-sm text-stone-600">
+            {completed} of {total} essential profile details complete.
           </p>
         </div>
-        <Link
-          href="/dashboard/profile"
-          className="text-xs italic font-serif text-[#712B13] hover:underline whitespace-nowrap"
-        >
-          Edit →
-        </Link>
+        <span className="font-serif text-2xl font-medium text-[#712B13]" aria-hidden="true">
+          {percent}%
+        </span>
       </div>
 
-      <div className="relative h-1.5 bg-stone-100 rounded-full overflow-hidden mb-2">
-        <div
-          className="absolute inset-y-0 left-0 bg-[#712B13] rounded-full transition-all duration-500"
-          style={{ width: `${percent}%` }}
-        />
+      <div
+        className="mt-4 h-1.5 overflow-hidden rounded-full bg-stone-200"
+        role="progressbar"
+        aria-label="Profile completeness"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        aria-valuetext={`${completed} of ${total} profile details complete`}
+      >
+        <div className="h-full rounded-full bg-[#712B13]" style={{ width: `${percent}%` }} />
       </div>
 
-      {topMissing && (
-        <p className="text-xs italic text-stone-500 font-serif">
-          Next: <span className="not-italic">{topMissing}</span>
+      {missing.length > 0 ? (
+        <div className="mt-4">
+          <p className="text-sm font-medium text-stone-800">What to complete next</p>
+          <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+            {missing.slice(0, 4).map((item) => (
+              <li key={item.key}>
+                <Link
+                  href={item.href}
+                  className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-stone-200 px-3 py-2 text-sm text-stone-700 hover:border-[#712B13] hover:text-[#712B13] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13]"
+                >
+                  <span>{item.label}</span>
+                  <span aria-hidden="true">→</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm font-medium text-green-800">
+          Your essential professional details are complete.
         </p>
       )}
-    </div>
+    </section>
   );
 }

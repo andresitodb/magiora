@@ -85,7 +85,15 @@ export default async function Nav({
     { href: '/admin/newsletter', label: 'Newsletter' },
   ];
 
-  const links = isAdmin ? adminLinks : publicLinks;
+  const dashboardLinks = [
+    { href: '/dashboard', label: 'Dashboard', exact: true },
+    { href: '/dashboard/profile', label: 'Profile' },
+    { href: '/dashboard/projects', label: 'Projects' },
+    { href: '/casting-calls', label: 'Casting' },
+    { href: '/dashboard/applications', label: 'Applications' },
+  ];
+
+  const links = isAdmin ? adminLinks : variant === 'dashboard' ? dashboardLinks : publicLinks;
 
   const logoHref = '/';
 
@@ -196,6 +204,7 @@ export default async function Nav({
           signInLabel={tr('nav.sign_in', 'Sign in')}
           signUpLabel={tr('nav.sign_up', 'Join')}
           signOutLabel={tr('nav.sign_out', 'Sign out')}
+          showDashboardShortcut={variant === 'public'}
         />
       </div>
     </nav>

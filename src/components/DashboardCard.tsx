@@ -6,16 +6,13 @@ interface DashboardCardProps {
   description: string;
   icon: React.ReactNode;
   badge?: string | number;
-  accent?: 'coral' | 'amber' | 'green' | 'blue' | 'stone';
+  actionLabel: string;
+  secondaryAction?: {
+    href: string;
+    label: string;
+    icon: React.ReactNode;
+  };
 }
-
-const ACCENT_STYLES: Record<string, { bg: string; iconBg: string; iconColor: string }> = {
-  coral: { bg: 'hover:border-[#712B13]', iconBg: 'bg-[#FAECE7]', iconColor: 'text-[#712B13]' },
-  amber: { bg: 'hover:border-amber-600', iconBg: 'bg-amber-50', iconColor: 'text-amber-700' },
-  green: { bg: 'hover:border-green-700', iconBg: 'bg-green-50', iconColor: 'text-green-700' },
-  blue: { bg: 'hover:border-blue-700', iconBg: 'bg-blue-50', iconColor: 'text-blue-700' },
-  stone: { bg: 'hover:border-stone-600', iconBg: 'bg-stone-100', iconColor: 'text-stone-700' },
-};
 
 export default function DashboardCard({
   href,
@@ -23,37 +20,62 @@ export default function DashboardCard({
   description,
   icon,
   badge,
-  accent = 'coral',
+  actionLabel,
+  secondaryAction,
 }: DashboardCardProps) {
-  const style = ACCENT_STYLES[accent];
-
   return (
-    <Link
-      href={href}
-      className={`k-card k-card-interactive block p-5 ${style.bg} group h-full`}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className={`w-10 h-10 rounded-md flex items-center justify-center ${style.iconBg} ${style.iconColor}`}>
+    <article className="k-card flex min-h-36 h-full flex-col p-4 transition-colors hover:border-stone-300 sm:p-5">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#712B13]/20 text-[#712B13]">
           {icon}
         </div>
         {badge != null && badge !== 0 && badge !== '' && (
-          <span className="k-badge bg-[#712B13] text-white">
+          <span className="k-badge border border-[#712B13]/15 bg-[#FAEEDA] text-[#712B13]">
             {badge}
           </span>
         )}
       </div>
-      <h3 className="font-serif text-lg font-medium mb-1 group-hover:text-[#712B13] transition-colors">
+      <h3 className="font-serif text-lg font-medium">
         {title}
       </h3>
-      <p className="text-sm text-stone-500 italic font-serif leading-snug">
+      <p className="mt-1.5 text-sm leading-relaxed text-stone-600">
         {description}
       </p>
-    </Link>
+      <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 pt-4">
+        <Link href={href} className="k-link text-sm font-medium">
+          {actionLabel} <span aria-hidden="true">→</span>
+        </Link>
+        {secondaryAction && (
+          <span className="group/profile-action relative">
+            <Link
+              href={secondaryAction.href}
+              aria-label={secondaryAction.label}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 text-stone-600 transition-colors hover:border-[#712B13]/40 hover:text-[#712B13] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13]"
+            >
+              {secondaryAction.icon}
+            </Link>
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-max max-w-40 -translate-x-1/2 rounded bg-stone-900 px-2 py-1 text-center text-xs text-white opacity-0 transition-opacity group-hover/profile-action:opacity-100 group-focus-within/profile-action:opacity-100"
+            >
+              {secondaryAction.label}
+            </span>
+          </span>
+        )}
+      </div>
+    </article>
   );
 }
 
 // Icon set — inline SVG for editorial consistency.
 export const DashboardIcons = {
+  externalLink: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </svg>
+  ),
   profile: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />

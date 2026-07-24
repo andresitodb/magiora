@@ -77,7 +77,7 @@ export default async function ProfileEditPage() {
       </div>
 
       {/* PHOTOS — with icon header */}
-      <div className="mb-3">
+      <div id="photos" className="mb-3 scroll-mt-24">
         <SectionLabel icon={SectionIcons.photo} label="Photos" />
         <p className="text-xs text-stone-500 italic font-serif">
           Headshot and gallery — first impressions matter.
@@ -97,7 +97,7 @@ export default async function ProfileEditPage() {
 
       <form action={updateProfile} className="space-y-8 mt-12" id="profile-form">
         {/* IDENTITY */}
-        <section className="space-y-4">
+        <section id="identity" className="space-y-4 scroll-mt-24">
           <SectionLabel icon={SectionIcons.identity} label="Identity" />
           <div>
             <label className="block text-sm font-medium mb-1">Display name</label>
@@ -112,7 +112,7 @@ export default async function ProfileEditPage() {
         </section>
 
         {/* ROLES */}
-        <section className="space-y-4 pt-6 border-t border-stone-200">
+        <section id="roles" className="space-y-4 pt-6 border-t border-stone-200 scroll-mt-24">
           <RoleSection
             defaultRoleTitles={profile.role_titles ?? []}
             defaultPhysicalDetails={profile.physical_details ?? {}}
@@ -123,7 +123,7 @@ export default async function ProfileEditPage() {
         </section>
 
         {/* DEMO REEL */}
-        <section className="space-y-4 pt-6 border-t border-stone-200">
+        <section id="portfolio" className="space-y-4 pt-6 border-t border-stone-200 scroll-mt-24">
           <SectionLabel icon={SectionIcons.demoReel} label="Demo reel & videos" />
           {isMember ? (
             <>
@@ -158,7 +158,7 @@ export default async function ProfileEditPage() {
         </section>
 
         {/* BIO */}
-        <section className="space-y-3 pt-6 border-t border-stone-200">
+        <section id="bio" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
           <SectionLabel icon={SectionIcons.bio} label="Bio" />
           <AutoGrowTextarea
             name="bio"
@@ -169,7 +169,7 @@ export default async function ProfileEditPage() {
         </section>
 
         {/* CONTACT */}
-        <section className="space-y-3 pt-6 border-t border-stone-200">
+        <section id="contact" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
           <SectionLabel icon={SectionIcons.contact} label="Contact & representation" />
           <ContactEditor
             defaultContactEmail={profile.contact_email ?? ''}
@@ -181,7 +181,7 @@ export default async function ProfileEditPage() {
         </section>
 
         {/* CITY */}
-        <section className="space-y-3 pt-6 border-t border-stone-200">
+        <section id="location" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
           <SectionLabel icon={SectionIcons.city} label="Location" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -202,13 +202,13 @@ export default async function ProfileEditPage() {
         </section>
 
         {/* LANGUAGES */}
-        <section className="space-y-3 pt-6 border-t border-stone-200">
+        <section id="languages" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
           <SectionLabel icon={SectionIcons.language} label="Languages" />
           <LanguageSelector defaultValue={profile.languages ?? []} />
         </section>
 
         {/* SKILLS */}
-        <section className="space-y-3 pt-6 border-t border-stone-200">
+        <section id="skills" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
           <SectionLabel
             icon={SectionIcons.skills}
             label={`Skills${!isMember ? ` — free plan limit ${FREE_SKILL_LIMIT}` : ''}`}
@@ -220,7 +220,7 @@ export default async function ProfileEditPage() {
         </section>
 
         {/* EXPERIENCE */}
-        <section className="space-y-3 pt-6 border-t border-stone-200">
+        <section id="experience" className="space-y-3 pt-6 border-t border-stone-200 scroll-mt-24">
           <SectionLabel icon={SectionIcons.experience} label="Experience" />
           <p className="text-xs italic text-stone-500 font-serif">
             Auto-sorted by year (newest first), no matter the order you enter.
