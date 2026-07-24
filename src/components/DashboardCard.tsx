@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SectionIcons } from '@/components/SectionIcons';
 
 interface DashboardCardProps {
   href: string;
@@ -10,6 +11,7 @@ interface DashboardCardProps {
   secondaryAction?: {
     href: string;
     label: string;
+    newTab?: boolean;
   };
 }
 
@@ -47,9 +49,14 @@ export default function DashboardCard({
         {secondaryAction && (
           <Link
             href={secondaryAction.href}
-            className="ml-auto text-right text-xs font-medium text-stone-500 underline decoration-stone-300 underline-offset-4 transition-colors hover:text-[#712B13] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#712B13] sm:text-sm"
+            target={secondaryAction.newTab ? '_blank' : undefined}
+            rel={secondaryAction.newTab ? 'noreferrer' : undefined}
+            aria-label={secondaryAction.newTab ? `${secondaryAction.label} (opens in a new tab)` : secondaryAction.label}
+            title={secondaryAction.newTab ? `${secondaryAction.label} — opens in a new tab` : secondaryAction.label}
+            className="ml-auto inline-flex items-center gap-1.5 text-right text-xs font-medium text-stone-500 underline decoration-stone-300 underline-offset-4 transition-colors hover:text-[#712B13] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#712B13] sm:text-sm"
           >
-            {secondaryAction.label} <span aria-hidden="true">↗</span>
+            {secondaryAction.label}
+            <span aria-hidden="true">{SectionIcons.externalLink}</span>
           </Link>
         )}
       </div>

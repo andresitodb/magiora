@@ -31,12 +31,6 @@ export default function EquipmentEditor({
         value={JSON.stringify(items.filter((it) => it.items.trim()))}
       />
 
-      {items.length === 0 && (
-        <p className="text-xs italic text-stone-500 font-serif">
-          Gear you own and can bring to a production. Producers love seeing this.
-        </p>
-      )}
-
       {items.map((it, i) => (
         <div key={i} className="bg-white border border-stone-200 rounded-md p-3 space-y-2">
           <div className="grid grid-cols-[200px_1fr_auto] gap-2 items-start">

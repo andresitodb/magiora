@@ -39,6 +39,10 @@ export default function ProfileMediaSection({
   const [error, setError] = useState<string | null>(null);
   const headshotInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const uploadLimit = isMember ? MAX_GALLERY : FREE_GALLERY_LIMIT;
+  const includedCount = isMember
+    ? gallery.length
+    : Math.min(gallery.length, FREE_GALLERY_LIMIT);
 
   async function uploadHeadshot(file: File) {
     setError(null);
@@ -88,8 +92,12 @@ export default function ProfileMediaSection({
 
   async function uploadGalleryImages(files: FileList) {
     setError(null);
-    if (gallery.length + files.length > MAX_GALLERY) {
-      setError(`Gallery limit is ${MAX_GALLERY} images`);
+    if (gallery.length + files.length > uploadLimit) {
+      setError(
+        isMember
+          ? `Gallery limit is ${MAX_GALLERY} images`
+          : `Three gallery images are included. Unlock Member to publish up to ${MAX_GALLERY}.`
+      );
       return;
     }
     const invalidFile = Array.from(files).find(imageValidationError);
@@ -236,7 +244,7 @@ export default function ProfileMediaSection({
             <h3 className="font-serif text-xl font-medium mb-1">
               More photos
               <span className="text-sm text-stone-500 font-normal ml-2">
-                {gallery.length} / {MAX_GALLERY}
+                {includedCount} / {uploadLimit}{!isMember && ' included'}
               </span>
             </h3>
           </div>
@@ -304,7 +312,7 @@ export default function ProfileMediaSection({
               </div>
             </div>
           ))}
-          {gallery.length < MAX_GALLERY && (
+          {gallery.length < uploadLimit && (
             <button
               type="button"
               onClick={() => galleryInputRef.current?.click()}
@@ -328,18 +336,18 @@ export default function ProfileMediaSection({
           }}
         />
 
-        <MemberEdition
-          title="Expanded gallery"
-          benefit="Publish images four through ten and give collaborators a richer view of your work."
-          isMember={isMember}
-          className="mt-4"
-        >
-          <p className="text-sm text-stone-600">
-            {isMember
-              ? `All ${gallery.length} gallery images are published.`
-              : `Your first ${Math.min(gallery.length, FREE_GALLERY_LIMIT)} images are published. Additional uploads remain saved and become visible with Member.`}
-          </p>
-        </MemberEdition>
+        {!isMember && gallery.length >= FREE_GALLERY_LIMIT && (
+          <MemberEdition
+            title="Expand your gallery"
+            benefit="Publish up to 10 professional gallery images."
+            isMember={false}
+            className="mt-4"
+          >
+            <p className="text-sm text-stone-600">
+              Your three included images are published. Any additional images already saved remain available here.
+            </p>
+          </MemberEdition>
+        )}
       </div>
     </div>
   );

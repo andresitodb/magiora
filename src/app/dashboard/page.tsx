@@ -206,9 +206,10 @@ export default async function DashboardPage({
             actionLabel="Edit profile"
             secondaryAction={
               publicState.canView && dashboardProfile.slug
-                ? {
+                  ? {
                     href: `/m/${dashboardProfile.slug}`,
                     label: 'View Public Profile',
+                    newTab: true,
                   }
                 : undefined
             }

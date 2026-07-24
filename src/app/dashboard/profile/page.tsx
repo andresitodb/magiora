@@ -287,9 +287,9 @@ export default async function ProfileEditPage({
 
               {isCrew ? (
                 <section id="equipment" className="mt-8 scroll-mt-24 border-t border-stone-200 pt-6">
-                  <SectionLabel icon={SectionIcons.equipment} label="Equipment you own" />
+                  <SectionLabel icon={SectionIcons.equipment} label="Equipment" />
                   <p className="mb-3 font-serif text-xs italic text-stone-500">
-                    Cameras, lights, sound gear — anything you can bring to a production.
+                    Professional equipment you can bring to a production.
                   </p>
                   <EquipmentEditor defaultValue={profile.equipment ?? []} />
                 </section>
@@ -309,8 +309,8 @@ export default async function ProfileEditPage({
             >
               <ChapterHeader
                 number="03"
-                title="Work"
-                description="Moving-image work, professional credits, and recommendations from collaborators."
+                title="Professional Work"
+                description="Projects, credits, demo reel and recommendations."
               />
 
               <section id="portfolio" className="scroll-mt-24">

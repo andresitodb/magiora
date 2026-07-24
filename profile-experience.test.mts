@@ -170,7 +170,7 @@ test('dashboard public profile action is visible, secondary, and not icon-only',
   );
   assert.match(dashboardSource, /label: 'View Public Profile'/);
   assert.match(cardSource, /\{secondaryAction\.label\}/);
-  assert.match(cardSource, /ml-auto text-right/);
+  assert.match(cardSource, /ml-auto[^"]*text-right/);
   assert.doesNotMatch(cardSource, /secondaryAction\.icon/);
 });
 
@@ -360,4 +360,36 @@ test('public navigation ends with Pricing and removes the redundant applications
   assert.doesNotMatch(nav, />\s*My Applications\s*</);
   assert.doesNotMatch(mobile, />\s*My Applications\s*</);
   assert.match(nav, /href="\/dashboard"/);
+});
+
+test('profile polish keeps the Free gallery clear and the public-profile action accessible', () => {
+  const media = readFileSync(
+    new URL('./src/app/dashboard/profile/ProfileMediaSection.tsx', import.meta.url),
+    'utf8',
+  );
+  const profile = readFileSync(
+    new URL('./src/app/dashboard/profile/page.tsx', import.meta.url),
+    'utf8',
+  );
+  const dashboard = readFileSync(
+    new URL('./src/app/dashboard/page.tsx', import.meta.url),
+    'utf8',
+  );
+  const card = readFileSync(
+    new URL('./src/components/DashboardCard.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(media, /uploadLimit = isMember \? MAX_GALLERY : FREE_GALLERY_LIMIT/);
+  assert.match(media, /gallery\.length < uploadLimit/);
+  assert.match(media, /Expand your gallery/);
+  assert.match(media, /Publish up to 10 professional gallery images/);
+  assert.match(profile, /label="Equipment"/);
+  assert.match(profile, /Professional equipment you can bring to a production/);
+  assert.match(profile, /title="Professional Work"/);
+  assert.match(profile, /Projects, credits, demo reel and recommendations/);
+  assert.match(dashboard, /label: 'View Public Profile',\s+newTab: true/);
+  assert.match(card, /target=\{secondaryAction\.newTab \? '_blank'/);
+  assert.match(card, /opens in a new tab/);
+  assert.match(card, /SectionIcons\.externalLink/);
 });
