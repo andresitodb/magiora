@@ -19,12 +19,24 @@ import {
 } from './src/lib/profileGallery.ts';
 import {
   getExperienceReferencePresentation,
+  getLegacyExperienceReference,
   INVALID_IMDB_MESSAGE,
   INVALID_OFFICIAL_WEBSITE_MESSAGE,
   normalizeExperienceForEditor,
   preserveSubmittedExperience,
   validateExperienceReference,
 } from './src/lib/experienceReferences.ts';
+import {
+  getActiveProfileSkills,
+  getActiveProfileVideos,
+  retainMemberSelection,
+  retainProfileSkills,
+  retainProfileVideos,
+} from './src/lib/profileMemberRetention.ts';
+import {
+  getBrandDisplayDomain,
+  getProfileDomainPreview,
+} from './src/lib/brandDomain.ts';
 
 test('profile fields are grouped into the six editorial chapters', () => {
   assert.deepEqual(PROFILE_CHAPTERS.map((chapter) => chapter.label), [
@@ -103,6 +115,7 @@ test('Member save gate identifies previews without changing Member submissions',
     requestedSlug: 'ava-directs',
     requestedTheme: 'cinematic',
     requestedAccent: 'forest',
+    currentSkillCount: 5,
     skillCount: 7,
   }), [
     'Custom profile URL',
@@ -116,6 +129,7 @@ test('Member save gate identifies previews without changing Member submissions',
     requestedSlug: 'ava-directs',
     requestedTheme: 'cinematic',
     requestedAccent: 'forest',
+    currentSkillCount: 5,
     skillCount: 7,
   }), []);
 });
@@ -275,6 +289,7 @@ test('Free save gate rejects each Member template without changing persistence r
       requestedSlug: 'ava-stone',
       requestedTheme: template.id,
       requestedAccent: 'coral',
+      currentSkillCount: 3,
       skillCount: 3,
     }).includes('Profile theme'));
   }
@@ -575,4 +590,103 @@ test('profile product copy and public Experience rendering stay purpose-specific
   assert.match(publicProfile, /reference\.label/);
   assert.doesNotMatch(publicProfile, /<VideoEmbed url=\{experience/);
   assert.match(actions, /preserveSubmittedExperience\(experienceRaw, existingExperience\)/);
+});
+
+test('valid Experience replacements remove legacy state and the historical URL', () => {
+  const legacy = {
+    production: 'Historical credit',
+    role: 'Director',
+    link: 'https://youtube.com/watch?v=legacy',
+    reference_type: 'legacy',
+  };
+  for (const replacement of [
+    { reference_type: 'imdb' as const, reference_url: 'https://www.imdb.com/title/tt1234567/' },
+    { reference_type: 'official' as const, reference_url: 'https://historical-film.example/press' },
+  ]) {
+    const edited = { ...legacy, ...replacement };
+    assert.equal(getLegacyExperienceReference(edited), null);
+    const [saved] = preserveSubmittedExperience([edited], [legacy]);
+    assert.equal(saved.link, undefined);
+    assert.equal(saved.reference_type, replacement.reference_type);
+    assert.equal(getExperienceReferencePresentation(saved)?.href, replacement.reference_url);
+  }
+});
+
+test('invalid Experience replacement preserves the legacy reference', () => {
+  const legacy = {
+    production: 'Historical credit',
+    link: 'https://vimeo.com/123456',
+    reference_type: 'legacy',
+  };
+  const invalid = {
+    ...legacy,
+    reference_type: 'official',
+    reference_url: 'https://youtube.com/watch?v=replacement',
+  };
+  assert.equal(getLegacyExperienceReference(invalid), legacy.link);
+  assert.throws(
+    () => preserveSubmittedExperience([invalid], [legacy]),
+    new RegExp(INVALID_OFFICIAL_WEBSITE_MESSAGE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+  );
+  assert.equal(legacy.link, 'https://vimeo.com/123456');
+});
+
+test('Free saves retain Member-created skills, videos, themes, and palettes while limiting active content', () => {
+  const skills = ['Acting', 'Voice', 'Dance', 'Movement', 'Comedy', 'Stunts', 'Writing', 'Directing'];
+  const savedSkills = retainProfileSkills(skills, skills, false);
+  assert.deepEqual(savedSkills, skills);
+  assert.deepEqual(getActiveProfileSkills(savedSkills, false), skills.slice(0, 5));
+
+  const videos = [
+    { label: 'Scene one', url: 'https://vimeo.com/1' },
+    { label: 'Scene two', url: 'https://vimeo.com/2' },
+  ];
+  assert.deepEqual(retainProfileVideos(videos, [], false), videos);
+  assert.deepEqual(getActiveProfileVideos(videos, false), []);
+  assert.equal(retainMemberSelection('cinematic', 'editorial', ['editorial', 'cinematic'], false, 'editorial'), 'cinematic');
+  assert.equal(retainMemberSelection('ocean', 'coral', ['coral', 'ocean'], false, 'coral'), 'ocean');
+});
+
+test('manipulated Free submissions cannot activate extra skills and preserved skills do not block ordinary saves', () => {
+  const existing = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'];
+  const stored = retainProfileSkills(existing, [...existing, 'Nine'], false);
+  assert.equal(getActiveProfileSkills(stored, false).length, 5);
+  assert.ok(!getActiveProfileSkills(stored, false).includes('Nine'));
+  assert.deepEqual(getRequestedMemberFeatures({
+    isMember: false,
+    currentSlug: 'ava-stone',
+    requestedSlug: 'ava-stone',
+    requestedTheme: 'editorial',
+    requestedAccent: 'coral',
+    currentSkillCount: 8,
+    skillCount: 8,
+  }), []);
+});
+
+test('profile gallery retains owner content while Free publication remains limited to three', () => {
+  const presentation = getProfileGalleryPresentation(10, false);
+  assert.equal(presentation.includedCount, 3);
+  assert.equal(10 - presentation.includedCount, 7);
+  assert.equal(presentation.canUpload, false);
+});
+
+test('profile-domain preview remains branded without changing canonical path routing', () => {
+  assert.equal(getProfileDomainPreview('andres'), 'andres.magiora.com');
+  assert.equal(getBrandDisplayDomain('preview-123.vercel.app'), 'magiora.com');
+  assert.equal(getProfileDomainPreview('andres', 'localhost:3000'), 'andres.magiora.com');
+  assert.equal(getProfileDomainPreview('andres', 'https://www.magiora.example/path'), 'andres.magiora.example');
+
+  const slugEditor = readFileSync(new URL('./src/components/SlugEditor.tsx', import.meta.url), 'utf8');
+  const profilePage = readFileSync(new URL('./src/app/m/[slug]/page.tsx', import.meta.url), 'utf8');
+  assert.match(slugEditor, /once custom domains are activated/);
+  assert.match(profilePage, /const pathname = `\/m\/\$\{encodeURIComponent\(slug\)\}`/);
+});
+
+test('retention copy and equipment example are explicit and accessible', () => {
+  const equipment = readFileSync(new URL('./src/components/EquipmentEditor.tsx', import.meta.url), 'utf8');
+  const media = readFileSync(new URL('./src/app/dashboard/profile/ProfileMediaSection.tsx', import.meta.url), 'utf8');
+  const videos = readFileSync(new URL('./src/components/VideoLinksManager.tsx', import.meta.url), 'utf8');
+  assert.match(equipment, /ARRI Alexa Mini/);
+  assert.match(media, /Preserved with Member/);
+  assert.match(videos, /Preserved with Member/);
 });

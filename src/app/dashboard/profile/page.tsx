@@ -164,6 +164,7 @@ export default async function ProfileEditPage({
             error={params.error ?? null}
             isMember={isMember}
             currentSlug={profile.slug ?? ''}
+            currentSkillCount={profile.skills?.length ?? 0}
           >
             <section
               id="profile-essentials"

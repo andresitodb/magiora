@@ -122,6 +122,7 @@ export type MemberSaveIntent = {
   requestedSlug: string;
   requestedTheme: string;
   requestedAccent: string;
+  currentSkillCount: number;
   skillCount: number;
 };
 
@@ -131,6 +132,7 @@ export function getRequestedMemberFeatures({
   requestedSlug,
   requestedTheme,
   requestedAccent,
+  currentSkillCount,
   skillCount,
 }: MemberSaveIntent) {
   if (isMember) return [];
@@ -145,7 +147,7 @@ export function getRequestedMemberFeatures({
   if (requestedAccent !== 'coral') {
     features.push('Color palette');
   }
-  if (skillCount > 5) {
+  if (skillCount > Math.max(5, currentSkillCount)) {
     features.push('Additional skills');
   }
   return features;

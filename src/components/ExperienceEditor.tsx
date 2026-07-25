@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import {
   type ExperienceRecord,
   type ExperienceReferenceType,
+  getLegacyExperienceReference,
   normalizeExperienceForEditor,
   validateExperienceReference,
 } from '@/lib/experienceReferences';
@@ -18,6 +19,7 @@ export default function ExperienceEditor({
     defaultValue.map(normalizeExperienceForEditor)
   );
   const [errors, setErrors] = useState<Record<number, string>>({});
+  const [replacingLegacy, setReplacingLegacy] = useState<Set<number>>(new Set());
 
   function add() {
     setItems([
@@ -34,17 +36,13 @@ export default function ExperienceEditor({
   }
 
   function update(index: number, field: keyof ExperienceRecord, value: string) {
-    setItems(items.map((item, itemIndex) =>
-      itemIndex === index ? { ...item, [field]: value } : item
-    ));
+    const nextItem = { ...items[index], [field]: value };
+    setItems(items.map((item, itemIndex) => itemIndex === index ? nextItem : item));
     if (field === 'reference_type' || field === 'reference_url') {
-      const item = items[index];
       const type = (
-        field === 'reference_type' ? value : item.reference_type
+        nextItem.reference_type
       ) as ExperienceReferenceType;
-      const url = field === 'reference_url'
-        ? value
-        : String(item.reference_url ?? '');
+      const url = String(nextItem.reference_url ?? '');
       validateReference(index, type, url);
     }
   }
@@ -83,6 +81,7 @@ export default function ExperienceEditor({
         ? { ...item, reference_type: 'official', reference_url: '' }
         : item
     ));
+    setReplacingLegacy((current) => new Set(current).add(index));
   }
 
   return (
@@ -103,7 +102,9 @@ export default function ExperienceEditor({
 
       {items.map((item, index) => {
         const prefix = `${editorId}-experience-${index}`;
-        const isLegacyReference = item.reference_type === 'legacy';
+        const legacyReference = getLegacyExperienceReference(item);
+        const isLegacyReference = Boolean(legacyReference);
+        const isReplacingLegacy = replacingLegacy.has(index);
         const referenceType = (
           item.reference_type === 'imdb' ? 'imdb' : 'official'
         ) as ExperienceReferenceType;
@@ -188,18 +189,60 @@ export default function ExperienceEditor({
                 </p>
                 <input
                   id={`${prefix}-legacy-reference`}
-                  value={String(item.link ?? '')}
+                  value={legacyReference ?? ''}
                   readOnly
                   aria-label={`Legacy reference URL for experience ${index + 1}`}
                   className="mt-3 w-full rounded border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600"
                 />
-                <button
-                  type="button"
-                  onClick={() => replaceLegacyReference(index)}
-                  className="mt-3 text-sm font-medium text-[#712B13] underline underline-offset-4"
-                >
-                  Replace with an approved reference
-                </button>
+                {isReplacingLegacy ? (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-[12rem_1fr]">
+                    <div>
+                      <label htmlFor={`${prefix}-reference-type`} className="mb-1 block text-sm font-medium">
+                        Replacement type
+                      </label>
+                      <select
+                        id={`${prefix}-reference-type`}
+                        value={referenceType}
+                        onChange={(event) => update(index, 'reference_type', event.target.value)}
+                        className="k-control"
+                      >
+                        <option value="imdb">IMDb</option>
+                        <option value="official">Official website</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor={`${prefix}-reference-url`} className="mb-1 block text-sm font-medium">
+                        Replacement URL
+                      </label>
+                      <input
+                        id={`${prefix}-reference-url`}
+                        type="url"
+                        value={String(item.reference_url ?? '')}
+                        onChange={(event) => update(index, 'reference_url', event.target.value)}
+                        onBlur={(event) => validateReference(index, referenceType, event.target.value)}
+                        aria-invalid={error ? true : undefined}
+                        aria-describedby={error ? `${prefix}-reference-error` : undefined}
+                        placeholder={referenceType === 'imdb'
+                          ? 'https://www.imdb.com/title/...'
+                          : 'https://official-production-site.com'}
+                        className="k-control"
+                      />
+                      {error && (
+                        <p id={`${prefix}-reference-error`} role="alert" className="mt-1.5 text-sm text-red-700">
+                          {error}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => replaceLegacyReference(index)}
+                    className="mt-3 text-sm font-medium text-[#712B13] underline underline-offset-4"
+                  >
+                    Replace with an approved reference
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">

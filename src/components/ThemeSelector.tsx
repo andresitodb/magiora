@@ -42,6 +42,14 @@ export default function ThemeSelector({
   const [previewData, setPreviewData] = useState(initialData);
   const [fullPreviewOpen, setFullPreviewOpen] = useState(false);
   const selectedAccent = ACCENTS.find((item) => item.id === accent) ?? ACCENTS[0];
+  const preservedTemplate = TEMPLATES.find((item) => item.id === normalizedDefault);
+  const preservedAccent = ACCENTS.find((item) => item.id === defaultAccent);
+  const hasPreservedPresentation =
+    !isMember &&
+    (
+      (normalizedDefault && normalizedDefault !== DEFAULT_TEMPLATE) ||
+      (defaultAccent && defaultAccent !== DEFAULT_ACCENT)
+    );
 
   useEffect(() => {
     const form = document.getElementById('profile-form');
@@ -101,6 +109,23 @@ export default function ThemeSelector({
     <div className="space-y-6">
       <input type="hidden" name="profile_theme" value={template} />
       <input type="hidden" name="profile_accent" value={accent} />
+
+      {hasPreservedPresentation && (
+        <div
+          className="rounded-md border border-stone-300 bg-stone-50 p-4"
+          role="status"
+          aria-label="Member profile presentation preserved"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-700">
+            Preserved with Member
+          </p>
+          <p className="mt-1 font-serif text-sm leading-relaxed text-stone-700">
+            {preservedTemplate?.name ?? 'Your selected profile theme'}
+            {' · '}
+            {preservedAccent?.name ?? 'Your selected color palette'} will be available again with Member.
+          </p>
+        </div>
+      )}
 
       <MemberEdition
         title="Profile themes"

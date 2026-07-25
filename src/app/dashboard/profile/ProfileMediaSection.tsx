@@ -273,7 +273,7 @@ export default function ProfileMediaSection({
                     ? 'bg-white/95 text-stone-800'
                     : 'bg-stone-900/90 text-white'
                 }`}>
-                  {isMember || index < FREE_PROFILE_GALLERY_LIMIT ? 'Published' : 'Visible with Member'}
+                  {isMember || index < FREE_PROFILE_GALLERY_LIMIT ? 'Published' : 'Preserved with Member'}
                 </span>
                 <button
                   type="button"

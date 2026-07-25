@@ -105,12 +105,14 @@ export default function ProfileMainForm({
   error,
   isMember,
   currentSlug,
+  currentSkillCount,
   children,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   error?: string | null;
   isMember: boolean;
   currentSlug: string;
+  currentSkillCount: number;
   children: React.ReactNode;
 }) {
   const [dirty, setDirty] = useState(false);
@@ -220,6 +222,7 @@ export default function ProfileMainForm({
             requestedSlug: String(formData.get('slug') ?? currentSlug),
             requestedTheme: String(formData.get('profile_theme') ?? 'editorial'),
             requestedAccent: String(formData.get('profile_accent') ?? 'coral'),
+            currentSkillCount,
             skillCount: formData.getAll('skills').length,
           });
           if (requestedFeatures.length > 0) {

@@ -94,6 +94,7 @@ export default function SkillsAutocomplete({
     const trimmed = skill.trim();
     if (!trimmed) return;
     if (skills.includes(trimmed)) return;
+    if (maxAllowed !== undefined && skills.length >= maxAllowed) return;
     setSkills([...skills, trimmed]);
     setInput('');
   }
@@ -139,7 +140,7 @@ export default function SkillsAutocomplete({
             {s}
             {maxAllowed !== undefined && index >= maxAllowed && (
               <span className="text-[10px] font-medium uppercase tracking-wide text-[#712B13]">
-                Member
+                Preserved with Member
               </span>
             )}
             <button
@@ -155,23 +156,25 @@ export default function SkillsAutocomplete({
             </button>
           </span>
         ))}
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          onFocus={() => setShowSuggestions(true)}
-          placeholder={skills.length === 0 ? 'Type a skill and press Enter…' : ''}
-          className="flex-1 min-w-[140px] outline-none text-sm bg-transparent"
-        />
+        {!includedLimitReached && (
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            onFocus={() => setShowSuggestions(true)}
+            placeholder={skills.length === 0 ? 'Type a skill and press Enter…' : ''}
+            className="flex-1 min-w-[140px] outline-none text-sm bg-transparent"
+          />
+        )}
       </div>
 
       {maxAllowed !== undefined && (
         <p className="mt-1 font-serif text-xs italic text-stone-600" aria-live="polite">
           {Math.min(skills.length, maxAllowed)} / {maxAllowed} included
           {includedLimitReached && !hasMemberPreviewSkills && '. Keep exploring—additional skills are available with Member.'}
-          {hasMemberPreviewSkills && ` · ${skills.length - maxAllowed} previewed with Member`}
+          {hasMemberPreviewSkills && ` · ${skills.length - maxAllowed} preserved with Member`}
         </p>
       )}
 

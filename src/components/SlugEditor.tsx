@@ -1,11 +1,8 @@
 'use client';
 
-import { useState, useTransition, useEffect, useSyncExternalStore } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { checkSlugAvailability } from '@/app/dashboard/profile/actions';
-
-const subscribeToHost = () => () => {};
-const getHost = () => window.location.host;
-const getServerHost = () => 'magiora.com';
+import { getProfileDomainPreview } from '@/lib/brandDomain';
 
 export default function SlugEditor({
   currentSlug,
@@ -19,9 +16,10 @@ export default function SlugEditor({
     'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unchanged'
   >('unchanged');
   const [, startTransition] = useTransition();
-
-  const host = useSyncExternalStore(subscribeToHost, getHost, getServerHost);
-  const baseUrl = `${host}/m/`;
+  const domainPreview = getProfileDomainPreview(
+    slug,
+    process.env.NEXT_PUBLIC_BRAND_DOMAIN,
+  );
 
   useEffect(() => {
     if (!isMember) return;
@@ -54,29 +52,33 @@ export default function SlugEditor({
         )}
       </label>
 
-      <div className="flex items-stretch border border-stone-300 rounded-md overflow-hidden bg-white">
-        <span
-          className="px-3 py-2 text-xs text-stone-500 italic font-serif bg-stone-50 border-r border-stone-200 flex items-center"
-          suppressHydrationWarning
-        >
-          {baseUrl}
-        </span>
-        <input
-          type="text"
-          name="slug"
-          value={slug}
-          onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-          className="min-w-0 flex-1 bg-white px-3 py-2 text-sm focus:outline-none"
-          minLength={3}
-          maxLength={30}
-          aria-describedby={!isMember ? 'member-url-note' : undefined}
-        />
-      </div>
+      <input
+        type="text"
+        name="slug"
+        value={slug}
+        onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+        className="k-control"
+        minLength={3}
+        maxLength={30}
+        aria-describedby="member-url-preview member-url-note"
+      />
+
+      <p
+        id="member-url-preview"
+        className="mt-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2 font-serif text-sm text-stone-800"
+        aria-live="polite"
+      >
+        {domainPreview}
+      </p>
+      <p id="member-url-note" className="mt-2 text-xs leading-relaxed text-stone-600">
+        Your Member profile can use a personal Magiora address once custom domains are activated.
+        The current public profile continues to use its Magiora profile link.
+      </p>
 
       <div className="mt-1 min-h-[16px] font-serif text-xs italic">
         {!isMember ? (
-          <span id="member-url-note" className="text-stone-500">
-            Try your preferred URL. Custom profile URLs are included with Member.
+          <span className="text-stone-500">
+            Try your preferred address. It will be available again with Member.
           </span>
         ) : (
           <>

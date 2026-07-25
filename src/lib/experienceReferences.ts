@@ -135,6 +135,22 @@ export function getExperienceReferencePresentation(record: ExperienceRecord): {
   };
 }
 
+export function getLegacyExperienceReference(record: ExperienceRecord): string | null {
+  const legacyUrl = String(record.link ?? '').trim();
+  if (!legacyUrl || inferExperienceReferenceType(legacyUrl) !== 'legacy') return null;
+
+  const replacementType =
+    record.reference_type === 'imdb' || record.reference_type === 'official'
+      ? record.reference_type
+      : null;
+  const replacementUrl = String(record.reference_url ?? '').trim();
+  if (replacementType && replacementUrl) {
+    const replacement = validateExperienceReference(replacementType, replacementUrl);
+    if (replacement.valid) return null;
+  }
+  return legacyUrl;
+}
+
 export function preserveSubmittedExperience(
   submitted: ExperienceRecord[],
   existing: ExperienceRecord[],
@@ -159,7 +175,13 @@ export function preserveSubmittedExperience(
     if (referenceType && referenceUrl) {
       const validation = validateExperienceReference(referenceType, referenceUrl);
       if (!validation.valid) throw new Error(validation.error);
-      return { ...record, reference_url: validation.normalizedUrl };
+      const withoutLegacyLink = { ...record };
+      delete withoutLegacyLink.link;
+      return {
+        ...withoutLegacyLink,
+        reference_type: referenceType,
+        reference_url: validation.normalizedUrl,
+      };
     }
 
     const legacyLink = String(record.link ?? '').trim();

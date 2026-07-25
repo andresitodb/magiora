@@ -10,15 +10,15 @@ import {
   type ExperienceRecord,
   preserveSubmittedExperience,
 } from '@/lib/experienceReferences';
+import {
+  type ProfileVideoLink,
+  retainMemberSelection,
+  retainProfileSkills,
+  retainProfileVideos,
+} from '@/lib/profileMemberRetention';
 
-const FREE_SKILL_LIMIT = 5;
 const VALID_TEMPLATES = TEMPLATES.map((t) => t.id);
 const VALID_ACCENTS = ACCENTS.map((a) => a.id);
-
-interface VideoLink {
-  url?: string;
-  [key: string]: unknown;
-}
 
 function optionalHttpUrl(value: FormDataEntryValue | null): string | null {
   const text = typeof value === 'string' ? value.trim() : '';
@@ -53,7 +53,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: existingProfile } = await supabase
     .from('profiles')
-    .select('slug, experience')
+    .select('slug, experience, skills, video_links, profile_theme, profile_accent')
     .eq('id', user.id)
     .single();
   const isMember = await hasPaidMembership(user.id);
@@ -95,23 +95,35 @@ export async function updateProfile(formData: FormData) {
     }
   }
 
-  let profileTheme = DEFAULT_TEMPLATE as string;
-  let profileAccent = DEFAULT_ACCENT as string;
-  if (isMember) {
-    const submittedTheme = formData.get('profile_theme') as string | null;
-    const submittedAccent = formData.get('profile_accent') as string | null;
-    if (submittedTheme && VALID_TEMPLATES.some((theme) => theme === submittedTheme)) {
-      profileTheme = submittedTheme;
-    }
-    if (submittedAccent && VALID_ACCENTS.some((accent) => accent === submittedAccent)) {
-      profileAccent = submittedAccent;
-    }
-  }
+  const submittedTheme = formData.get('profile_theme') as string | null;
+  const submittedAccent = formData.get('profile_accent') as string | null;
+  const profileTheme = retainMemberSelection(
+    existingProfile?.profile_theme,
+    submittedTheme,
+    VALID_TEMPLATES,
+    isMember,
+    DEFAULT_TEMPLATE,
+  );
+  const profileAccent = retainMemberSelection(
+    existingProfile?.profile_accent,
+    submittedAccent,
+    VALID_ACCENTS,
+    isMember,
+    DEFAULT_ACCENT,
+  );
 
   const languages = formData.getAll('languages').map(String).filter(Boolean);
 
-  let skills = formData.getAll('skills').map(String).map((s) => s.trim()).filter(Boolean);
-  if (!isMember && skills.length > FREE_SKILL_LIMIT) skills = skills.slice(0, FREE_SKILL_LIMIT);
+  const submittedSkills = formData
+    .getAll('skills')
+    .map(String)
+    .map((skill) => skill.trim())
+    .filter(Boolean);
+  const skills = retainProfileSkills(
+    existingProfile?.skills ?? [],
+    submittedSkills,
+    isMember,
+  );
 
   const malformedFieldLabels: Record<string, string> = {
     video_links: 'video links',
@@ -148,12 +160,19 @@ export async function updateProfile(formData: FormData) {
     }
   };
 
-  let videoLinks: VideoLink[] = [];
-  if (isMember) {
-    videoLinks = parseJSON<VideoLink[]>('video_links', [], 'array').filter((link) =>
-      link.url?.trim()
-    );
-  }
+  const submittedVideoLinks = parseJSON<ProfileVideoLink[]>(
+    'video_links',
+    [],
+    'array',
+  );
+  const existingVideoLinks = Array.isArray(existingProfile?.video_links)
+    ? existingProfile.video_links as ProfileVideoLink[]
+    : [];
+  const videoLinks = retainProfileVideos(
+    existingVideoLinks,
+    submittedVideoLinks,
+    isMember,
+  );
 
   const experienceRaw = parseJSON<ExperienceRecord[]>('experience', [], 'array');
   let experience: ExperienceRecord[];

@@ -19,6 +19,11 @@ import {
   getExperienceReferencePresentation,
   type ExperienceRecord,
 } from '@/lib/experienceReferences';
+import {
+  getActiveProfileSkills,
+  getActiveProfileVideos,
+  type ProfileVideoLink,
+} from '@/lib/profileMemberRetention';
 
 const FREE_GALLERY_DISPLAY_LIMIT = 3;
 
@@ -268,7 +273,11 @@ export default async function PublicProfilePage({
     .slice(0, 4)
     .map(({ candidate }) => candidate);
 
-  const videoLinks: { label: string; url: string }[] = profile.video_links ?? [];
+  const videoLinks = getActiveProfileVideos(
+    (profile.video_links ?? []) as ProfileVideoLink[],
+    isMember,
+  ) as { label: string; url: string }[];
+  const activeSkills = getActiveProfileSkills(profile.skills ?? [], isMember);
   const experience: ExperienceRecord[] = sortByYearDesc(profile.experience ?? []);
   const recommendations: Recommendation[] = profile.recommendations ?? [];
   const equipment: EquipmentItem[] = profile.equipment ?? [];
@@ -515,11 +524,11 @@ export default async function PublicProfilePage({
                 </div>
               )}
 
-              {profile.skills?.length > 0 && (
+              {activeSkills.length > 0 && (
                 <div className="pt-6 border-t" style={{ borderColor: accent.border }}>
                   <p className="font-serif italic text-sm mb-3" style={{ color: accent.accent }}>Skills</p>
                   <div className="flex flex-wrap gap-2">
-                    {profile.skills.map((s: string) => (
+                    {activeSkills.map((s: string) => (
                       <span
                         key={s}
                         className="px-3 py-1 rounded-full text-xs font-serif border"

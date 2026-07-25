@@ -58,26 +58,47 @@ export default function VideoLinksManager({
         <input
           type="hidden"
           name="video_links"
-          value={JSON.stringify(isMember ? links : [])}
+          value={JSON.stringify(links)}
         />
 
         {!isMember ? (
-          <div className="grid gap-2 sm:grid-cols-2" aria-label="Preview of four additional portfolio clips">
-            {Array.from({ length: MAX_EXTRA }, (_, index) => (
-              <div
-                key={index}
-                className="flex min-h-16 items-center gap-3 rounded-md border border-dashed border-stone-300 bg-white px-3 py-2"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-sm text-stone-500" aria-hidden="true">
-                  {index + 1}
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-stone-700">Portfolio clip</p>
-                  <p className="text-xs text-stone-500">Clip title and portfolio video URL</p>
+          links.length > 0 ? (
+            <div className="space-y-2" aria-label="Portfolio videos preserved with Member">
+              {links.map((link, index) => (
+                <div
+                  key={`${link.url}-${index}`}
+                  className="rounded-md border border-stone-200 bg-stone-50 px-3 py-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-stone-800">
+                      {link.label || `Portfolio video ${index + 1}`}
+                    </p>
+                    <span className="rounded-full border border-stone-300 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-stone-700">
+                      Preserved with Member
+                    </span>
+                  </div>
+                  <p className="mt-1 break-all text-xs text-stone-500">{link.url}</p>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2" aria-label="Preview of four additional portfolio clips">
+              {Array.from({ length: MAX_EXTRA }, (_, index) => (
+                <div
+                  key={index}
+                  className="flex min-h-16 items-center gap-3 rounded-md border border-dashed border-stone-300 bg-white px-3 py-2"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-sm text-stone-500" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <div>
+                    <p className="text-sm font-medium text-stone-700">Portfolio clip</p>
+                    <p className="text-xs text-stone-500">Clip title and portfolio video URL</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         ) : (
           <div>
         <div className="flex items-center justify-between mb-2">

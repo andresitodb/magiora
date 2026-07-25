@@ -48,7 +48,7 @@ export default function EquipmentEditor({
             <textarea
               value={it.items}
               onChange={(e) => update(i, 'items', e.target.value)}
-              placeholder="e.g. RED Komodo X, Sony FX3 (with cage)"
+              placeholder="e.g. ARRI Alexa Mini, Sony FX3 (with cage)"
               rows={2}
               className="px-2 py-1.5 border border-stone-300 rounded text-sm font-serif"
             />
