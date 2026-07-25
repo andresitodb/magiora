@@ -8,6 +8,12 @@ import {
   type AccentId,
   type TemplateId,
 } from './profile_themes.ts';
+import {
+  CINEMATIC_HOME_SECTIONS,
+  CINEMATIC_PAGES,
+  type CinematicHomeSectionId,
+  type CinematicPageId,
+} from './profileTemplateRegistry.ts';
 
 export const SCREEN_PRESENCE_SECTIONS = [
   'about',
@@ -21,7 +27,9 @@ export const SCREEN_PRESENCE_SECTIONS = [
 ] as const;
 
 export type ScreenPresenceSectionId = (typeof SCREEN_PRESENCE_SECTIONS)[number];
-export type TypographyStyle = 'editorial' | 'modern' | 'classic' | 'contemporary';
+export type TypographyStyle =
+  | 'editorial' | 'modern' | 'classic' | 'contemporary'
+  | 'auteur' | 'premiere' | 'modern-cinema' | 'festival';
 
 export const TYPOGRAPHY_SYSTEMS: ReadonlyArray<{
   id: TypographyStyle;
@@ -35,6 +43,10 @@ export const TYPOGRAPHY_SYSTEMS: ReadonlyArray<{
   { id: 'modern', name: 'Modern', displayClass: 'font-sans', bodyClass: 'font-sans', metadataClass: 'tracking-[0.12em]', headingClass: 'tracking-[-0.04em]' },
   { id: 'classic', name: 'Classic', displayClass: 'font-serif', bodyClass: 'font-serif', metadataClass: 'tracking-[0.2em]', headingClass: 'tracking-normal' },
   { id: 'contemporary', name: 'Contemporary', displayClass: 'font-sans', bodyClass: 'font-serif', metadataClass: 'tracking-[0.16em]', headingClass: 'tracking-[-0.015em]' },
+  { id: 'auteur', name: 'Auteur', displayClass: 'font-serif', bodyClass: 'font-sans', metadataClass: 'tracking-[0.24em]', headingClass: 'tracking-[-0.04em]' },
+  { id: 'premiere', name: 'Premiere', displayClass: 'font-serif', bodyClass: 'font-serif', metadataClass: 'tracking-[0.18em]', headingClass: 'tracking-[-0.02em]' },
+  { id: 'modern-cinema', name: 'Modern Cinema', displayClass: 'font-sans', bodyClass: 'font-sans', metadataClass: 'tracking-[0.14em]', headingClass: 'tracking-[-0.055em]' },
+  { id: 'festival', name: 'Festival', displayClass: 'font-sans', bodyClass: 'font-serif', metadataClass: 'tracking-[0.28em]', headingClass: 'tracking-[-0.01em]' },
 ];
 
 export type ProfileTemplateSettings = {
@@ -43,6 +55,8 @@ export type ProfileTemplateSettings = {
   fontStyle: TypographyStyle;
   sectionOrder: ScreenPresenceSectionId[];
   hiddenSections: ScreenPresenceSectionId[];
+  navigationOrder: CinematicPageId[];
+  homeSectionOrder: CinematicHomeSectionId[];
 };
 
 export type StoredProfileTemplateSettings = {
@@ -51,6 +65,8 @@ export type StoredProfileTemplateSettings = {
   font_style?: string | null;
   section_order?: unknown;
   hidden_sections?: unknown;
+  navigation_order?: unknown;
+  home_section_order?: unknown;
 } | null;
 
 export function isTypographyStyle(value: unknown): value is TypographyStyle {
@@ -80,6 +96,20 @@ export function normalizeHiddenSections(value: unknown): ScreenPresenceSectionId
       value.indexOf(item) === index,
   );
 }
+
+function normalizeOrder<T extends string>(value: unknown, canonical: readonly T[]): T[] {
+  const submitted = Array.isArray(value) ? value : [];
+  const known = submitted.filter(
+    (item, index): item is T =>
+      typeof item === 'string' && canonical.includes(item as T) && submitted.indexOf(item) === index,
+  );
+  return [...known, ...canonical.filter((item) => !known.includes(item))];
+}
+
+export const normalizeCinematicNavigationOrder = (value: unknown) =>
+  normalizeOrder(value, CINEMATIC_PAGES);
+export const normalizeCinematicHomeSectionOrder = (value: unknown) =>
+  normalizeOrder(value, CINEMATIC_HOME_SECTIONS);
 
 export function moveSection(
   order: ScreenPresenceSectionId[],
@@ -121,5 +151,7 @@ export function resolveProfileTemplateSettings({
         : 'editorial',
     sectionOrder: normalizeSectionOrder(local?.sectionOrder ?? saved?.section_order),
     hiddenSections: normalizeHiddenSections(local?.hiddenSections ?? saved?.hidden_sections),
+    navigationOrder: normalizeCinematicNavigationOrder(local?.navigationOrder ?? saved?.navigation_order),
+    homeSectionOrder: normalizeCinematicHomeSectionOrder(local?.homeSectionOrder ?? saved?.home_section_order),
   };
 }

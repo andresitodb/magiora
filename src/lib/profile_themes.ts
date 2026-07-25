@@ -7,7 +7,9 @@ export type TemplateId =
   | 'minimalist'
   | 'stage'
   | 'studio';
-export type AccentId = 'coral' | 'monochrome' | 'forest' | 'ocean' | 'sunset' | 'midnight';
+export type AccentId =
+  | 'coral' | 'monochrome' | 'forest' | 'ocean' | 'sunset' | 'midnight'
+  | 'noir' | 'silver-screen' | 'deep-burgundy' | 'midnight-blue';
 
 export interface Template {
   id: TemplateId;
@@ -51,7 +53,7 @@ export const TEMPLATES: Template[] = [
     id: 'cinematic',
     name: 'Cinematic Showcase',
     description: 'A full-bleed image-led opening with bold titles and a sequence of featured projects.',
-    supportedAccents: ALL_ACCENTS,
+    supportedAccents: ['noir', 'silver-screen', 'deep-burgundy', 'midnight-blue'],
   },
   {
     id: 'portrait',
@@ -163,6 +165,34 @@ export const ACCENTS: Accent[] = [
     text: '#f5f3ee',
     textMuted: '#a8a29e',
     border: '#3a3530',
+  },
+  {
+    id: 'noir', name: 'Noir',
+    background: '#0b0b0c', surface: '#171719', primaryText: '#f5f3ef', secondaryText: '#b8b5b0',
+    buttonBackground: '#f5f3ef', buttonText: '#0b0b0c', overlayText: '#ffffff', overlayBackground: '#050506',
+    bg: '#0b0b0c', card: '#171719', accent: '#d2cbc0', accentDark: '#a69f95',
+    accentSoft: '#29282a', text: '#f5f3ef', textMuted: '#b8b5b0', border: '#343438',
+  },
+  {
+    id: 'silver-screen', name: 'Silver Screen',
+    background: '#e9e9e7', surface: '#f8f8f5', primaryText: '#17181a', secondaryText: '#55585d',
+    buttonBackground: '#25282d', buttonText: '#ffffff', overlayText: '#ffffff', overlayBackground: '#17191d',
+    bg: '#e9e9e7', card: '#f8f8f5', accent: '#4e5661', accentDark: '#25282d',
+    accentSoft: '#d6d8da', text: '#17181a', textMuted: '#60646a', border: '#c8c9c8',
+  },
+  {
+    id: 'deep-burgundy', name: 'Deep Burgundy',
+    background: '#160d10', surface: '#26151a', primaryText: '#f8f0eb', secondaryText: '#d5c0bc',
+    buttonBackground: '#d8b27c', buttonText: '#27130f', overlayText: '#fffaf7', overlayBackground: '#12080b',
+    bg: '#160d10', card: '#26151a', accent: '#d8b27c', accentDark: '#a67a45',
+    accentSoft: '#40252d', text: '#f8f0eb', textMuted: '#c5aba7', border: '#53313a',
+  },
+  {
+    id: 'midnight-blue', name: 'Midnight Blue',
+    background: '#08131f', surface: '#102235', primaryText: '#edf5fb', secondaryText: '#b5c8d8',
+    buttonBackground: '#b7d6e8', buttonText: '#08131f', overlayText: '#ffffff', overlayBackground: '#050d16',
+    bg: '#08131f', card: '#102235', accent: '#9fc7de', accentDark: '#689bb8',
+    accentSoft: '#1a354c', text: '#edf5fb', textMuted: '#aac0d1', border: '#29445a',
   },
 ];
 
