@@ -11,9 +11,9 @@ export default function PublicProfileTabs({
   accent,
 }: {
   about: React.ReactNode;
-  photos: React.ReactNode;
-  experience: React.ReactNode;
-  contact: React.ReactNode;
+  photos?: React.ReactNode;
+  experience?: React.ReactNode;
+  contact?: React.ReactNode;
   accent: Accent;
 }) {
   const tabs = [
@@ -21,7 +21,7 @@ export default function PublicProfileTabs({
     { id: 'photos', label: 'Photos', content: photos },
     { id: 'experience', label: 'Experience', content: experience },
     { id: 'contact', label: 'Contact', content: contact },
-  ];
+  ].filter((tab) => tab.content !== null && tab.content !== undefined);
 
   const [active, setActive] = useState(tabs[0].id);
   const activeTab = tabs.find((t) => t.id === active);

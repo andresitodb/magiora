@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { postCastingCall } from '../actions';
-import { hasPaidMembership } from '@/lib/billingServer';
+import { hasMemberEntitlement as hasPaidMembership } from '@/lib/memberEntitlementServer';
 
 export default async function NewCastingCallPage({
   searchParams,

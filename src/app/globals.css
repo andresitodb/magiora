@@ -51,6 +51,35 @@ textarea {
   outline-offset: 2px;
 }
 
+[data-profile-template="screen-presence"][data-typography="modern"] {
+  font-family: var(--font-geist-sans);
+}
+
+[data-profile-template="screen-presence"][data-typography="modern"] :is(h1, h2, h3, .font-serif) {
+  font-family: var(--font-geist-sans);
+  letter-spacing: -0.035em;
+}
+
+[data-profile-template="screen-presence"][data-typography="classic"] {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+[data-profile-template="screen-presence"][data-typography="classic"] :is(h1, h2, h3) {
+  letter-spacing: 0;
+}
+
+[data-profile-template="screen-presence"][data-typography="contemporary"] {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+[data-profile-template="screen-presence"][data-typography="contemporary"] :is(h1, h2, h3, nav, .uppercase) {
+  font-family: var(--font-geist-sans);
+}
+
+[data-profile-template="screen-presence"][data-typography="contemporary"] :is(h1, h2, h3) {
+  letter-spacing: -0.015em;
+}
+
 .k-container {
   width: min(100% - 2rem, 72rem);
   margin-inline: auto;

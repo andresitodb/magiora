@@ -24,6 +24,10 @@ import {
   getActiveProfileVideos,
   type ProfileVideoLink,
 } from '@/lib/profileMemberRetention';
+import ScreenPresenceProfile from '@/components/ScreenPresenceProfile';
+import { aggregatePreviewProjects, type PreviewProject, type ProfilePreviewData } from '@/lib/profilePreview';
+import { resolveProfileTemplateSettings } from '@/lib/profileTemplateSettings';
+import { resolveMemberEntitlement } from '@/lib/memberEntitlement';
 
 const FREE_GALLERY_DISPLAY_LIMIT = 3;
 
@@ -135,7 +139,7 @@ export default async function PublicProfilePage({
 
   if ((!profile.visible || profile.approved !== true) && !isOwner) notFound();
 
-  const isMember = profile.plan === 'member';
+  const isMember = resolveMemberEntitlement({ plan: profile.plan }).isMember;
   const roleTitles: string[] = profile.role_titles ?? [];
   const primaryTitle =
     roleTitles[0] ??
@@ -143,8 +147,19 @@ export default async function PublicProfilePage({
       ? profile.custom_role_label
       : profile.role_category?.replace('_', ' '));
 
-  const template = getTemplate(isMember ? profile.profile_theme : 'editorial');
-  const accent = getAccent(isMember ? profile.profile_accent : 'coral');
+  const { data: screenTemplateSettings } = await supabase
+    .from('profile_template_settings')
+    .select('template_id, palette_id, font_style, section_order, hidden_sections')
+    .eq('profile_id', profile.id)
+    .eq('template_id', 'editorial')
+    .maybeSingle();
+  const resolvedTemplateSettings = resolveProfileTemplateSettings({
+    saved: isMember ? screenTemplateSettings : null,
+    legacyTemplate: isMember ? profile.profile_theme : 'editorial',
+    legacyAccent: isMember ? profile.profile_accent : 'coral',
+  });
+  const template = getTemplate(resolvedTemplateSettings.templateId);
+  const accent = getAccent(resolvedTemplateSettings.paletteId);
 
   const [
     { data: stories },
@@ -179,13 +194,36 @@ export default async function PublicProfilePage({
       .eq('profile_id', profile.id),
     supabase
       .from('project_credits')
-      .select('project_id')
+      .select('project_id, role_title')
       .eq('profile_id', profile.id),
   ]);
 
   const profileProjectIds = Array.from(
     new Set((profileCreditProjects ?? []).map((credit) => credit.project_id))
   );
+  const projectCreditRoles = new Map<string, string[]>();
+  for (const credit of profileCreditProjects ?? []) {
+    const roles = projectCreditRoles.get(credit.project_id) ?? [];
+    if (credit.role_title) roles.push(credit.role_title);
+    projectCreditRoles.set(credit.project_id, roles);
+  }
+  const [{ data: ownedScreenProjects }, { data: creditedScreenProjects }] = await Promise.all([
+    supabase
+      .from('projects')
+      .select('id, slug, title, tagline, poster_url, year')
+      .eq('owner_id', profile.id)
+      .eq('visible', true)
+      .order('year', { ascending: false, nullsFirst: false })
+      .limit(6),
+    profileProjectIds.length > 0
+      ? supabase
+          .from('projects')
+          .select('id, slug, title, tagline, poster_url, year')
+          .in('id', profileProjectIds)
+          .eq('visible', true)
+          .limit(6)
+      : Promise.resolve({ data: [] }),
+  ]);
   const candidateIds = ((relatedCandidates ?? []) as RelatedProfile[]).map(
     (candidate) => candidate.id
   );
@@ -289,6 +327,41 @@ export default async function PublicProfilePage({
   if (!isMember) gallery = gallery.slice(0, FREE_GALLERY_DISPLAY_LIMIT);
 
   const hasAnyVideo = !!profile.demo_reel_url || videoLinks.length > 0;
+  const hasContact =
+    Boolean(profile.contact_email || profile.phone || profile.website_url) ||
+    Object.values(social).some((value) => Boolean(value?.trim())) ||
+    Boolean(rep.agency || rep.manager || rep.agent || rep.email || rep.phone || rep.website);
+
+  if (String(template.id) === 'editorial') {
+    const creditedProjectsWithRoles = (creditedScreenProjects ?? []).map((project) => ({
+      ...project,
+      creditRoles: projectCreditRoles.get(project.id) ?? [],
+    }));
+    const screenProjects = aggregatePreviewProjects([
+      ...(ownedScreenProjects ?? []),
+      ...creditedProjectsWithRoles,
+    ] as PreviewProject[]).slice(0, 6);
+    const screenData: ProfilePreviewData = {
+      headshotUrl: profile.headshot_url,
+      displayName: profile.display_name ?? '',
+      roles: roleTitles,
+      city: profile.location_city ?? '',
+      state: profile.location_state ?? '',
+      bio: profile.bio ?? '',
+      languages: profile.languages?.map(getLanguageName) ?? [],
+      skills: activeSkills,
+      demoReelUrl: profile.demo_reel_url ?? '',
+      gallery,
+      experience,
+      projects: screenProjects,
+      recommendations,
+      socialLinks: social,
+      equipment,
+      contactEmail: profile.contact_email ?? '',
+      websiteUrl: profile.website_url ?? '',
+    };
+    return <ScreenPresenceProfile data={screenData} accent={accent} settings={resolvedTemplateSettings} />;
+  }
 
   return (
     <div style={{ backgroundColor: accent.bg, color: accent.text }} className="min-h-screen">
@@ -607,13 +680,10 @@ export default async function PublicProfilePage({
                   <img key={i} src={url} alt="" className="w-full aspect-[4/5] object-cover rounded-md" />
                 ))}
               </div>
-            ) : (
-              <p className="font-serif italic text-center py-12" style={{ color: accent.textMuted }}>
-                No photos in the gallery yet.
-              </p>
-            )
+            ) : null
           }
           experience={
+            experience.length > 0 || recommendations.length > 0 ? (
             <div className="space-y-10">
               {experience.length > 0 ? (
                 <div>
@@ -658,9 +728,7 @@ export default async function PublicProfilePage({
                     })}
                   </div>
                 </div>
-              ) : (
-                <p className="font-serif italic" style={{ color: accent.textMuted }}>No credits listed yet.</p>
-              )}
+              ) : null}
 
               {recommendations.length > 0 && (
                 <div>
@@ -681,8 +749,10 @@ export default async function PublicProfilePage({
                 </div>
               )}
             </div>
+            ) : null
           }
           contact={
+            hasContact ? (
             <div className="space-y-8">
               {profile.contact_email && (
                 <div>
@@ -757,14 +827,8 @@ export default async function PublicProfilePage({
                 </div>
               )}
 
-              {!profile.contact_email && !profile.phone && !profile.website_url &&
-                Object.values(social).filter((v) => v && (v as string).trim()).length === 0 &&
-                !rep.agency && !rep.email && (
-                  <p className="font-serif italic text-center py-12" style={{ color: accent.textMuted }}>
-                    No contact info added yet.
-                  </p>
-                )}
             </div>
+            ) : null
           }
         />
 

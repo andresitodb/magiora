@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { resolveMemberEntitlement } from '@/lib/memberEntitlement';
 import { rsvpToEvent } from '@/app/dashboard/events/actions';
 import Nav from '@/components/Nav';
 import BackLink from '@/components/BackLink';
@@ -68,7 +69,7 @@ export default async function EventDetailPage({
       .select('plan')
       .eq('id', user.id)
       .single();
-    isMember = profile?.plan === 'member';
+    isMember = resolveMemberEntitlement({ plan: profile?.plan }).isMember;
 
     const { data: r } = await supabase
       .from('event_rsvps')

@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { hasPaidMembership } from '@/lib/billingServer';
+import { hasMemberEntitlement as hasPaidMembership } from '@/lib/memberEntitlementServer';
 import { computeDashboardCompleteness } from '@/lib/dashboardFoundation';
 import {
   getChapterProgress,
@@ -30,6 +30,9 @@ import {
 import ProfileMainForm from '@/components/ProfileEditorExperience';
 import { SectionIcons } from '@/components/SectionIcons';
 import MemberEdition from '@/components/MemberEdition';
+import MemberBenefitNotice from '@/components/MemberBenefitNotice';
+import { getLanguageName } from '@/lib/languages';
+import { aggregatePreviewProjects } from '@/lib/profilePreview';
 
 const FREE_SKILL_LIMIT = 5;
 
@@ -79,11 +82,11 @@ export default async function ProfileEditPage({
       .single(),
     supabase
       .from('project_credits')
-      .select('id, project:projects(title, tagline, poster_url)', { count: 'exact' })
+      .select('id, role_title, project:projects(slug, title, tagline, poster_url, year)', { count: 'exact' })
       .eq('profile_id', user!.id),
     supabase
       .from('projects')
-      .select('title, tagline, poster_url')
+      .select('slug, title, tagline, poster_url, year')
       .eq('owner_id', user!.id)
       .order('updated_at', { ascending: false })
       .limit(6),
@@ -94,16 +97,21 @@ export default async function ProfileEditPage({
   const creditedPreviewProjects = (linkedCredits ?? []).flatMap((credit) => {
     const related = Array.isArray(credit.project) ? credit.project[0] : credit.project;
     const project = related as
-      | { title: string; tagline: string | null; poster_url: string | null }
+      | {
+          slug: string | null;
+          title: string;
+          tagline: string | null;
+          poster_url: string | null;
+          year: number | null;
+        }
       | null
       | undefined;
-    return project ? [project] : [];
+    return project ? [{ ...project, creditRole: credit.role_title }] : [];
   });
-  const previewProjects = [...(ownedPreviewProjects ?? []), ...creditedPreviewProjects]
-    .filter((project, index, projects) =>
-      projects.findIndex((candidate) => candidate.title === project.title) === index
-    )
-    .slice(0, 6);
+  const previewProjects = aggregatePreviewProjects([
+    ...(ownedPreviewProjects ?? []),
+    ...creditedPreviewProjects,
+  ]).slice(0, 6);
 
   const isMember = await hasPaidMembership(user!.id);
   const isActorPrimary =
@@ -137,7 +145,14 @@ export default async function ProfileEditPage({
       <header className="mb-8 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="k-eyebrow mb-2">Your profile</p>
-          <h1 className="k-section-title">Edit profile</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="k-section-title">Edit profile</h1>
+            {isMember && (
+              <span className="rounded-full border border-[#D8C18A] bg-[#F7F0DE] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#76591E]">
+                Member
+              </span>
+            )}
+          </div>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-stone-600">
             Shape the professional presence collaborators see across Magiora.
           </p>
@@ -272,18 +287,26 @@ export default async function ProfileEditPage({
                   defaultValue={profile.skills ?? []}
                   maxAllowed={isMember ? undefined : FREE_SKILL_LIMIT}
                 />
-                <MemberEdition
-                  title="Expanded skills"
-                  benefit="Five professional skills are included. Member lets your full range of capabilities appear on your profile."
-                  isMember={isMember}
-                  className="mt-4"
-                >
-                  <p className="text-sm text-stone-600">
-                    {isMember
-                      ? `${profile.skills?.length ?? 0} skills currently shape your professional profile.`
-                      : `${Math.min(profile.skills?.length ?? 0, FREE_SKILL_LIMIT)} of ${FREE_SKILL_LIMIT} included skills are currently used.`}
-                  </p>
-                </MemberEdition>
+                {isMember ? (
+                  <div className="mt-4">
+                    <MemberBenefitNotice
+                      title="Member capacity"
+                      description="Member profiles can present their full range of professional skills."
+                      usage={`Unlimited skills · ${profile.skills?.length ?? 0} currently used.`}
+                    />
+                  </div>
+                ) : (
+                  <MemberEdition
+                    title="Expanded skills"
+                    benefit="Five professional skills are included. Member lets your full range of capabilities appear on your profile."
+                    isMember={false}
+                    className="mt-4"
+                  >
+                    <p className="text-sm text-stone-600">
+                      {Math.min(profile.skills?.length ?? 0, FREE_SKILL_LIMIT)} of {FREE_SKILL_LIMIT} included skills are currently used.
+                    </p>
+                  </MemberEdition>
+                )}
               </section>
 
               {isCrew ? (
@@ -403,12 +426,14 @@ export default async function ProfileEditPage({
               </div>
 
               <section className="mt-8 border-t border-stone-200 pt-6">
-                <SectionLabel icon={SectionIcons.premium} label="Profile presentation" />
+                <SectionLabel icon={isMember ? SectionIcons.member : SectionIcons.premium} label="Profile presentation" />
 
                 <div className="space-y-5">
                   <MemberEdition
                     title="Custom profile URL"
-                    benefit="Choose a memorable Magiora link that is easy to share with collaborators."
+                    benefit={isMember
+                      ? 'Custom profile URL included with Member.'
+                      : 'Choose a memorable Magiora link that is easy to share with collaborators.'}
                     isMember={isMember}
                   >
                     <SlugEditor currentSlug={profile.slug} isMember={isMember} />
@@ -424,7 +449,7 @@ export default async function ProfileEditPage({
                       city: profile.location_city ?? '',
                       state: profile.location_state ?? '',
                       bio: profile.bio ?? '',
-                      languages: profile.languages ?? [],
+                      languages: profile.languages?.map(getLanguageName) ?? [],
                       skills: profile.skills ?? [],
                       demoReelUrl: profile.demo_reel_url ?? '',
                       gallery: profile.gallery ?? [],
@@ -432,6 +457,9 @@ export default async function ProfileEditPage({
                       projects: previewProjects,
                       recommendations: profile.recommendations ?? [],
                       socialLinks: profile.social_links ?? {},
+                      equipment: profile.equipment ?? [],
+                      contactEmail: profile.contact_email ?? '',
+                      websiteUrl: profile.website_url ?? '',
                     }}
                   />
                 </div>

@@ -1,10 +1,13 @@
 export type PreviewCredit = {
-  year?: string;
+  year?: string | number | null;
   production?: string;
   title?: string;
   project?: string;
   role?: string;
   description?: string;
+  reference_type?: string;
+  reference_url?: string;
+  link?: string;
 };
 
 export type PreviewRecommendation = {
@@ -17,6 +20,36 @@ export type PreviewProject = {
   title: string;
   tagline?: string | null;
   poster_url?: string | null;
+  slug?: string | null;
+  year?: number | null;
+  creditRoles?: string[];
+  creditRole?: string | null;
+  role?: string | null;
+  description?: string | null;
+  reference_url?: string | null;
+  reference_type?: 'imdb' | 'official' | null;
+};
+
+export function aggregatePreviewProjects(projects: PreviewProject[]): PreviewProject[] {
+  const aggregated = new Map<string, PreviewProject>();
+  for (const project of projects) {
+    const key = project.slug || project.title.trim().toLowerCase();
+    const roles = [...(project.creditRoles ?? []), project.creditRole, project.role]
+      .map((role) => role?.trim())
+      .filter((role): role is string => Boolean(role));
+    const existing = aggregated.get(key);
+    if (!existing) {
+      aggregated.set(key, { ...project, creditRoles: Array.from(new Set(roles)) });
+      continue;
+    }
+    existing.creditRoles = Array.from(new Set([...(existing.creditRoles ?? []), ...roles]));
+  }
+  return [...aggregated.values()];
+}
+
+export type PreviewEquipment = {
+  category?: string;
+  items?: string;
 };
 
 export type ProfilePreviewData = {
@@ -34,6 +67,9 @@ export type ProfilePreviewData = {
   projects: PreviewProject[];
   recommendations: PreviewRecommendation[];
   socialLinks: Record<string, string>;
+  equipment?: PreviewEquipment[];
+  contactEmail?: string;
+  websiteUrl?: string;
 };
 
 export type ProfilePreviewPatch = Partial<ProfilePreviewData>;

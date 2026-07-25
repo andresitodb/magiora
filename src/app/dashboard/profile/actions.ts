@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { hasPaidMembership } from '@/lib/billingServer';
+import { hasMemberEntitlement as hasPaidMembership } from '@/lib/memberEntitlementServer';
 import { categoryForTitle, CUSTOM_FALLBACK_CATEGORY } from '@/lib/role_titles';
 import { TEMPLATES, ACCENTS, DEFAULT_TEMPLATE, DEFAULT_ACCENT } from '@/lib/profile_themes';
 import {
@@ -16,9 +16,74 @@ import {
   retainProfileSkills,
   retainProfileVideos,
 } from '@/lib/profileMemberRetention';
+import {
+  isTypographyStyle,
+  normalizeHiddenSections,
+  normalizeSectionOrder,
+  SCREEN_PRESENCE_SECTIONS,
+} from '@/lib/profileTemplateSettings';
+import { getSupportedAccents, getTemplate } from '@/lib/profile_themes';
 
 const VALID_TEMPLATES = TEMPLATES.map((t) => t.id);
 const VALID_ACCENTS = ACCENTS.map((a) => a.id);
+
+export type TemplateSettingsSaveResult = {
+  ok: boolean;
+  message: string;
+};
+
+export async function saveTemplateSettings(
+  payload: {
+    templateId: string;
+    paletteId: string;
+    fontStyle: string;
+    sectionOrder: unknown;
+    hiddenSections?: unknown;
+  },
+): Promise<TemplateSettingsSaveResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: 'Sign in to save template customization.' };
+  if (!(await hasPaidMembership(user.id))) {
+    return { ok: false, message: 'Template customization is available with Member.' };
+  }
+
+  const template = getTemplate(payload.templateId);
+  const supportedPalette = getSupportedAccents(template.id)
+    .some((palette) => palette.id === payload.paletteId);
+  const submittedSectionsAreValid =
+    Array.isArray(payload.sectionOrder) &&
+    payload.sectionOrder.every((section) =>
+      SCREEN_PRESENCE_SECTIONS.includes(section as (typeof SCREEN_PRESENCE_SECTIONS)[number])
+    );
+  if (
+    template.id !== payload.templateId ||
+    !supportedPalette ||
+    !isTypographyStyle(payload.fontStyle) ||
+    !submittedSectionsAreValid
+  ) {
+    return { ok: false, message: 'This template customization is not valid.' };
+  }
+
+  const sectionOrder = normalizeSectionOrder(payload.sectionOrder);
+  const hiddenSections = normalizeHiddenSections(payload.hiddenSections);
+  const { error } = await supabase.from('profile_template_settings').upsert({
+    profile_id: user.id,
+    template_id: template.id,
+    palette_id: payload.paletteId,
+    font_style: payload.fontStyle,
+    section_order: sectionOrder,
+    hidden_sections: hiddenSections,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'profile_id,template_id' });
+
+  if (error) return { ok: false, message: 'Customization could not be saved.' };
+  revalidatePath('/dashboard/profile');
+  revalidatePath('/profile-preview');
+  const { data: profile } = await supabase.from('profiles').select('slug').eq('id', user.id).single();
+  if (profile?.slug) revalidatePath(`/m/${profile.slug}`);
+  return { ok: true, message: 'Customization saved.' };
+}
 
 function optionalHttpUrl(value: FormDataEntryValue | null): string | null {
   const text = typeof value === 'string' ? value.trim() : '';

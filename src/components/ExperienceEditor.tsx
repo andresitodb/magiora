@@ -68,6 +68,21 @@ export default function ExperienceEditor({
       else next[index] = result.error;
       return next;
     });
+    return result;
+  }
+
+  function normalizeReference(
+    index: number,
+    type: ExperienceReferenceType,
+    value: string,
+  ) {
+    const result = validateReference(index, type, value);
+    if (!result?.valid || result.normalizedUrl === value) return;
+    setItems((current) => current.map((item, itemIndex) =>
+      itemIndex === index
+        ? { ...item, reference_url: result.normalizedUrl }
+        : item
+    ));
   }
 
   function remove(index: number) {
@@ -109,6 +124,15 @@ export default function ExperienceEditor({
           item.reference_type === 'imdb' ? 'imdb' : 'official'
         ) as ExperienceReferenceType;
         const error = errors[index];
+        const referenceUrl = String(item.reference_url ?? '');
+        const usesHttp = /^http:\/\//i.test(referenceUrl.trim());
+        const helperId = `${prefix}-reference-helper`;
+        const warningId = `${prefix}-reference-http-warning`;
+        const describedBy = [
+          helperId,
+          usesHttp ? warningId : null,
+          error ? `${prefix}-reference-error` : null,
+        ].filter(Boolean).join(' ');
 
         return (
           <fieldset
@@ -216,17 +240,27 @@ export default function ExperienceEditor({
                       </label>
                       <input
                         id={`${prefix}-reference-url`}
-                        type="url"
-                        value={String(item.reference_url ?? '')}
+                        type="text"
+                        inputMode="url"
+                        value={referenceUrl}
                         onChange={(event) => update(index, 'reference_url', event.target.value)}
-                        onBlur={(event) => validateReference(index, referenceType, event.target.value)}
+                        onBlur={(event) => normalizeReference(index, referenceType, event.target.value)}
                         aria-invalid={error ? true : undefined}
-                        aria-describedby={error ? `${prefix}-reference-error` : undefined}
+                        aria-describedby={describedBy}
                         placeholder={referenceType === 'imdb'
                           ? 'https://www.imdb.com/title/...'
                           : 'https://official-production-site.com'}
                         className="k-control"
                       />
+                      <p id={helperId} className="mt-1.5 text-xs leading-relaxed text-stone-500">
+                        You can enter a full URL or simply type the website address.
+                        {' '}If no protocol is provided, Magiora will automatically use HTTPS.
+                      </p>
+                      {usesHttp && (
+                        <p id={warningId} role="status" className="mt-1.5 text-xs text-stone-600">
+                          This website uses an unsecured HTTP connection.
+                        </p>
+                      )}
                       {error && (
                         <p id={`${prefix}-reference-error`} role="alert" className="mt-1.5 text-sm text-red-700">
                           {error}
@@ -268,16 +302,17 @@ export default function ExperienceEditor({
                   </label>
                   <input
                     id={`${prefix}-reference-url`}
-                    type="url"
-                    value={String(item.reference_url ?? '')}
+                    type="text"
+                    inputMode="url"
+                    value={referenceUrl}
                     onChange={(event) =>
                       update(index, 'reference_url', event.target.value)
                     }
                     onBlur={(event) =>
-                      validateReference(index, referenceType, event.target.value)
+                      normalizeReference(index, referenceType, event.target.value)
                     }
                     aria-invalid={error ? true : undefined}
-                    aria-describedby={error ? `${prefix}-reference-error` : undefined}
+                    aria-describedby={describedBy}
                     placeholder={
                       referenceType === 'imdb'
                         ? 'https://www.imdb.com/title/...'
@@ -285,6 +320,15 @@ export default function ExperienceEditor({
                     }
                     className="k-control"
                   />
+                  <p id={helperId} className="mt-1.5 text-xs leading-relaxed text-stone-500">
+                    You can enter a full URL or simply type the website address.
+                    {' '}If no protocol is provided, Magiora will automatically use HTTPS.
+                  </p>
+                  {usesHttp && (
+                    <p id={warningId} role="status" className="mt-1.5 text-xs text-stone-600">
+                      This website uses an unsecured HTTP connection.
+                    </p>
+                  )}
                   {error && (
                     <p
                       id={`${prefix}-reference-error`}

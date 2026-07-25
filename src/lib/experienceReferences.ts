@@ -39,12 +39,22 @@ export const INVALID_IMDB_MESSAGE = 'Enter a valid IMDb URL.';
 export const INVALID_OFFICIAL_WEBSITE_MESSAGE =
   'Portfolio videos belong in the Portfolio section. Experience only accepts IMDb or official production websites.';
 
-function parseHttpsUrl(value: string): URL | null {
+function parseWebUrl(value: string): URL | null {
   try {
-    const url = new URL(value.trim());
-    if (url.protocol !== 'https:') return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const hasScheme = /^[a-z][a-z\d+.-]*:/i.test(trimmed);
+    const url = new URL(hasScheme ? trimmed : `https://${trimmed}`);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
     url.hostname = url.hostname.toLowerCase().replace(/\.+$/, '');
-    return url.hostname ? url : null;
+    if (
+      !url.hostname ||
+      (!url.hostname.includes('.') && url.hostname !== 'localhost') ||
+      /\s/.test(url.hostname)
+    ) {
+      return null;
+    }
+    return url;
   } catch {
     return null;
   }
@@ -58,7 +68,7 @@ export function validateExperienceReference(
   type: ExperienceReferenceType,
   value: string,
 ): ExperienceReferenceValidation {
-  const url = parseHttpsUrl(value);
+  const url = parseWebUrl(value);
   if (!url) {
     return {
       valid: false,

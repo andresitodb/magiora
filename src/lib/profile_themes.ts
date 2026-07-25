@@ -13,7 +13,10 @@ export interface Template {
   id: TemplateId;
   name: string;
   description: string;
+  supportedAccents: AccentId[];
 }
+
+const ALL_ACCENTS: AccentId[] = ['coral', 'monochrome', 'forest', 'ocean', 'sunset', 'midnight'];
 
 export interface Accent {
   id: AccentId;
@@ -40,33 +43,39 @@ export interface Accent {
 export const TEMPLATES: Template[] = [
   {
     id: 'editorial',
-    name: 'Editorial Portfolio',
-    description: 'A considered masthead, asymmetric portrait, selected work and long-form biography.',
+    name: 'Screen Presence',
+    description: 'A confident, story-led profile for performers whose personality leads the page.',
+    supportedAccents: ['coral', 'monochrome', 'forest', 'ocean'],
   },
   {
     id: 'cinematic',
     name: 'Cinematic Showcase',
     description: 'A full-bleed image-led opening with bold titles and a sequence of featured projects.',
+    supportedAccents: ALL_ACCENTS,
   },
   {
     id: 'portrait',
-    name: 'Full-bleed Portrait',
-    description: 'An immersive portrait-led introduction with credentials and work arranged alongside.',
+    name: 'Portrait Edition',
+    description: 'A portrait-forward presentation for visual performers, movement, and personal style.',
+    supportedAccents: ALL_ACCENTS,
   },
   {
     id: 'minimalist',
-    name: 'Quiet Index',
-    description: 'A precise studio index with restrained type, generous space and structured case studies.',
+    name: 'Creative Practice',
+    description: 'A clear, versatile portfolio for craft, production, technical work, and many disciplines.',
+    supportedAccents: ALL_ACCENTS,
   },
   {
     id: 'stage',
     name: 'Stage Presence',
     description: 'A theatrical presentation for performance credits, appearances and live creative practice.',
+    supportedAccents: ALL_ACCENTS,
   },
   {
     id: 'studio',
     name: 'Studio Portfolio',
-    description: 'A modular case-study site for directors, designers, photographers, crew and multidisciplinary work.',
+    description: 'A structured showcase for studios, companies, agencies, and creative collectives.',
+    supportedAccents: ALL_ACCENTS,
   },
 ];
 
@@ -160,14 +169,38 @@ export const ACCENTS: Accent[] = [
 export const DEFAULT_TEMPLATE: TemplateId = 'editorial';
 export const DEFAULT_ACCENT: AccentId = 'coral';
 
+export const LEGACY_TEMPLATE_ID_MAP: Readonly<Record<string, TemplateId>> = {
+  polaroid: 'portrait',
+};
+
+export function resolveTemplateId(id: string | null | undefined): TemplateId {
+  const compatibleId = id ? LEGACY_TEMPLATE_ID_MAP[id] ?? id : DEFAULT_TEMPLATE;
+  return TEMPLATES.some((template) => template.id === compatibleId)
+    ? compatibleId as TemplateId
+    : DEFAULT_TEMPLATE;
+}
+
 export function getTemplate(id: string | null | undefined): Template {
-  // back-compat: 'polaroid' from previous batch maps to 'portrait'
-  if (id === 'polaroid') return TEMPLATES.find((t) => t.id === 'portrait') ?? TEMPLATES[0];
-  return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0];
+  const resolvedId = resolveTemplateId(id);
+  return TEMPLATES.find((template) => template.id === resolvedId) ?? TEMPLATES[0];
 }
 
 export function getAccent(id: string | null | undefined): Accent {
   return ACCENTS.find((a) => a.id === id) ?? ACCENTS[0];
+}
+
+export function getSupportedAccents(templateId: string | null | undefined): Accent[] {
+  const template = getTemplate(templateId);
+  return template.supportedAccents
+    .map((accentId) => ACCENTS.find((accent) => accent.id === accentId))
+    .filter((accent): accent is Accent => Boolean(accent));
+}
+
+export function isTemplateAccentSupported(
+  templateId: string | null | undefined,
+  accentId: string | null | undefined,
+) {
+  return getTemplate(templateId).supportedAccents.some((id) => id === accentId);
 }
 
 export function contrastRatio(foreground: string, background: string): number {

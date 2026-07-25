@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { resolveMemberEntitlement } from '@/lib/memberEntitlement';
 import { notFound } from 'next/navigation';
 import Nav from '@/components/Nav';
 import BackLink from '@/components/BackLink';
@@ -92,7 +93,7 @@ export default async function CastingCallDetailPage({
   const isAdmin = profile?.is_admin === true;
   if (call.status !== 'open' && !isOwner && !isAdmin) notFound();
 
-  const isMember = profile?.plan === 'member';
+  const isMember = resolveMemberEntitlement({ plan: profile?.plan }).isMember;
 
   const { data: existingApplication } = user
     ? await supabase

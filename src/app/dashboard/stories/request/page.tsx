@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requestFeature } from '../actions';
 import BackLink from '@/components/BackLink';
 import AutoGrowTextarea from '@/components/AutoGrowTextarea';
-import { hasPaidMembership } from '@/lib/billingServer';
+import { hasMemberEntitlement as hasPaidMembership } from '@/lib/memberEntitlementServer';
 
 export default async function RequestFeaturePage({
   searchParams,

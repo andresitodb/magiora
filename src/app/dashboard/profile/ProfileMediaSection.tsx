@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import MemberEdition from '@/components/MemberEdition';
+import MemberBenefitNotice from '@/components/MemberBenefitNotice';
 import {
   canAddProfileGalleryFiles,
   FREE_PROFILE_GALLERY_LIMIT,
@@ -341,18 +342,26 @@ export default function ProfileMediaSection({
           }}
         />
 
-        <MemberEdition
-          title={isMember ? 'Expanded gallery' : 'Expand your gallery'}
-          benefit="Your first 3 gallery images are public. Member lets you publish up to 10."
-          isMember={isMember}
-          className="mt-4"
-        >
-          <p className="text-sm text-stone-600">
-            {isMember
-              ? `Included with Member. All ${gallery.length} gallery images are published.`
-              : 'Your included images are published first. Any additional historical images remain saved and available to reorder.'}
-          </p>
-        </MemberEdition>
+        {isMember ? (
+          <div className="mt-4">
+            <MemberBenefitNotice
+              title="Member capacity"
+              description={`You can publish up to ${MEMBER_PROFILE_GALLERY_LIMIT} gallery images.`}
+              usage={`${gallery.length} of ${MEMBER_PROFILE_GALLERY_LIMIT} images used.`}
+            />
+          </div>
+        ) : (
+          <MemberEdition
+            title="Expand your gallery"
+            benefit="Your first 3 gallery images are public. Member lets you publish up to 10."
+            isMember={false}
+            className="mt-4"
+          >
+            <p className="text-sm text-stone-600">
+              Your included images are published first. Any additional historical images remain saved and available to reorder.
+            </p>
+          </MemberEdition>
+        )}
       </div>
     </div>
   );

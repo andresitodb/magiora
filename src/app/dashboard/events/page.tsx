@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import BackLink from '@/components/BackLink';
 import Link from 'next/link';
-import { hasPaidMembership } from '@/lib/billingServer';
+import { hasMemberEntitlement as hasPaidMembership } from '@/lib/memberEntitlementServer';
 
 type EventRsvpRow = {
   status: string;

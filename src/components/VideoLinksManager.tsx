@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import MemberEdition from '@/components/MemberEdition';
+import MemberBenefitNotice from '@/components/MemberBenefitNotice';
 
 type VideoLink = { label: string; url: string };
 const MAX_EXTRA = 4;
@@ -101,6 +102,14 @@ export default function VideoLinksManager({
           )
         ) : (
           <div>
+        <div className="mb-4">
+          <MemberBenefitNotice
+            title="Member capacity"
+            description={`You can add up to ${MAX_EXTRA} additional portfolio videos.`}
+            usage={`${links.length} of ${MAX_EXTRA} additional portfolio videos used.`}
+            compact
+          />
+        </div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-sm font-medium">
             More work

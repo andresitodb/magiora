@@ -1,7 +1,7 @@
 import Nav from '@/components/Nav';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { hasPaidMembership } from '@/lib/billingServer';
+import { hasMemberEntitlement as hasPaidMembership } from '@/lib/memberEntitlementServer';
 import { openBillingPortal, startCheckout } from './actions';
 import MagioraLogo from '@/components/brand/MagioraLogo';
 

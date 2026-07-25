@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect } from 'react';
 import { checkSlugAvailability } from '@/app/dashboard/profile/actions';
 import { getProfileDomainPreview } from '@/lib/brandDomain';
+import MemberBenefitNotice from '@/components/MemberBenefitNotice';
 
 export default function SlugEditor({
   currentSlug,
@@ -43,6 +44,16 @@ export default function SlugEditor({
 
   return (
     <div>
+      {isMember && (
+        <div className="mb-4">
+          <MemberBenefitNotice
+            title="Included with Member"
+            description="Custom profile URL included with Member."
+            usage={currentSlug ? `Current URL: /m/${currentSlug}` : 'Choose your custom profile URL below.'}
+            compact
+          />
+        </div>
+      )}
       <label className="block text-sm font-medium mb-1">
         Your link
         {!isMember && (
