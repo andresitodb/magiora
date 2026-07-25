@@ -278,7 +278,7 @@ function TemplateMiniature({
   const name = data.displayName || 'Your name';
   const role = data.roles[0] || 'Your practice';
   const image = data.gallery[0] || data.headshotUrl;
-  const project = data.projects[0]?.title || data.experience[0]?.title || 'Selected work';
+  const project = data.projects[0]?.title || data.experience[0]?.production || data.experience[0]?.title || 'Selected work';
   const bio = data.bio || 'Your biography will shape this page.';
   const shared = { backgroundColor: accent.background, color: accent.primaryText };
 
@@ -325,7 +325,7 @@ function TemplateMiniature({
     return (
       <div data-template-layout="stage-bill" className="relative aspect-[16/10] overflow-hidden" style={{ backgroundColor: accent.overlayBackground, color: accent.overlayText }}>
         <PreviewImage src={data.headshotUrl} name={name} accent={accent} className="absolute right-0 h-full w-1/2 opacity-80" />
-        <div className="relative flex h-full w-3/5 flex-col justify-between p-3"><span className="font-serif text-[7px] italic">Tonight / On stage</span><div><p className="font-serif text-xl leading-[0.85]">{name}</p><p className="mt-2 text-[6px] uppercase tracking-[0.18em]">{role}</p></div><span className="text-[5px]">{data.experience[0]?.title || 'Performance credits'}</span></div>
+        <div className="relative flex h-full w-3/5 flex-col justify-between p-3"><span className="font-serif text-[7px] italic">Tonight / On stage</span><div><p className="font-serif text-xl leading-[0.85]">{name}</p><p className="mt-2 text-[6px] uppercase tracking-[0.18em]">{role}</p></div><span className="text-[5px]">{data.experience[0]?.production || data.experience[0]?.title || 'Performance credits'}</span></div>
       </div>
     );
   }
@@ -397,7 +397,7 @@ function CompleteProfileSite({
             {data.experience.length ? data.experience.slice(0, 6).map((credit, index) => (
               <div key={index} className="grid grid-cols-[4rem_1fr] gap-4 border-b py-3" style={{ borderColor: accent.border }}>
                 <span className="text-sm" style={{ color: isDark ? accent.overlayText : accent.secondaryText }}>{credit.year || '—'}</span>
-                <div><p className="font-serif">{credit.title || credit.project}</p>{credit.role && <p className="text-sm" style={{ color: isDark ? accent.overlayText : accent.secondaryText }}>{credit.role}</p>}</div>
+                <div><p className="font-serif">{credit.production || credit.title || credit.project}</p>{credit.role && <p className="text-sm" style={{ color: isDark ? accent.overlayText : accent.secondaryText }}>{credit.role}</p>}</div>
               </div>
             )) : <EmptyPreview>Add credits to build your professional timeline.</EmptyPreview>}
           </div>
@@ -456,7 +456,7 @@ function TemplateHero({
   if (template === 'editorial') return <div className="grid gap-8 px-5 py-12 sm:px-10 lg:grid-cols-[0.8fr_1.2fr] lg:px-16"><PreviewImage src={data.headshotUrl} name={name} accent={accent} className="max-h-[65vh] min-h-96 w-full" /><div className="lg:pt-12"><p className="text-xs uppercase tracking-[0.22em]" style={{ color: accent.accent }}>Profile journal · {role}</p><h1 className="mt-5 font-serif text-5xl leading-[0.9] sm:text-7xl">{name}</h1><p className="mt-8 columns-1 font-serif text-lg leading-relaxed sm:columns-2" style={{ color: accent.secondaryText }}>{bio}</p></div></div>;
   if (template === 'portrait') return <div className="grid min-h-[70vh] md:grid-cols-[1.1fr_0.9fr]"><PreviewImage src={data.headshotUrl} name={name} accent={accent} className="min-h-[60vh] w-full" /><div className="flex flex-col justify-center p-8 sm:p-14" style={{ backgroundColor: accent.surface, color: accent.primaryText }}><p className="text-xs uppercase tracking-[0.22em]" style={{ color: accent.accent }}>Portrait / Practice</p><h1 className="mt-5 font-serif text-5xl leading-none sm:text-7xl">{name}</h1><p className="mt-5 text-lg">{role}</p><p className="mt-2 text-sm" style={{ color: accent.secondaryText }}>{location}</p></div></div>;
   if (template === 'minimalist') return <div className="mx-auto max-w-5xl px-5 py-24 text-center"><p className="text-xs uppercase tracking-[0.3em]">Studio index / 01</p><h1 className="mt-12 font-serif text-5xl sm:text-8xl">{name}</h1><p className="mt-6 text-xs uppercase tracking-[0.22em]" style={{ color: accent.accent }}>{role}</p><p className="mx-auto mt-12 max-w-xl text-base leading-relaxed" style={{ color: accent.secondaryText }}>{bio}</p></div>;
-  if (template === 'stage') return <div className="grid min-h-[72vh] md:grid-cols-[0.8fr_1.2fr]"><div className="flex flex-col justify-between p-8 sm:p-14"><p className="font-serif text-lg italic">Stage / Live practice</p><div><h1 className="font-serif text-6xl leading-[0.85] sm:text-8xl">{name}</h1><p className="mt-6 text-xs uppercase tracking-[0.22em]">{role}</p></div><p className="text-sm">{data.experience[0]?.title || 'Performance credits'}{location ? ` · ${location}` : ''}</p></div><PreviewImage src={data.headshotUrl} name={name} accent={accent} className="min-h-[60vh] w-full opacity-90" /></div>;
+  if (template === 'stage') return <div className="grid min-h-[72vh] md:grid-cols-[0.8fr_1.2fr]"><div className="flex flex-col justify-between p-8 sm:p-14"><p className="font-serif text-lg italic">Stage / Live practice</p><div><h1 className="font-serif text-6xl leading-[0.85] sm:text-8xl">{name}</h1><p className="mt-6 text-xs uppercase tracking-[0.22em]">{role}</p></div><p className="text-sm">{data.experience[0]?.production || data.experience[0]?.title || 'Performance credits'}{location ? ` · ${location}` : ''}</p></div><PreviewImage src={data.headshotUrl} name={name} accent={accent} className="min-h-[60vh] w-full opacity-90" /></div>;
   return <div className="px-5 py-14 sm:px-10 lg:px-16"><div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs uppercase tracking-[0.22em]" style={{ color: accent.accent }}>Independent creative studio</p><h1 className="mt-4 font-serif text-5xl sm:text-7xl">{name}</h1></div><p className="max-w-sm text-sm leading-relaxed" style={{ color: accent.secondaryText }}>{bio}</p></div><div className="mt-12 grid gap-4 sm:grid-cols-3">{[image, data.gallery[1], data.projects[0]?.poster_url].map((src, index) => <PreviewImage key={index} src={src} name={name} accent={accent} className={`${index === 1 ? 'sm:mt-10' : ''} aspect-[4/3] w-full`} />)}</div></div>;
 }
 

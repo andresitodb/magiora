@@ -15,6 +15,10 @@ import { applyPublicBrand } from '@/lib/publicBrand';
 import type { Metadata } from 'next';
 import { entityMetadata, metadataText, unavailableMetadata } from '@/lib/metadata';
 import { getProfileEntity } from '@/lib/publicEntityLoaders';
+import {
+  getExperienceReferencePresentation,
+  type ExperienceRecord,
+} from '@/lib/experienceReferences';
 
 const FREE_GALLERY_DISPLAY_LIMIT = 3;
 
@@ -39,15 +43,6 @@ function tieBreakValue(seed: string): number {
   return hash;
 }
 
-// Sort experience by year DESC for display
-type ExperienceItem = {
-  year?: string;
-  title?: string;
-  role?: string;
-  project?: string;
-  link?: string;
-};
-
 type Recommendation = {
   quote?: string;
   from_name?: string;
@@ -68,10 +63,10 @@ type Representation = {
   website?: string;
 };
 
-function sortByYearDesc(items: ExperienceItem[]): ExperienceItem[] {
+function sortByYearDesc(items: ExperienceRecord[]): ExperienceRecord[] {
   return [...items].sort((a, b) => {
-    const ay = parseInt(a.year ?? '');
-    const by = parseInt(b.year ?? '');
+    const ay = parseInt(String(a.year ?? ''));
+    const by = parseInt(String(b.year ?? ''));
     const aValid = !isNaN(ay);
     const bValid = !isNaN(by);
     if (!aValid && !bValid) return 0;
@@ -274,7 +269,7 @@ export default async function PublicProfilePage({
     .map(({ candidate }) => candidate);
 
   const videoLinks: { label: string; url: string }[] = profile.video_links ?? [];
-  const experience: ExperienceItem[] = sortByYearDesc(profile.experience ?? []);
+  const experience: ExperienceRecord[] = sortByYearDesc(profile.experience ?? []);
   const recommendations: Recommendation[] = profile.recommendations ?? [];
   const equipment: EquipmentItem[] = profile.equipment ?? [];
   const physical = profile.physical_details ?? {};
@@ -615,23 +610,43 @@ export default async function PublicProfilePage({
                 <div>
                   <p className="font-serif italic text-sm mb-4" style={{ color: accent.accent }}>Credits</p>
                   <div className="space-y-4">
-                    {experience.map((e, i) => (
-                      <div key={i} className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 pb-4 border-b last:border-0" style={{ borderColor: accent.border }}>
-                        <p className="font-serif" style={{ color: accent.textMuted }}>{e.year}</p>
-                        <div>
-                          <p className="font-serif font-medium" style={{ color: accent.text }}>
-                            {e.title}
-                            {e.role && <span style={{ color: accent.textMuted }}> — {e.role}</span>}
-                          </p>
-                          {e.project && <p className="font-serif italic text-sm" style={{ color: accent.textMuted }}>{e.project}</p>}
-                          {e.link && (
-                            <a href={e.link} target="_blank" rel="noopener noreferrer" className="text-xs hover:underline mt-1 inline-block" style={{ color: accent.accent }}>
-                              View ↗
-                            </a>
-                          )}
+                    {experience.map((experienceItem, i) => {
+                      const reference = getExperienceReferencePresentation(experienceItem);
+                      const production = String(
+                        experienceItem.production ?? experienceItem.title ?? ''
+                      );
+                      const description = String(
+                        experienceItem.description ??
+                        (
+                          experienceItem.title &&
+                          experienceItem.project &&
+                          experienceItem.project !== experienceItem.title
+                            ? experienceItem.project
+                            : ''
+                        )
+                      );
+                      return (
+                        <div key={i} className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] gap-4 pb-4 border-b last:border-0" style={{ borderColor: accent.border }}>
+                          <p className="font-serif" style={{ color: accent.textMuted }}>{experienceItem.year}</p>
+                          <div>
+                            <p className="font-serif font-medium" style={{ color: accent.text }}>
+                              {production}
+                              {experienceItem.role && <span style={{ color: accent.textMuted }}> — {String(experienceItem.role)}</span>}
+                            </p>
+                            {description && (
+                              <p className="mt-1 text-sm leading-relaxed" style={{ color: accent.textMuted }}>
+                                {description}
+                              </p>
+                            )}
+                            {reference && (
+                              <a href={reference.href} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ color: accent.accent }}>
+                                {reference.label} <span aria-hidden="true">↗</span>
+                              </a>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ) : (

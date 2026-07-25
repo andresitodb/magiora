@@ -17,6 +17,14 @@ import {
   canAddProfileGalleryFiles,
   getProfileGalleryPresentation,
 } from './src/lib/profileGallery.ts';
+import {
+  getExperienceReferencePresentation,
+  INVALID_IMDB_MESSAGE,
+  INVALID_OFFICIAL_WEBSITE_MESSAGE,
+  normalizeExperienceForEditor,
+  preserveSubmittedExperience,
+  validateExperienceReference,
+} from './src/lib/experienceReferences.ts';
 
 test('profile fields are grouped into the six editorial chapters', () => {
   assert.deepEqual(PROFILE_CHAPTERS.map((chapter) => chapter.label), [
@@ -387,7 +395,7 @@ test('profile polish keeps the Free gallery clear and the public-profile action 
   assert.match(media, /getProfileGalleryPresentation\(gallery\.length, isMember\)/);
   assert.match(media, /\{canUpload && \(/);
   assert.match(media, /Expand your gallery/);
-  assert.match(media, /Free includes 3 published gallery images\. Member lets you publish up to 10\./);
+  assert.match(media, /Your first 3 gallery images are public\. Member lets you publish up to 10\./);
   assert.match(profile, /label="Equipment"/);
   assert.match(profile, /Professional equipment you can bring to a production/);
   assert.match(profile, /title="Professional Work"/);
@@ -457,4 +465,114 @@ test('Profile Status preview uses the shared external-link treatment in a new ta
   assert.match(profile, /aria-label="View public profile preview \(opens in a new tab\)"/);
   assert.match(profile, /SectionIcons\.externalLink/);
   assert.match(profile, /focus-visible:outline/);
+});
+
+test('Experience reference validation accepts only approved HTTPS destinations', () => {
+  for (const value of [
+    'https://imdb.com/title/tt1234567',
+    'https://www.imdb.com/title/tt1234567',
+    'https://m.imdb.com/title/tt1234567',
+    'https://pro.imdb.com/title/tt1234567',
+  ]) {
+    assert.equal(validateExperienceReference('imdb', value).valid, true);
+  }
+
+  assert.deepEqual(
+    validateExperienceReference('imdb', 'https://example.com/title/tt1234567'),
+    { valid: false, error: INVALID_IMDB_MESSAGE },
+  );
+  assert.deepEqual(
+    validateExperienceReference('imdb', 'http://www.imdb.com/title/tt1234567'),
+    { valid: false, error: INVALID_IMDB_MESSAGE },
+  );
+  assert.deepEqual(
+    validateExperienceReference('imdb', 'not a URL'),
+    { valid: false, error: INVALID_IMDB_MESSAGE },
+  );
+  assert.equal(
+    validateExperienceReference('official', 'https://festival.example/films/salt-line').valid,
+    true,
+  );
+});
+
+test('Experience official websites reject video, social, and blocked subdomains', () => {
+  for (const hostname of [
+    'youtube.com',
+    'www.youtube.com',
+    'youtu.be',
+    'vimeo.com',
+    'www.vimeo.com',
+    'dailymotion.com',
+    'tiktok.com',
+    'instagram.com',
+    'facebook.com',
+    'portfolio.youtube.com',
+    'press.instagram.com',
+  ]) {
+    assert.deepEqual(
+      validateExperienceReference('official', `https://${hostname}/example`),
+      { valid: false, error: INVALID_OFFICIAL_WEBSITE_MESSAGE },
+    );
+  }
+  assert.deepEqual(
+    validateExperienceReference('official', 'http://official-film.example'),
+    { valid: false, error: INVALID_OFFICIAL_WEBSITE_MESSAGE },
+  );
+  assert.deepEqual(
+    validateExperienceReference('official', 'javascript:alert(1)'),
+    { valid: false, error: INVALID_OFFICIAL_WEBSITE_MESSAGE },
+  );
+  assert.deepEqual(
+    validateExperienceReference('official', 'not a URL'),
+    { valid: false, error: INVALID_OFFICIAL_WEBSITE_MESSAGE },
+  );
+});
+
+test('legacy Experience references remain preserved without becoming portfolio videos', () => {
+  const legacy = {
+    year: '2021',
+    title: 'Historical credit',
+    role: 'Director',
+    link: 'https://vimeo.com/123456',
+  };
+  const normalized = normalizeExperienceForEditor(legacy);
+  const preserved = preserveSubmittedExperience([normalized], [legacy]);
+
+  assert.equal(normalized.reference_type, 'legacy');
+  assert.equal(normalized.link, legacy.link);
+  assert.equal(preserved[0]?.link, legacy.link);
+  assert.equal(getExperienceReferencePresentation(legacy), null);
+  assert.throws(
+    () => preserveSubmittedExperience([{ ...legacy, link: 'https://youtu.be/new-video' }], [legacy]),
+    new RegExp(INVALID_OFFICIAL_WEBSITE_MESSAGE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+  );
+});
+
+test('profile product copy and public Experience rendering stay purpose-specific', () => {
+  const media = readFileSync(
+    new URL('./src/app/dashboard/profile/ProfileMediaSection.tsx', import.meta.url),
+    'utf8',
+  );
+  const videos = readFileSync(
+    new URL('./src/components/VideoLinksManager.tsx', import.meta.url),
+    'utf8',
+  );
+  const publicProfile = readFileSync(
+    new URL('./src/app/m/[slug]/page.tsx', import.meta.url),
+    'utf8',
+  );
+  const actions = readFileSync(
+    new URL('./src/app/dashboard/profile/actions.ts', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(media, /Your first 3 gallery images are public\. Member lets you publish up to 10\./);
+  assert.match(videos, /Add up to 4 additional portfolio videos\./);
+  assert.doesNotMatch(videos, /labeled scenes/i);
+  assert.match(videos, />\s*Clip title\s*</);
+  assert.match(videos, />\s*Portfolio video URL\s*</);
+  assert.match(publicProfile, /getExperienceReferencePresentation/);
+  assert.match(publicProfile, /reference\.label/);
+  assert.doesNotMatch(publicProfile, /<VideoEmbed url=\{experience/);
+  assert.match(actions, /preserveSubmittedExperience\(experienceRaw, existingExperience\)/);
 });

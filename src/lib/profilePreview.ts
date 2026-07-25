@@ -1,8 +1,10 @@
 export type PreviewCredit = {
   year?: string;
+  production?: string;
   title?: string;
   project?: string;
   role?: string;
+  description?: string;
 };
 
 export type PreviewRecommendation = {

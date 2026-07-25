@@ -6,15 +6,14 @@ import { revalidatePath } from 'next/cache';
 import { hasPaidMembership } from '@/lib/billingServer';
 import { categoryForTitle, CUSTOM_FALLBACK_CATEGORY } from '@/lib/role_titles';
 import { TEMPLATES, ACCENTS, DEFAULT_TEMPLATE, DEFAULT_ACCENT } from '@/lib/profile_themes';
+import {
+  type ExperienceRecord,
+  preserveSubmittedExperience,
+} from '@/lib/experienceReferences';
 
 const FREE_SKILL_LIMIT = 5;
 const VALID_TEMPLATES = TEMPLATES.map((t) => t.id);
 const VALID_ACCENTS = ACCENTS.map((a) => a.id);
-
-interface ExperienceItem {
-  year?: string | number | null;
-  [key: string]: unknown;
-}
 
 interface VideoLink {
   url?: string;
@@ -32,7 +31,7 @@ function optionalHttpUrl(value: FormDataEntryValue | null): string | null {
   }
 }
 
-function sortExperienceByYear(items: ExperienceItem[]): ExperienceItem[] {
+function sortExperienceByYear(items: ExperienceRecord[]): ExperienceRecord[] {
   return [...items].sort((a, b) => {
     const ay = parseInt(String(a.year ?? ''));
     const by = parseInt(String(b.year ?? ''));
@@ -54,7 +53,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: existingProfile } = await supabase
     .from('profiles')
-    .select('slug')
+    .select('slug, experience')
     .eq('id', user.id)
     .single();
   const isMember = await hasPaidMembership(user.id);
@@ -156,8 +155,25 @@ export async function updateProfile(formData: FormData) {
     );
   }
 
-  const experienceRaw = parseJSON<ExperienceItem[]>('experience', [], 'array');
-  const experience = sortExperienceByYear(experienceRaw);
+  const experienceRaw = parseJSON<ExperienceRecord[]>('experience', [], 'array');
+  let experience: ExperienceRecord[];
+  try {
+    const existingExperience = Array.isArray(existingProfile?.experience)
+      ? existingProfile.experience as ExperienceRecord[]
+      : [];
+    experience = sortExperienceByYear(
+      preserveSubmittedExperience(experienceRaw, existingExperience)
+    );
+  } catch (error) {
+    redirect(
+      '/dashboard/profile?error=' +
+        encodeURIComponent(
+          error instanceof Error
+            ? error.message
+            : 'Review your experience references and try again.'
+        )
+    );
+  }
 
   const recommendations = parseJSON('recommendations', [], 'array');
   const equipment = parseJSON('equipment', [], 'array');

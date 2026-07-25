@@ -52,7 +52,7 @@ export default function VideoLinksManager({
 
       <MemberEdition
         title="Additional clips"
-        benefit="Add up to four labeled scenes, music videos, commercials, or behind-the-scenes clips."
+        benefit="Add up to 4 additional portfolio videos."
         isMember={isMember}
       >
         <input
@@ -73,7 +73,7 @@ export default function VideoLinksManager({
                 </span>
                 <div>
                   <p className="text-sm font-medium text-stone-700">Portfolio clip</p>
-                  <p className="text-xs text-stone-500">Label and video link</p>
+                  <p className="text-xs text-stone-500">Clip title and portfolio video URL</p>
                 </div>
               </div>
             ))}
@@ -100,31 +100,43 @@ export default function VideoLinksManager({
 
         {links.length === 0 ? (
           <p className="text-xs text-stone-400 italic font-serif">
-            Add up to {MAX_EXTRA} extra clips (scenes, music videos, commercials, behind-the-scenes...)
+            Add up to 4 additional portfolio videos.
           </p>
         ) : (
           <div className="space-y-2">
             {links.map((link, i) => (
-              <div key={i} className="flex gap-2">
-                <input
-                  type="text"
-                  value={link.label}
-                  onChange={(e) => updateLink(i, 'label', e.target.value)}
-                  placeholder="Label (e.g. Music video — Bad Bunny)"
-                  className="flex-1 px-3 py-2 border border-stone-300 rounded-md bg-white text-sm"
-                />
-                <input
-                  type="url"
-                  value={link.url}
-                  onChange={(e) => updateLink(i, 'url', e.target.value)}
-                  placeholder="https://..."
-                  className="flex-1 px-3 py-2 border border-stone-300 rounded-md bg-white text-sm"
-                />
+              <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                <div>
+                  <label htmlFor={`portfolio-clip-title-${i}`} className="mb-1 block text-sm font-medium">
+                    Clip title
+                  </label>
+                  <input
+                    id={`portfolio-clip-title-${i}`}
+                    type="text"
+                    value={link.label}
+                    onChange={(e) => updateLink(i, 'label', e.target.value)}
+                    placeholder="Scene, commercial, or music video title"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`portfolio-video-url-${i}`} className="mb-1 block text-sm font-medium">
+                    Portfolio video URL
+                  </label>
+                  <input
+                    id={`portfolio-video-url-${i}`}
+                    type="url"
+                    value={link.url}
+                    onChange={(e) => updateLink(i, 'url', e.target.value)}
+                    placeholder="https://..."
+                    className="w-full px-3 py-2 border border-stone-300 rounded-md bg-white text-sm"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => removeLink(i)}
                   className="px-3 py-2 text-stone-500 hover:text-red-700 cursor-pointer"
-                  title="Remove"
+                  aria-label={`Remove portfolio video ${i + 1}`}
                 >
                   ×
                 </button>

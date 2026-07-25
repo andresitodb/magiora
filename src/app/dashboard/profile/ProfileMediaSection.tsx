@@ -343,11 +343,7 @@ export default function ProfileMediaSection({
 
         <MemberEdition
           title={isMember ? 'Expanded gallery' : 'Expand your gallery'}
-          benefit={
-            isMember
-              ? 'Publish up to 10 professional gallery images.'
-              : 'Free includes 3 published gallery images. Member lets you publish up to 10.'
-          }
+          benefit="Your first 3 gallery images are public. Member lets you publish up to 10."
           isMember={isMember}
           className="mt-4"
         >
