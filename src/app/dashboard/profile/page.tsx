@@ -387,8 +387,15 @@ export default async function ProfileEditPage({
                     </p>
                   </div>
                   {profile.slug && (
-                    <Link href={`/m/${profile.slug}`} className="text-sm font-medium underline underline-offset-4">
+                    <Link
+                      href={`/m/${profile.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label="View public profile preview (opens in a new tab)"
+                      className="inline-flex items-center gap-1.5 rounded-sm text-sm font-medium underline decoration-current/50 underline-offset-4 transition-colors hover:text-[#712B13] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#712B13]"
+                    >
                       View preview
+                      <span aria-hidden="true">{SectionIcons.externalLink}</span>
                     </Link>
                   )}
                 </div>

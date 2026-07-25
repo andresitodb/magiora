@@ -4,9 +4,13 @@ import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import MemberEdition from '@/components/MemberEdition';
+import {
+  canAddProfileGalleryFiles,
+  FREE_PROFILE_GALLERY_LIMIT,
+  getProfileGalleryPresentation,
+  MEMBER_PROFILE_GALLERY_LIMIT,
+} from '@/lib/profileGallery';
 
-const MAX_GALLERY = 10;
-const FREE_GALLERY_LIMIT = 3;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
@@ -39,10 +43,11 @@ export default function ProfileMediaSection({
   const [error, setError] = useState<string | null>(null);
   const headshotInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
-  const uploadLimit = isMember ? MAX_GALLERY : FREE_GALLERY_LIMIT;
-  const includedCount = isMember
-    ? gallery.length
-    : Math.min(gallery.length, FREE_GALLERY_LIMIT);
+  const {
+    uploadLimit,
+    includedCount,
+    canUpload,
+  } = getProfileGalleryPresentation(gallery.length, isMember);
 
   async function uploadHeadshot(file: File) {
     setError(null);
@@ -92,11 +97,11 @@ export default function ProfileMediaSection({
 
   async function uploadGalleryImages(files: FileList) {
     setError(null);
-    if (gallery.length + files.length > uploadLimit) {
+    if (!canAddProfileGalleryFiles(gallery.length, files.length, isMember)) {
       setError(
         isMember
-          ? `Gallery limit is ${MAX_GALLERY} images`
-          : `Three gallery images are included. Unlock Member to publish up to ${MAX_GALLERY}.`
+          ? `Gallery limit is ${MEMBER_PROFILE_GALLERY_LIMIT} images`
+          : `Three gallery images are included. Unlock Member to publish up to ${MEMBER_PROFILE_GALLERY_LIMIT}.`
       );
       return;
     }
@@ -177,10 +182,10 @@ export default function ProfileMediaSection({
   }
 
   function makeImagePublic(index: number) {
-    if (index < FREE_GALLERY_LIMIT) return;
+    if (index < FREE_PROFILE_GALLERY_LIMIT) return;
     const next = [...gallery];
     const [selected] = next.splice(index, 1);
-    next.splice(FREE_GALLERY_LIMIT - 1, 0, selected);
+    next.splice(FREE_PROFILE_GALLERY_LIMIT - 1, 0, selected);
     void saveGalleryOrder(next);
   }
 
@@ -264,11 +269,11 @@ export default function ProfileMediaSection({
               <img src={url} alt={`Profile gallery image ${index + 1}`} className="h-full w-full object-cover" />
               <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-1 p-1.5">
                 <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${
-                  isMember || index < FREE_GALLERY_LIMIT
+                  isMember || index < FREE_PROFILE_GALLERY_LIMIT
                     ? 'bg-white/95 text-stone-800'
                     : 'bg-stone-900/90 text-white'
                 }`}>
-                  {isMember || index < FREE_GALLERY_LIMIT ? 'Published' : 'Visible with Member'}
+                  {isMember || index < FREE_PROFILE_GALLERY_LIMIT ? 'Published' : 'Visible with Member'}
                 </span>
                 <button
                   type="button"
@@ -290,7 +295,7 @@ export default function ProfileMediaSection({
                     ←
                   </button>
                 )}
-                {!isMember && index >= FREE_GALLERY_LIMIT && (
+                {!isMember && index >= FREE_PROFILE_GALLERY_LIMIT && (
                   <button
                     type="button"
                     onClick={() => makeImagePublic(index)}
@@ -312,7 +317,7 @@ export default function ProfileMediaSection({
               </div>
             </div>
           ))}
-          {gallery.length < uploadLimit && (
+          {canUpload && (
             <button
               type="button"
               onClick={() => galleryInputRef.current?.click()}
@@ -336,18 +341,22 @@ export default function ProfileMediaSection({
           }}
         />
 
-        {!isMember && gallery.length >= FREE_GALLERY_LIMIT && (
-          <MemberEdition
-            title="Expand your gallery"
-            benefit="Publish up to 10 professional gallery images."
-            isMember={false}
-            className="mt-4"
-          >
-            <p className="text-sm text-stone-600">
-              Your three included images are published. Any additional images already saved remain available here.
-            </p>
-          </MemberEdition>
-        )}
+        <MemberEdition
+          title={isMember ? 'Expanded gallery' : 'Expand your gallery'}
+          benefit={
+            isMember
+              ? 'Publish up to 10 professional gallery images.'
+              : 'Free includes 3 published gallery images. Member lets you publish up to 10.'
+          }
+          isMember={isMember}
+          className="mt-4"
+        >
+          <p className="text-sm text-stone-600">
+            {isMember
+              ? `Included with Member. All ${gallery.length} gallery images are published.`
+              : 'Your included images are published first. Any additional historical images remain saved and available to reorder.'}
+          </p>
+        </MemberEdition>
       </div>
     </div>
   );

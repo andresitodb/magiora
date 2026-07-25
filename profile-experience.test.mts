@@ -13,6 +13,10 @@ import {
 } from './src/lib/profileExperience.ts';
 import { ACCENTS, TEMPLATES, contrastRatio } from './src/lib/profile_themes.ts';
 import { mergeProfilePreviewData, type ProfilePreviewData } from './src/lib/profilePreview.ts';
+import {
+  canAddProfileGalleryFiles,
+  getProfileGalleryPresentation,
+} from './src/lib/profileGallery.ts';
 
 test('profile fields are grouped into the six editorial chapters', () => {
   assert.deepEqual(PROFILE_CHAPTERS.map((chapter) => chapter.label), [
@@ -380,10 +384,10 @@ test('profile polish keeps the Free gallery clear and the public-profile action 
     'utf8',
   );
 
-  assert.match(media, /uploadLimit = isMember \? MAX_GALLERY : FREE_GALLERY_LIMIT/);
-  assert.match(media, /gallery\.length < uploadLimit/);
+  assert.match(media, /getProfileGalleryPresentation\(gallery\.length, isMember\)/);
+  assert.match(media, /\{canUpload && \(/);
   assert.match(media, /Expand your gallery/);
-  assert.match(media, /Publish up to 10 professional gallery images/);
+  assert.match(media, /Free includes 3 published gallery images\. Member lets you publish up to 10\./);
   assert.match(profile, /label="Equipment"/);
   assert.match(profile, /Professional equipment you can bring to a production/);
   assert.match(profile, /title="Professional Work"/);
@@ -392,4 +396,65 @@ test('profile polish keeps the Free gallery clear and the public-profile action 
   assert.match(card, /target=\{secondaryAction\.newTab \? '_blank'/);
   assert.match(card, /opens in a new tab/);
   assert.match(card, /SectionIcons\.externalLink/);
+});
+
+test('Free gallery exposes uploads below three and blocks them at the included limit', () => {
+  const empty = getProfileGalleryPresentation(0, false);
+  const twoImages = getProfileGalleryPresentation(2, false);
+  const threeImages = getProfileGalleryPresentation(3, false);
+  const historicalImages = getProfileGalleryPresentation(4, false);
+
+  assert.deepEqual(empty, {
+    uploadLimit: 3,
+    includedCount: 0,
+    canUpload: true,
+    showMemberBenefit: true,
+  });
+  assert.equal(twoImages.includedCount, 2);
+  assert.equal(twoImages.canUpload, true);
+  assert.equal(twoImages.showMemberBenefit, true);
+  assert.equal(threeImages.includedCount, 3);
+  assert.equal(threeImages.canUpload, false);
+  assert.equal(threeImages.showMemberBenefit, true);
+  assert.equal(historicalImages.includedCount, 3);
+  assert.equal(historicalImages.canUpload, false);
+  assert.equal(canAddProfileGalleryFiles(2, 1, false), true);
+  assert.equal(canAddProfileGalleryFiles(2, 2, false), false);
+  assert.equal(canAddProfileGalleryFiles(4, 1, false), false);
+});
+
+test('Member gallery retains ten-image uploads without an Unlock Member CTA', () => {
+  const member = getProfileGalleryPresentation(9, true);
+  const fullMember = getProfileGalleryPresentation(10, true);
+  const media = readFileSync(
+    new URL('./src/app/dashboard/profile/ProfileMediaSection.tsx', import.meta.url),
+    'utf8',
+  );
+  const memberEdition = readFileSync(
+    new URL('./src/components/MemberEdition.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.equal(member.uploadLimit, 10);
+  assert.equal(member.includedCount, 9);
+  assert.equal(member.canUpload, true);
+  assert.equal(member.showMemberBenefit, false);
+  assert.equal(fullMember.canUpload, false);
+  assert.match(media, /isMember=\{isMember\}/);
+  assert.match(media, /Included with Member/);
+  assert.match(memberEdition, /\{!isMember && \(/);
+});
+
+test('Profile Status preview uses the shared external-link treatment in a new tab', () => {
+  const profile = readFileSync(
+    new URL('./src/app/dashboard/profile/page.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(profile, /View preview/);
+  assert.match(profile, /target="_blank"/);
+  assert.match(profile, /rel="noreferrer"/);
+  assert.match(profile, /aria-label="View public profile preview \(opens in a new tab\)"/);
+  assert.match(profile, /SectionIcons\.externalLink/);
+  assert.match(profile, /focus-visible:outline/);
 });
