@@ -46,7 +46,6 @@ import {
 import {
   getBrandDisplayDomain,
   getProfileDomainPreview,
-  getProfileUrlProductClaim,
 } from './src/lib/brandDomain.ts';
 import { getScreenPresenceSections } from './src/lib/screenPresence.ts';
 import {
@@ -1021,7 +1020,7 @@ test('Directory Role and Language listboxes escape the filter card clipping cont
   const filters = readFileSync(new URL('./src/components/DirectoryFilters.tsx', import.meta.url), 'utf8');
   assert.match(filters, /data-directory-filter-panel/);
   assert.match(filters, /relative z-20 overflow-visible/);
-  assert.equal(filters.match(/<DirectoryCombobox/g)?.length, 2);
+  assert.equal(filters.match(/<DirectoryCombobox/g)?.length, 3);
   assert.match(combobox, /data-directory-combobox/);
   assert.match(combobox, /absolute left-0 top-full z-10/);
   assert.match(combobox, /max-h-64 w-full overflow-x-hidden overflow-y-auto/);
@@ -1033,9 +1032,50 @@ test('Directory Role and Language listboxes escape the filter card clipping cont
   assert.match(combobox, /event\.key === 'Enter'.*select\(matches\[activeIndex\]\)/);
   assert.match(combobox, /document\.addEventListener\('pointerdown'/);
   assert.doesNotMatch(combobox, /setTimeout\(\(\) => setOpen/);
-  const city = readFileSync(new URL('./src/components/CityAutocomplete.tsx', import.meta.url), 'utf8');
-  assert.match(city, /onChange\(city\)/);
-  assert.match(city, /knownCities/);
+  assert.match(filters, /cityFilters/);
+});
+
+test('Directory focus lists all available roles, languages, and cities before narrowing', () => {
+  const rows = [
+    { id: 'actor', role_category: 'actor', role_titles: ['Actor', 'Writer'], languages: ['en'], location_city: 'Miami' },
+    { id: 'director', role_category: 'director', role_titles: ['Director'], languages: ['es'], location_city: 'Mexico City' },
+    { id: 'editor', role_category: 'crew_other', role_titles: ['Editor'], custom_role_label: 'Post-production artist', languages: ['en', 'es'], location_city: 'Montreal' },
+  ];
+  const options = buildDirectoryFilterOptions(rows);
+  assert.deepEqual(filterDirectoryOptions(options.roles, '').map(({ label }) => label), [
+    'Actor', 'Crew Other', 'Director', 'Editor', 'Post-Production Artist', 'Writer',
+  ]);
+  assert.deepEqual(filterDirectoryOptions(options.languages, '').map(({ label }) => label), ['English', 'Spanish']);
+  assert.deepEqual(filterDirectoryOptions(options.cities, '').map(({ label }) => label), ['Mexico City', 'Miami', 'Montreal']);
+  assert.deepEqual(filterDirectoryOptions(options.roles, 'Ed').map(({ label }) => label), ['Editor']);
+  assert.deepEqual(filterDirectoryOptions(options.roles, 'Wri').map(({ label }) => label), ['Writer']);
+  assert.deepEqual(filterDirectoryOptions(options.languages, 'Eng').map(({ label }) => label), ['English']);
+  assert.deepEqual(filterDirectoryOptions(options.languages, 'Esp').map(({ label }) => label), ['Spanish']);
+  assert.deepEqual(filterDirectoryOptions(options.cities, 'm').map(({ label }) => label), ['Mexico City', 'Miami', 'Montreal']);
+});
+
+test('Directory selected values do not narrow their listboxes until the user types', () => {
+  const combobox = readFileSync(new URL('./src/components/DirectoryCombobox.tsx', import.meta.url), 'utf8');
+  assert.match(combobox, /const \[searching, setSearching\] = useState\(false\)/);
+  assert.match(combobox, /searching \? filterDirectoryOptions\(options, input\) : options/);
+  assert.match(combobox, /onFocus=\{\(\) => \{ setOpen\(true\); setSearching\(false\); \}\}/);
+  assert.match(combobox, /onChange=\{\(event\) => \{ setInput\(event\.target\.value\); setSearching\(true\)/);
+  assert.match(combobox, /setSearching\(false\)/);
+});
+
+test('Directory controls own their selected state without a redundant Active row', () => {
+  const filters = readFileSync(new URL('./src/components/DirectoryFilters.tsx', import.meta.url), 'utf8');
+  const directory = readFileSync(new URL('./src/app/directory/page.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(filters, />Active:</);
+  assert.doesNotMatch(filters, /activeFilters\.map/);
+  assert.match(filters, /clearLabel="Clear role filter"/);
+  assert.match(filters, /clearLabel="Clear city filter"/);
+  assert.match(filters, /clearLabel="Clear language filter"/);
+  assert.match(filters, /Clear all filters/);
+  assert.match(filters, /new URLSearchParams\(searchParams\.toString\(\)\)/);
+  assert.match(filters, /next\.delete\('page'\)/);
+  assert.match(directory, /\.select\('id, role_category, role_titles, custom_role_label, languages, location_city'\)/);
+  assert.match(directory, /cityFilters=\{filterMetadata\.cities\}/);
 });
 
 test('Member publishing capabilities share one entitlement source', () => {
@@ -1066,12 +1106,7 @@ test('Pricing reflects publishing, browsing, and retained work without an unveri
   assert.match(pricing, /Browse Projects, Events, Casting Calls, and Spotlight/);
   assert.match(pricing, /Preserve existing work and drafts/);
   assert.match(pricing, /Template and palette customization/);
-  assert.match(pricing, /getProfileUrlProductClaim/);
-  assert.match(pricing, /PROFILE_SUBDOMAINS_PUBLICLY_AVAILABLE/);
-  assert.equal(getProfileUrlProductClaim({}), 'magiora.com/m/yourname');
-  assert.equal(getProfileUrlProductClaim({
-    subdomainsPubliclyAvailable: true,
-  }), 'yourname.magiora.com');
+  assert.match(pricing, /Custom profile URL \(yourname\.magiora\.com\)/);
 });
 
 test('Member entitlement consistently accepts the profile plan and active subscriptions', () => {

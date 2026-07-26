@@ -84,7 +84,6 @@ export default async function DirectoryPage({
     filterFallbackResult ? null : filterMetadataResult.error
   );
   const filterMetadata = buildDirectoryFilterOptions(filterRows ?? []);
-
   let query = supabase
     .from('profiles')
     .select(
@@ -204,14 +203,6 @@ export default async function DirectoryPage({
     }
   }
 
-  const knownCities = Array.from(
-    new Set(
-      (filterRows ?? [])
-        .map((row) => row.location_city)
-        .filter((city): city is string => Boolean(city))
-    )
-  ).sort((a, b) => a.localeCompare(b));
-
   const resultCount = totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(resultCount / PAGE_SIZE));
   const pageHref = (page: number) => {
@@ -245,7 +236,7 @@ export default async function DirectoryPage({
         <DirectoryFilters
           roleFilters={filterMetadata.roles}
           languageFilters={filterMetadata.languages}
-          knownCities={knownCities}
+          cityFilters={filterMetadata.cities}
           currentRole={params.role ?? ''}
           currentCity={params.city ?? ''}
           currentLang={params.lang ?? ''}

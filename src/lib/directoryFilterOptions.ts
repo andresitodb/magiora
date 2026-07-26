@@ -14,6 +14,7 @@ export type DirectoryFilterProfile = {
   role_titles?: unknown;
   custom_role_label?: unknown;
   languages?: unknown;
+  location_city?: unknown;
 };
 
 const ROLE_ALIASES: Record<string, string[]> = {
@@ -98,6 +99,7 @@ function uniqueDisplayValues(values: unknown[]) {
 export function buildDirectoryFilterOptions(rows: DirectoryFilterProfile[]) {
   const roles = new Map<string, { label: string; count: number }>();
   const languages = new Map<string, { label: string; count: number; value: string }>();
+  const cities = new Map<string, { label: string; count: number }>();
 
   for (const row of rows) {
     const profileRoles = uniqueDisplayValues([
@@ -124,6 +126,13 @@ export function buildDirectoryFilterOptions(rows: DirectoryFilterProfile[]) {
       const current = languages.get(key);
       languages.set(key, { ...language, count: (current?.count ?? 0) + 1 });
     }
+    for (const city of new Set(directoryStringValues(row.location_city))) {
+      const label = city.trim();
+      const key = normalizeDirectorySearch(label);
+      if (!key) continue;
+      const current = cities.get(key);
+      cities.set(key, { label: current?.label ?? label, count: (current?.count ?? 0) + 1 });
+    }
   }
 
   return {
@@ -138,6 +147,12 @@ export function buildDirectoryFilterOptions(rows: DirectoryFilterProfile[]) {
       label,
       count,
       searchTerms: [label, ...(LANGUAGE_ALIASES[label] ?? [])],
+    })).sort((a, b) => a.label.localeCompare(b.label)),
+    cities: [...cities.values()].map(({ label, count }) => ({
+      value: label,
+      label,
+      count,
+      searchTerms: [label],
     })).sort((a, b) => a.label.localeCompare(b.label)),
   };
 }

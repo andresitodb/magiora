@@ -9,13 +9,12 @@ import {
   useRef,
 } from 'react';
 import DirectoryCombobox from '@/components/DirectoryCombobox';
-import CityAutocomplete from '@/components/CityAutocomplete';
 import type { DirectoryFilterOption } from '@/lib/directoryFilterOptions';
 
 export default function DirectoryFilters({
   roleFilters,
   languageFilters,
-  knownCities,
+  cityFilters,
   currentRole,
   currentCity,
   currentLang,
@@ -25,7 +24,7 @@ export default function DirectoryFilters({
 }: {
   roleFilters: DirectoryFilterOption[];
   languageFilters: DirectoryFilterOption[];
-  knownCities: string[];
+  cityFilters: DirectoryFilterOption[];
   currentRole: string;
   currentCity: string;
   currentLang: string;
@@ -77,22 +76,9 @@ export default function DirectoryFilters({
     }
   }, [currentQuery]);
 
-  const activeFilters = [
-    currentQuery && { key: 'q', label: `Search: ${currentQuery}` },
-    currentRole && {
-      key: 'role',
-      label: roleFilters.find((role) => role.value === currentRole)?.label ?? currentRole,
-    },
-    currentCity && { key: 'city', label: currentCity },
-    currentLang && {
-      key: 'lang',
-      label: languageFilters.find((language) => language.value === currentLang)?.label ?? currentLang,
-    },
-    currentVerified && { key: 'verified', label: 'Verified' },
-  ].filter(
-    (filter): filter is { key: string; label: string } => Boolean(filter)
+  const hasAnyFilter = Boolean(
+    currentQuery || currentRole || currentCity || currentLang || currentVerified
   );
-  const hasAnyFilter = activeFilters.length > 0;
 
   return (
     <div
@@ -125,6 +111,7 @@ export default function DirectoryFilters({
             placeholder="Everyone"
             emptyLabel="No matching roles"
             ariaLabel="Filter by role"
+            clearLabel="Clear role filter"
           />
         </div>
 
@@ -132,12 +119,15 @@ export default function DirectoryFilters({
           <label className="block text-xs font-medium text-stone-600 mb-1 italic font-serif">
             City
           </label>
-          <CityAutocomplete
-            defaultValue={currentCity}
-            knownCities={knownCities}
-            onChange={(value, history = 'push') =>
-              pushFilter({ city: value || null }, history)
-            }
+          <DirectoryCombobox
+            key={currentCity}
+            options={cityFilters}
+            currentValue={currentCity}
+            onChange={(value) => pushFilter({ city: value || null })}
+            placeholder="Any city"
+            emptyLabel="No matching cities"
+            ariaLabel="Filter by city"
+            clearLabel="Clear city filter"
           />
         </div>
 
@@ -153,6 +143,7 @@ export default function DirectoryFilters({
             placeholder="Any language"
             emptyLabel="No matching languages"
             ariaLabel="Filter by language"
+            clearLabel="Clear language filter"
           />
         </div>
 
@@ -198,25 +189,6 @@ export default function DirectoryFilters({
         )}
       </div>
 
-      {activeFilters.length > 0 && (
-        <div className="pt-3 border-t border-stone-100 flex flex-wrap items-center gap-2">
-          <span className="text-xs italic font-serif text-stone-500">Active:</span>
-          {activeFilters.map((filter) => (
-            <button
-              key={filter.key}
-              type="button"
-              onClick={() => {
-                if (filter.key === 'q') setQ('');
-                pushFilter({ [filter.key]: null });
-              }}
-              className="rounded-full border border-stone-300 bg-stone-50 px-3 py-1 text-xs font-serif text-stone-700 hover:border-[#712B13] cursor-pointer"
-              aria-label={`Remove ${filter.label} filter`}
-            >
-              {filter.label} ×
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
