@@ -10,6 +10,8 @@ import {
   getProjectStatusLabel,
   getProjectStatusColor,
 } from '@/lib/projects';
+import { getMemberCapabilities } from '@/lib/memberEntitlementServer';
+import MemberPublishingNotice from '@/components/MemberPublishingNotice';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +33,7 @@ export default async function ProjectsListPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+  const capabilities = await getMemberCapabilities(user.id);
 
   const { data: projects } = await supabase
     .from('projects')
@@ -56,21 +59,21 @@ export default async function ProjectsListPage() {
             Your films, shows, and other work. Add cast and crew so the people you worked with show up on each other&apos;s pages.
           </p>
         </div>
-        <Link
+        {capabilities.canPublishProjects && <Link
           href="/dashboard/projects/new"
           className="k-button k-button-primary whitespace-nowrap"
         >
           + New project
-        </Link>
+        </Link>}
       </div>
+      {!capabilities.canPublishProjects && <MemberPublishingNotice noun="projects" />}
 
       {(!projects || projects.length === 0) ? (
         <EmptyState
           icon="folder"
           title="No projects yet"
           body="Add your first project — a film, short, music video, commercial, or anything else. List the cast and crew, share the link, and let your collaborators show up on your page."
-          ctaHref="/dashboard/projects/new"
-          ctaLabel="Create a project"
+          {...(capabilities.canPublishProjects ? { ctaHref: '/dashboard/projects/new', ctaLabel: 'Create a project' } : {})}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">

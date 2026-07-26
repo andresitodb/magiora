@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import {
   resolveMemberEntitlement,
   type MemberEntitlement,
+  resolveMemberCapabilities,
+  type MemberCapabilities,
 } from '@/lib/memberEntitlement';
 
 export async function getMemberEntitlement(profileId: string): Promise<MemberEntitlement> {
@@ -27,4 +29,8 @@ export async function getMemberEntitlement(profileId: string): Promise<MemberEnt
 
 export async function hasMemberEntitlement(profileId: string): Promise<boolean> {
   return (await getMemberEntitlement(profileId)).isMember;
+}
+
+export async function getMemberCapabilities(profileId: string): Promise<MemberCapabilities> {
+  return resolveMemberCapabilities(await getMemberEntitlement(profileId));
 }

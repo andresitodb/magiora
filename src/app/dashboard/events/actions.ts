@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { hasMemberEntitlement as hasPaidMembership } from '@/lib/memberEntitlementServer';
+import { getMemberCapabilities } from '@/lib/memberEntitlementServer';
 
 export async function postEvent(formData: FormData) {
   const supabase = await createClient();
@@ -13,7 +13,7 @@ export async function postEvent(formData: FormData) {
 
   if (!user) redirect('/login');
 
-  if (!(await hasPaidMembership(user.id))) {
+  if (!(await getMemberCapabilities(user.id)).canPublishEvents) {
     redirect('/dashboard?error=members_only');
   }
 

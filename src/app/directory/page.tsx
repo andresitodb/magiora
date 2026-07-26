@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import DirectoryFilters from '@/components/DirectoryFilters';
-import { getLanguageName, LANGUAGES } from '@/lib/languages';
+import { getLanguageName } from '@/lib/languages';
 import {
   DIRECTORY_PAGE_SIZE,
   DIRECTORY_RANDOM_POOL_SIZE,
@@ -13,6 +13,11 @@ import {
   shouldRandomizeDirectory,
   stringSeed,
 } from '@/lib/designPolish';
+import {
+  buildDirectoryFilterOptions,
+  profileMatchesDirectoryLanguage,
+  profileMatchesDirectoryRole,
+} from '@/lib/directoryFilterOptions';
 
 const PAGE_SIZE = DIRECTORY_PAGE_SIZE;
 
@@ -29,20 +34,6 @@ type DirectoryProfile = {
   languages: string[] | null;
   verified: boolean;
 };
-
-const ROLE_FILTERS: { value: string; label: string }[] = [
-  { value: 'actor', label: 'Actors' },
-  { value: 'director', label: 'Directors' },
-  { value: 'cinematographer', label: 'Cinematographers' },
-  { value: 'producer', label: 'Producers' },
-  { value: 'editor', label: 'Editors' },
-  { value: 'writer', label: 'Writers' },
-  { value: 'sound', label: 'Sound' },
-  { value: 'production_designer', label: 'Production Designers' },
-  { value: 'makeup_hair', label: 'Makeup & Hair' },
-  { value: 'costume', label: 'Costume' },
-  { value: 'crew_other', label: 'Other crew' },
-];
 
 export const dynamic = 'force-dynamic';
 
@@ -74,6 +65,25 @@ export default async function DirectoryPage({
     hasExplicitSort: params.sort !== undefined,
     page: currentPage,
   });
+  const filterMetadataResult = await supabase
+    .from('profiles')
+    .select('id, role_category, role_categories, role_titles, custom_role_label, languages, location_city')
+    .eq('visible', true)
+    .eq('approved', true)
+    .limit(2000);
+  const filterFallbackResult = filterMetadataResult.error
+    ? await supabase
+        .from('profiles')
+        .select('id, role_category, role_titles, custom_role_label, languages, location_city')
+        .eq('visible', true)
+        .eq('approved', true)
+        .limit(2000)
+    : null;
+  const filterRows = filterMetadataResult.data ?? filterFallbackResult?.data ?? [];
+  const filterRowsError = filterFallbackResult?.error ?? (
+    filterFallbackResult ? null : filterMetadataResult.error
+  );
+  const filterMetadata = buildDirectoryFilterOptions(filterRows ?? []);
 
   let query = supabase
     .from('profiles')
@@ -84,21 +94,16 @@ export default async function DirectoryPage({
     .eq('visible', true)
     .eq('approved', true);
 
-  if (params.role && ROLE_FILTERS.find((r) => r.value === params.role)) {
-    query = query.or(`role_category.eq.${params.role},role_categories.cs.{${params.role}}`);
+  if (params.role) {
+    const matchingIds = (filterRows ?? []).filter((row) => profileMatchesDirectoryRole(row, params.role!)).map((row) => row.id);
+    query = matchingIds.length ? query.in('id', matchingIds) : query.eq('id', '00000000-0000-0000-0000-000000000000');
   }
   if (params.city) {
     query = query.ilike('location_city', `%${params.city}%`);
   }
   if (params.lang) {
-    // Tolerant matching: search by code AND name to handle either storage format
-    const lang = LANGUAGES.find(
-      (l) => l.code === params.lang || l.name.toLowerCase() === params.lang!.toLowerCase()
-    );
-    const aliases = lang ? [lang.code, lang.name] : [params.lang];
-    // Use OR with array-contains for each alias
-    const ors = aliases.map((a) => `languages.cs.{${a}}`).join(',');
-    query = query.or(ors);
+    const matchingIds = (filterRows ?? []).filter((row) => profileMatchesDirectoryLanguage(row, params.lang!)).map((row) => row.id);
+    query = matchingIds.length ? query.in('id', matchingIds) : query.eq('id', '00000000-0000-0000-0000-000000000000');
   }
   if (params.q) {
     query = query.ilike('display_name', `%${params.q}%`);
@@ -132,19 +137,7 @@ export default async function DirectoryPage({
     ? query.limit(DIRECTORY_RANDOM_POOL_SIZE)
     : query.range(from, to);
 
-  // Fetch distinct cities for autocomplete
-  const cityRowsPromise = supabase
-    .from('profiles')
-    .select('location_city')
-    .eq('visible', true)
-    .eq('approved', true)
-    .not('location_city', 'is', null)
-    .limit(1000);
-
-  const [profilesResult, cityRowsResult] = await Promise.all([
-    profilesPromise,
-    cityRowsPromise,
-  ]);
+  const profilesResult = await profilesPromise;
   const {
     data: profileRows,
     count: totalCount,
@@ -161,13 +154,7 @@ export default async function DirectoryPage({
   const profiles = randomizeDefault
     ? seededSubset(profileRows ?? [], PAGE_SIZE, requestSeed)
     : profileRows;
-  const {
-    data: cityRows,
-    error: cityRowsError,
-    status: cityRowsStatus,
-  } = cityRowsResult;
-
-  if (profilesError || cityRowsError) {
+  if (profilesError || filterRowsError) {
     console.error('[directory] Supabase query failed', {
       profiles: profilesError
         ? {
@@ -177,12 +164,11 @@ export default async function DirectoryPage({
             status: profilesStatus,
           }
         : null,
-      cities: cityRowsError
+      filters: filterRowsError
         ? {
-            message: cityRowsError.message,
-            code: cityRowsError.code,
-            details: cityRowsError.details,
-            status: cityRowsStatus,
+            message: filterRowsError.message,
+            code: filterRowsError.code,
+            details: filterRowsError.details,
           }
         : null,
     });
@@ -220,7 +206,7 @@ export default async function DirectoryPage({
 
   const knownCities = Array.from(
     new Set(
-      (cityRows ?? [])
+      (filterRows ?? [])
         .map((row) => row.location_city)
         .filter((city): city is string => Boolean(city))
     )
@@ -257,7 +243,8 @@ export default async function DirectoryPage({
         </p>
 
         <DirectoryFilters
-          roleFilters={ROLE_FILTERS}
+          roleFilters={filterMetadata.roles}
+          languageFilters={filterMetadata.languages}
           knownCities={knownCities}
           currentRole={params.role ?? ''}
           currentCity={params.city ?? ''}
@@ -267,7 +254,7 @@ export default async function DirectoryPage({
           currentSort={sort}
         />
 
-        {cityRowsError && !profilesError && (
+        {filterRowsError && !profilesError && (
           <div
             role="status"
             className="mt-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"

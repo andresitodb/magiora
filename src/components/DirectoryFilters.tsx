@@ -6,17 +6,15 @@ import {
   useTransition,
   useEffect,
   useEffectEvent,
-  useMemo,
   useRef,
 } from 'react';
-import { LANGUAGES } from '@/lib/languages';
-import RoleAutocomplete from '@/components/RoleAutocomplete';
+import DirectoryCombobox from '@/components/DirectoryCombobox';
 import CityAutocomplete from '@/components/CityAutocomplete';
-
-const PINNED_LANGS = ['en', 'es'];
+import type { DirectoryFilterOption } from '@/lib/directoryFilterOptions';
 
 export default function DirectoryFilters({
   roleFilters,
+  languageFilters,
   knownCities,
   currentRole,
   currentCity,
@@ -25,7 +23,8 @@ export default function DirectoryFilters({
   currentVerified,
   currentSort,
 }: {
-  roleFilters: { value: string; label: string }[];
+  roleFilters: DirectoryFilterOption[];
+  languageFilters: DirectoryFilterOption[];
   knownCities: string[];
   currentRole: string;
   currentCity: string;
@@ -78,24 +77,6 @@ export default function DirectoryFilters({
     }
   }, [currentQuery]);
 
-  // Sort roles alphabetically by label
-  const sortedRoles = useMemo(
-    () => [...roleFilters].sort((a, b) => a.label.localeCompare(b.label)),
-    [roleFilters]
-  );
-
-  const sortedLangs = useMemo(
-    () => [
-      ...PINNED_LANGS.map((c) => LANGUAGES.find((l) => l.code === c)).filter(
-        (language): language is (typeof LANGUAGES)[number] => language !== undefined
-      ),
-      ...[...LANGUAGES]
-        .filter((l) => !PINNED_LANGS.includes(l.code))
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    ],
-    []
-  );
-
   const activeFilters = [
     currentQuery && { key: 'q', label: `Search: ${currentQuery}` },
     currentRole && {
@@ -105,7 +86,7 @@ export default function DirectoryFilters({
     currentCity && { key: 'city', label: currentCity },
     currentLang && {
       key: 'lang',
-      label: LANGUAGES.find((language) => language.code === currentLang)?.name ?? currentLang,
+      label: languageFilters.find((language) => language.value === currentLang)?.label ?? currentLang,
     },
     currentVerified && { key: 'verified', label: 'Verified' },
   ].filter(
@@ -114,7 +95,10 @@ export default function DirectoryFilters({
   const hasAnyFilter = activeFilters.length > 0;
 
   return (
-    <div className="k-card p-3 md:p-4 space-y-3">
+    <div
+      data-directory-filter-panel
+      className="k-card relative z-20 overflow-visible p-3 md:p-4 space-y-3"
+    >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
         <div>
           <label className="block text-xs font-medium text-stone-600 mb-1 italic font-serif">
@@ -133,11 +117,14 @@ export default function DirectoryFilters({
           <label className="block text-xs font-medium text-stone-600 mb-1 italic font-serif">
             Role
           </label>
-          <RoleAutocomplete
+          <DirectoryCombobox
             key={currentRole}
-            options={sortedRoles}
+            options={roleFilters}
             currentValue={currentRole}
             onChange={(value) => pushFilter({ role: value || null })}
+            placeholder="Everyone"
+            emptyLabel="No matching roles"
+            ariaLabel="Filter by role"
           />
         </div>
 
@@ -158,18 +145,15 @@ export default function DirectoryFilters({
           <label className="block text-xs font-medium text-stone-600 mb-1 italic font-serif">
             Language
           </label>
-          <select
-            value={currentLang}
-            onChange={(e) => pushFilter({ lang: e.target.value || null })}
-            className="k-control cursor-pointer"
-          >
-            <option value="">Any language</option>
-            {sortedLangs.map((l) => (
-              <option key={l.code} value={l.code}>
-                {l.name}
-              </option>
-            ))}
-          </select>
+          <DirectoryCombobox
+            key={currentLang}
+            options={languageFilters}
+            currentValue={currentLang}
+            onChange={(value) => pushFilter({ lang: value || null })}
+            placeholder="Any language"
+            emptyLabel="No matching languages"
+            ariaLabel="Filter by language"
+          />
         </div>
 
         <label className="block text-xs font-medium text-stone-600 italic font-serif">

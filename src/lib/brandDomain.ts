@@ -24,3 +24,18 @@ export function getProfileDomainPreview(
   const label = slug.trim() || 'yourname';
   return `${label}.${getBrandDisplayDomain(configuredDomain)}`;
 }
+
+export function getProfileUrlProductClaim({
+  slug = 'yourname',
+  configuredDomain,
+  subdomainsPubliclyAvailable = false,
+}: {
+  slug?: string;
+  configuredDomain?: string | null;
+  subdomainsPubliclyAvailable?: boolean;
+}) {
+  const domain = getBrandDisplayDomain(configuredDomain);
+  return subdomainsPubliclyAvailable
+    ? `${slug}.${domain}`
+    : `${domain}/m/${slug}`;
+}

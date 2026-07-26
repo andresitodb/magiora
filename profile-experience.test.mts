@@ -46,6 +46,7 @@ import {
 import {
   getBrandDisplayDomain,
   getProfileDomainPreview,
+  getProfileUrlProductClaim,
 } from './src/lib/brandDomain.ts';
 import { getScreenPresenceSections } from './src/lib/screenPresence.ts';
 import {
@@ -64,7 +65,15 @@ import {
   CINEMATIC_PAGES,
   PROFILE_TEMPLATE_REGISTRY,
 } from './src/lib/profileTemplateRegistry.ts';
-import { resolveMemberEntitlement } from './src/lib/memberEntitlement.ts';
+import { resolveMemberCapabilities, resolveMemberEntitlement } from './src/lib/memberEntitlement.ts';
+import {
+  buildDirectoryFilterOptions,
+  directoryStringValues,
+  filterDirectoryOptions,
+  normalizeDirectorySearch,
+  profileMatchesDirectoryLanguage,
+  profileMatchesDirectoryRole,
+} from './src/lib/directoryFilterOptions.ts';
 import {
   getCinematicCareerSnapshot,
   getShortBiography,
@@ -182,7 +191,7 @@ test('Member presentation remains interactive and pricing copy matches actual li
   assert.doesNotMatch(themeSource, /disabled=\{!isMember\}/);
   assert.doesNotMatch(slugSource, /disabled=\{!isMember\}/);
   assert.match(pricingSource, /up to 10 gallery photos/i);
-  assert.match(pricingSource, /6 profile themes &amp; 6 color palettes/i);
+  assert.match(pricingSource, /Template and palette customization/i);
   assert.match(pricingSource, /Up to 4 additional video links/i);
 });
 
@@ -926,6 +935,143 @@ test('Cinematic Home uses an excerpt and full-image artwork', () => {
   assert.match(renderer, /h-full w-full object-contain/);
   assert.match(renderer, /selected_credits: null/);
   assert.match(renderer, /aria-label="Career snapshot"/);
+});
+
+test('Directory suggestions derive only from available profile metadata', () => {
+  const directory = readFileSync(new URL('./src/app/directory/page.tsx', import.meta.url), 'utf8');
+  const visibleRows = [
+    { id: '1', role_titles: ['Editor', 'Director of Photography'], languages: ['es', 'en'] },
+    { id: '2', custom_role_label: 'Production Designer', languages: ['Spanish'] },
+  ];
+  const options = buildDirectoryFilterOptions(visibleRows);
+  assert.deepEqual(filterDirectoryOptions(options.roles, 'Ed').map(({ label }) => label), ['Editor']);
+  assert.deepEqual(filterDirectoryOptions(options.roles, 'DP').map(({ label }) => label), ['Director of Photography']);
+  assert.deepEqual(filterDirectoryOptions(options.roles, 'Actor'), []);
+  for (const query of ['Esp', 'Español', 'Castellano']) {
+    assert.deepEqual(filterDirectoryOptions(options.languages, query).map(({ label }) => label), ['Spanish']);
+  }
+  assert.deepEqual(filterDirectoryOptions(options.languages, 'Russian'), []);
+  assert.equal(normalizeDirectorySearch('  ESPAÑOL '), 'espanol');
+  assert.equal(profileMatchesDirectoryRole(visibleRows[0], 'Editor'), true);
+  assert.equal(profileMatchesDirectoryLanguage(visibleRows[0], 'es'), true);
+  assert.match(directory, /\.eq\('visible', true\)/);
+  assert.match(directory, /\.eq\('approved', true\)/);
+  assert.match(directory, /role_category, role_categories, role_titles, custom_role_label, languages/);
+});
+
+test('Directory metadata normalizes array, JSON, Postgres-array, string, and null field shapes', () => {
+  assert.deepEqual(directoryStringValues([' Editor ', null, ['Director']]), ['Editor', 'Director']);
+  assert.deepEqual(directoryStringValues('["Editor","Director"]'), ['Editor', 'Director']);
+  assert.deepEqual(directoryStringValues('{"Editor","Director of Photography"}'), ['Editor', 'Director of Photography']);
+  assert.deepEqual(directoryStringValues(' Editor '), ['Editor']);
+  assert.deepEqual(directoryStringValues(null), []);
+
+  const rows = [
+    { id: 'array', role_titles: [' Editor '], role_categories: ['editor'], languages: [' es ', 'Spanish'] },
+    { id: 'json', role_titles: '["Editor"]', languages: '["en"]' },
+    { id: 'postgres', role_titles: '{"Director","Editor"}', languages: '{"es"}' },
+    { id: 'category', role_category: 'editor', languages: null },
+    { id: 'custom', custom_role_label: 'Editor' },
+  ];
+  const options = buildDirectoryFilterOptions(rows);
+  assert.equal(options.roles.find(({ label }) => label === 'Editor')?.count, 5);
+  assert.equal(options.languages.find(({ label }) => label === 'Spanish')?.count, 2);
+  assert.equal(profileMatchesDirectoryRole(rows[0], 'Editor'), true);
+  assert.equal(profileMatchesDirectoryRole(rows[2], 'Director'), true);
+  assert.equal(profileMatchesDirectoryRole(rows[3], 'Editor'), true);
+  assert.equal(profileMatchesDirectoryRole(rows[4], 'Editor'), true);
+  assert.equal(profileMatchesDirectoryLanguage(rows[0], 'es'), true);
+});
+
+test('Directory aliases select canonical values consumed by server matching', () => {
+  const rows = [
+    { id: 'editor', role_titles: ['Editor'], languages: ['en'] },
+    { id: 'dp', role_titles: ['Director of Photography'], languages: ['Spanish'] },
+  ];
+  const options = buildDirectoryFilterOptions(rows);
+  const editor = filterDirectoryOptions(options.roles, 'Ed')[0];
+  const dp = filterDirectoryOptions(options.roles, 'DP')[0];
+  const spanish = filterDirectoryOptions(options.languages, 'Castellano')[0];
+  assert.equal(editor.value, 'Editor');
+  assert.equal(dp.value, 'Director of Photography');
+  assert.equal(spanish.value, 'es');
+  assert.notEqual(spanish.value, 'Castellano');
+  assert.equal(profileMatchesDirectoryRole(rows[0], editor.value), true);
+  assert.equal(profileMatchesDirectoryRole(rows[1], dp.value), true);
+  assert.equal(profileMatchesDirectoryLanguage(rows[1], spanish.value), true);
+});
+
+test('Directory combobox exposes keyboard and listbox semantics and resets pagination', () => {
+  const combobox = readFileSync(new URL('./src/components/DirectoryCombobox.tsx', import.meta.url), 'utf8');
+  const filters = readFileSync(new URL('./src/components/DirectoryFilters.tsx', import.meta.url), 'utf8');
+  assert.match(combobox, /role="combobox"/);
+  assert.match(combobox, /role="listbox"/);
+  assert.match(combobox, /role="option"/);
+  assert.match(combobox, /ArrowDown/);
+  assert.match(combobox, /ArrowUp/);
+  assert.match(combobox, /event\.key === 'Enter'/);
+  assert.match(combobox, /event\.key === 'Escape'/);
+  assert.match(filters, /next\.delete\('page'\)/);
+  assert.match(filters, /No matching roles/);
+  assert.match(filters, /No matching languages/);
+});
+
+test('Directory Role and Language listboxes escape the filter card clipping context', () => {
+  const combobox = readFileSync(new URL('./src/components/DirectoryCombobox.tsx', import.meta.url), 'utf8');
+  const filters = readFileSync(new URL('./src/components/DirectoryFilters.tsx', import.meta.url), 'utf8');
+  assert.match(filters, /data-directory-filter-panel/);
+  assert.match(filters, /relative z-20 overflow-visible/);
+  assert.equal(filters.match(/<DirectoryCombobox/g)?.length, 2);
+  assert.match(combobox, /data-directory-combobox/);
+  assert.match(combobox, /absolute left-0 top-full z-10/);
+  assert.match(combobox, /max-h-64 w-full overflow-x-hidden overflow-y-auto/);
+  assert.match(combobox, /role="combobox"/);
+  assert.match(combobox, /role="listbox"/);
+  assert.match(combobox, /aria-activedescendant/);
+  assert.match(combobox, /event\.key === 'Escape'/);
+  assert.match(combobox, /onClick=\{\(\) => select\(option\)\}/);
+  assert.match(combobox, /event\.key === 'Enter'.*select\(matches\[activeIndex\]\)/);
+  assert.match(combobox, /document\.addEventListener\('pointerdown'/);
+  assert.doesNotMatch(combobox, /setTimeout\(\(\) => setOpen/);
+  const city = readFileSync(new URL('./src/components/CityAutocomplete.tsx', import.meta.url), 'utf8');
+  assert.match(city, /onChange\(city\)/);
+  assert.match(city, /knownCities/);
+});
+
+test('Member publishing capabilities share one entitlement source', () => {
+  const member = resolveMemberCapabilities(resolveMemberEntitlement({ plan: 'member' }));
+  assert.deepEqual(member, {
+    canPublishProjects: true,
+    canPublishEvents: true,
+    canPublishCastingCalls: true,
+    canApplyToCastingCalls: true,
+  });
+  const free = resolveMemberCapabilities(resolveMemberEntitlement({ plan: 'free' }));
+  assert.equal(Object.values(free).every((value) => value === false), true);
+
+  const projects = readFileSync(new URL('./src/app/dashboard/projects/actions.ts', import.meta.url), 'utf8');
+  const events = readFileSync(new URL('./src/app/dashboard/events/actions.ts', import.meta.url), 'utf8');
+  const casting = readFileSync(new URL('./src/app/dashboard/casting-calls/actions.ts', import.meta.url), 'utf8');
+  assert.match(projects, /canPublishProjects/);
+  assert.match(events, /canPublishEvents/);
+  assert.match(casting, /canPublishCastingCalls/);
+  assert.match(casting, /canApplyToCastingCalls/);
+  assert.doesNotMatch(`${projects}\n${events}\n${casting}`, /profile\.plan === ['"]member['"]/);
+});
+
+test('Pricing reflects publishing, browsing, and retained work without an unverified subdomain claim', () => {
+  const pricing = readFileSync(new URL('./src/app/pricing/page.tsx', import.meta.url), 'utf8');
+  assert.match(pricing, /Publish Projects, Events, and Casting Calls/);
+  assert.match(pricing, /Apply to casting calls/);
+  assert.match(pricing, /Browse Projects, Events, Casting Calls, and Spotlight/);
+  assert.match(pricing, /Preserve existing work and drafts/);
+  assert.match(pricing, /Template and palette customization/);
+  assert.match(pricing, /getProfileUrlProductClaim/);
+  assert.match(pricing, /PROFILE_SUBDOMAINS_PUBLICLY_AVAILABLE/);
+  assert.equal(getProfileUrlProductClaim({}), 'magiora.com/m/yourname');
+  assert.equal(getProfileUrlProductClaim({
+    subdomainsPubliclyAvailable: true,
+  }), 'yourname.magiora.com');
 });
 
 test('Member entitlement consistently accepts the profile plan and active subscriptions', () => {

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { hasMemberEntitlement as hasPaidMembership } from '@/lib/memberEntitlementServer';
+import { getMemberCapabilities } from '@/lib/memberEntitlementServer';
+import MemberPublishingNotice from '@/components/MemberPublishingNotice';
 
 type CastingApplicationRow = {
   id: string;
@@ -24,7 +25,7 @@ export default async function MyCastingCallsPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isMember = await hasPaidMembership(user!.id);
+  const canPublish = (await getMemberCapabilities(user!.id)).canPublishCastingCalls;
 
   const { data: myCalls } = await supabase
     .from('casting_calls')
@@ -57,7 +58,7 @@ export default async function MyCastingCallsPage({
       <section className="mb-12">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="font-serif text-xl font-medium">Posted by you</h2>
-          {isMember && (
+          {canPublish && (
             <Link
               href="/dashboard/casting-calls/new"
               className="k-button k-button-primary"
@@ -67,11 +68,8 @@ export default async function MyCastingCallsPage({
           )}
         </div>
 
-        {!isMember ? (
-          <p className="text-sm text-stone-500 italic font-serif">
-            Become a member to post casting calls.
-          </p>
-        ) : !myCalls || myCalls.length === 0 ? (
+        {!canPublish && <MemberPublishingNotice noun="casting calls" />}
+        {!myCalls || myCalls.length === 0 ? (
           <p className="text-sm text-stone-500 italic font-serif">
             You haven&apos;t posted any casting calls yet.
           </p>

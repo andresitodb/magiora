@@ -7,6 +7,13 @@ export type MemberEntitlement = {
   source: MemberEntitlementSource;
 };
 
+export type MemberCapabilities = {
+  canPublishProjects: boolean;
+  canPublishEvents: boolean;
+  canPublishCastingCalls: boolean;
+  canApplyToCastingCalls: boolean;
+};
+
 export function resolveMemberEntitlement({
   plan,
   subscriptionStatus,
@@ -21,4 +28,13 @@ export function resolveMemberEntitlement({
     return { isMember: true, source: 'subscription' };
   }
   return { isMember: false, source: 'none' };
+}
+
+export function resolveMemberCapabilities(entitlement: MemberEntitlement): MemberCapabilities {
+  return {
+    canPublishProjects: entitlement.isMember,
+    canPublishEvents: entitlement.isMember,
+    canPublishCastingCalls: entitlement.isMember,
+    canApplyToCastingCalls: entitlement.isMember,
+  };
 }

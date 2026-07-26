@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { castingApplicationIssue } from '@/lib/castingEligibility';
-import { hasMemberEntitlement as hasPaidMembership } from '@/lib/memberEntitlementServer';
+import { getMemberCapabilities } from '@/lib/memberEntitlementServer';
 
 function isHttpUrl(value: string): boolean {
   if (!value) return true;
@@ -26,7 +26,7 @@ export async function postCastingCall(formData: FormData) {
     redirect('/login');
   }
 
-  if (!(await hasPaidMembership(user.id))) {
+  if (!(await getMemberCapabilities(user.id)).canPublishCastingCalls) {
     redirect('/dashboard?error=members_only');
   }
 
@@ -151,7 +151,7 @@ export async function applyCastingCall(formData: FormData) {
     .eq('applicant_id', user.id)
     .maybeSingle();
   const eligibilityIssue = castingApplicationIssue({
-    isMember: await hasPaidMembership(user.id),
+    isMember: (await getMemberCapabilities(user.id)).canApplyToCastingCalls,
     status: call.status,
     isOwner: call.posted_by === user.id,
     applicationDeadline: call.application_deadline,

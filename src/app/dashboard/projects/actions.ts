@@ -12,6 +12,7 @@ import {
 } from '@/lib/projects';
 import { categoryForTitle } from '@/lib/role_titles';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getMemberCapabilities } from '@/lib/memberEntitlementServer';
 
 async function generateUniqueSlug(
   supabase: SupabaseClient,
@@ -38,6 +39,9 @@ export async function createProject(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+  if (!(await getMemberCapabilities(user.id)).canPublishProjects) {
+    redirect('/dashboard/projects?error=member_publishing_required');
+  }
 
   const title = (formData.get('title') as string)?.trim();
   if (!title) {
@@ -103,12 +107,15 @@ export async function updateProject(formData: FormData) {
 
   const { data: existing } = await supabase
     .from('projects')
-    .select('owner_id, slug, title')
+    .select('owner_id, slug, title, visible')
     .eq('id', projectId)
     .maybeSingle();
 
   if (!existing || existing.owner_id !== user.id) {
     redirect('/dashboard/projects?error=' + encodeURIComponent('Not allowed'));
+  }
+  if (!existing.visible && formData.get('visible') === 'true' && !(await getMemberCapabilities(user.id)).canPublishProjects) {
+    redirect(`/dashboard/projects/${projectId}/edit?error=${encodeURIComponent('Publishing projects is included with Member.')}`);
   }
 
   const title = (formData.get('title') as string)?.trim() || existing.title;
