@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import MemberEdition from '@/components/MemberEdition';
-import MagioraLogo from '@/components/brand/MagioraLogo';
+import ProfilePoweredByFooter from '@/components/ProfilePoweredByFooter';
 import ScreenPresenceProfile from '@/components/ScreenPresenceProfile';
+import CinematicShowcaseProfile from '@/components/CinematicShowcaseProfile';
+import type { CinematicPageId } from '@/lib/profileTemplateRegistry';
 import { SectionIcons } from '@/components/SectionIcons';
 import {
   TEMPLATES,
@@ -188,12 +190,13 @@ export default function ThemeSelector({
           {TEMPLATES.map((item) => {
             const itemAccentId = paletteByTemplate[item.id];
             const cardAccent = getAccent(itemAccentId);
-            if (item.id === 'editorial') {
+            if (item.id === 'editorial' || item.id === 'cinematic') {
               const isSelected = template === item.id;
               return (
                 <div
                   key={item.id}
-                  data-screen-presence-card
+                  data-screen-presence-card={item.id === 'editorial' ? true : undefined}
+                  data-cinematic-showcase-card={item.id === 'cinematic' ? true : undefined}
                   className={`rounded-md border p-3 transition-all duration-200 ${
                     isSelected
                       ? 'border-[#712B13] bg-[#FAECE7]/50 shadow-[0_10px_25px_-22px_rgba(113,43,19,0.7)]'
@@ -224,9 +227,9 @@ export default function ThemeSelector({
                     </p>
                   </button>
 
-                  <div data-screen-presence-controls className="mt-4 border-t border-stone-200 pt-3">
+                  <div data-screen-presence-controls={item.id === 'editorial' ? true : undefined} data-cinematic-showcase-controls={item.id === 'cinematic' ? true : undefined} className="mt-4 border-t border-stone-200 pt-3">
                     <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-stone-500">
-                      Screen Presence colors
+                      {item.name} colors
                     </p>
                     <div className="mt-2 grid grid-cols-2 gap-2">
                       {getSupportedAccents(item.id).map((palette) => (
@@ -235,7 +238,7 @@ export default function ThemeSelector({
                           type="button"
                           onClick={() => setTemplateAccent(item.id, palette.id)}
                           aria-pressed={itemAccentId === palette.id}
-                          aria-label={`Use ${palette.name} palette for Screen Presence`}
+                          aria-label={`Use ${palette.name} palette for ${item.name}`}
                           title={palette.name}
                           className={`cursor-pointer rounded-sm border-2 p-2 text-left transition-shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#712B13] ${
                             itemAccentId === palette.id
@@ -264,7 +267,7 @@ export default function ThemeSelector({
                       rel="noreferrer"
                       onClick={() => storePreviewPayload(item.id, itemAccentId)}
                       className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-sm text-sm font-medium text-[#712B13] underline decoration-[#712B13]/35 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#712B13]"
-                      aria-label="Customize Screen Presence with the selected palette in a new tab"
+                      aria-label={`Customize ${item.name} with the selected palette in a new tab`}
                     >
                       Customize Template <span aria-hidden="true">{SectionIcons.externalLink}</span>
                     </Link>
@@ -312,7 +315,7 @@ export default function ThemeSelector({
             </button>
           )})}
         </div>
-        {template !== 'editorial' && <div className="mt-5 border-t border-stone-200 pt-5">
+        {template !== 'editorial' && template !== 'cinematic' && <div className="mt-5 border-t border-stone-200 pt-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="font-serif text-base font-medium">
@@ -349,7 +352,7 @@ export default function ThemeSelector({
             ))}
           </div>
         </div>}
-        {template !== 'editorial' && <div className="mt-5 flex justify-end border-t border-stone-200 pt-4">
+        {template !== 'editorial' && template !== 'cinematic' && <div className="mt-5 flex justify-end border-t border-stone-200 pt-4">
           <Link
             href={`/profile-preview?template=${encodeURIComponent(template)}&accent=${encodeURIComponent(accent)}`}
             target="_blank"
@@ -388,7 +391,7 @@ function TemplateMiniature({
       <div data-template-layout="cinematic-title-sequence" className="relative aspect-[16/10] overflow-hidden" style={{ backgroundColor: accent.overlayBackground }}>
         <PreviewImage src={image} name={name} accent={accent} className="absolute inset-0 h-full w-full opacity-70" />
         <div className="absolute inset-0 flex flex-col justify-between p-3" style={{ color: accent.overlayText, background: `linear-gradient(transparent 20%, ${accent.overlayBackground} 100%)` }}>
-          <span className="text-[5px] uppercase tracking-[0.22em]">Reel · Projects</span>
+          <span className="text-[5px] uppercase tracking-[0.22em]">Home · Portfolio · Reel · Credits</span>
           <div><p className="text-[5px] uppercase tracking-[0.2em]">{role}</p><p className="mt-1 font-serif text-lg leading-none">{name}</p><p className="mt-1 text-[6px]">{project}</p></div>
         </div>
       </div>
@@ -466,14 +469,21 @@ export function CompleteProfileSite({
   accent,
   data,
   settings,
+  cinematicPage,
+  onCinematicNavigate,
 }: {
   template: TemplateId;
   accent: Accent;
   data: ProfilePreviewData;
   settings?: ReturnType<typeof resolveProfileTemplateSettings>;
+  cinematicPage?: CinematicPageId;
+  onCinematicNavigate?: (page: CinematicPageId) => void;
 }) {
   if (template === 'editorial') {
     return <ScreenPresenceProfile data={data} accent={accent} settings={settings} />;
+  }
+  if (template === 'cinematic') {
+    return <CinematicShowcaseProfile data={data} accent={accent} settings={settings} page={cinematicPage} preview onNavigate={onCinematicNavigate} />;
   }
 
   const name = data.displayName || 'Your name';
@@ -481,7 +491,7 @@ export function CompleteProfileSite({
   const location = [data.city, data.state].filter(Boolean).join(', ');
   const image = data.gallery[0] || data.headshotUrl;
   const bio = data.bio;
-  const isDark = template === 'cinematic' || template === 'stage';
+  const isDark = String(template) === 'cinematic' || template === 'stage';
   const hasWork = data.projects.length > 0 || data.gallery.length > 0;
   const hasPractice = data.skills.length > 0 || data.languages.length > 0 || Boolean(data.demoReelUrl);
   const hasSocial = Object.values(data.socialLinks).some(Boolean);
@@ -557,12 +567,7 @@ export function CompleteProfileSite({
           ) : <span className="text-sm">Social links will appear here.</span>}
         </section>}
       </div>
-      <footer className="border-t px-5 py-7 sm:px-10 lg:px-16" style={{ borderColor: accent.border }}>
-        <Link href="/" aria-label="Magiora Home" className="inline-flex items-center gap-3 text-sm hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">
-          <MagioraLogo />
-          <span>Hosted on Magiora</span>
-        </Link>
-      </footer>
+      <ProfilePoweredByFooter surface={isDark ? 'dark' : 'light'} borderColor={accent.border} />
     </article>
   );
 }

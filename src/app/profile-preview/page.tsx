@@ -7,7 +7,7 @@ import {
   getTemplate,
 } from '@/lib/profile_themes';
 import { getLanguageName } from '@/lib/languages';
-import { resolveProfileTemplateSettings } from '@/lib/profileTemplateSettings';
+import { isMissingCinematicSettingsMigration, resolveProfileTemplateSettings, type StoredProfileTemplateSettings } from '@/lib/profileTemplateSettings';
 import { hasMemberEntitlement } from '@/lib/memberEntitlementServer';
 
 export const metadata = {
@@ -26,32 +26,42 @@ export default async function ProfilePreviewPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+  const requestedTemplateId = getTemplate(requested.template).id;
 
   const [
     { data: profile },
     { data: ownedProjects },
     { data: linkedCredits },
-    { data: screenTemplateSettings },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
       .from('projects')
-      .select('slug, title, tagline, poster_url, year')
+      .select('slug, title, tagline, poster_url, year, project_type, featured_at')
       .eq('owner_id', user.id)
       .order('updated_at', { ascending: false })
       .limit(6),
     supabase
       .from('project_credits')
-      .select('role_title, project:projects(slug, title, tagline, poster_url, year)')
+      .select('role_title, project:projects(slug, title, tagline, poster_url, year, project_type, featured_at)')
       .eq('profile_id', user.id),
-    supabase
+  ]);
+  if (!profile) redirect('/dashboard/profile');
+  const extendedSettingsResult = await supabase
+    .from('profile_template_settings')
+    .select('template_id, palette_id, font_style, section_order, hidden_sections, navigation_order, home_section_order, reading_scale')
+    .eq('profile_id', user.id)
+    .eq('template_id', requestedTemplateId)
+    .maybeSingle();
+  let templateSettings: StoredProfileTemplateSettings = extendedSettingsResult.data;
+  if (isMissingCinematicSettingsMigration(extendedSettingsResult.error)) {
+    const fallback = await supabase
       .from('profile_template_settings')
       .select('template_id, palette_id, font_style, section_order, hidden_sections')
       .eq('profile_id', user.id)
-      .eq('template_id', 'editorial')
-      .maybeSingle(),
-  ]);
-  if (!profile) redirect('/dashboard/profile');
+      .eq('template_id', requestedTemplateId)
+      .maybeSingle();
+    templateSettings = fallback.data;
+  }
 
   const creditedProjects = (linkedCredits ?? []).flatMap((credit) => {
     const relation = Array.isArray(credit.project) ? credit.project[0] : credit.project;
@@ -80,13 +90,17 @@ export default async function ProfilePreviewPage({
     equipment: profile.equipment ?? [],
     contactEmail: profile.contact_email ?? '',
     websiteUrl: profile.website_url ?? '',
+    phone: profile.phone ?? '',
+    country: profile.location_country ?? '',
+    videoLinks: profile.video_links ?? [],
+    representation: profile.representation ?? {},
   };
   const resolvedSettings = resolveProfileTemplateSettings({
     local: {
       ...(requested.template ? { templateId: getTemplate(requested.template).id } : {}),
       ...(requested.accent ? { paletteId: getAccent(requested.accent).id } : {}),
     },
-    saved: screenTemplateSettings,
+    saved: templateSettings,
     legacyTemplate: profile.profile_theme,
     legacyAccent: profile.profile_accent,
   });
@@ -97,7 +111,7 @@ export default async function ProfilePreviewPage({
       initialTemplate={resolvedSettings.templateId}
       initialAccent={resolvedSettings.paletteId}
       initialData={data}
-      initialSettings={screenTemplateSettings}
+      initialSettings={templateSettings}
       isMember={isMember}
     />
   );

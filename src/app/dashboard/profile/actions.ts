@@ -20,9 +20,14 @@ import {
   isTypographyStyle,
   normalizeHiddenSections,
   normalizeSectionOrder,
+  normalizeCinematicNavigationOrder,
+  normalizeCinematicHomeSectionOrder,
   SCREEN_PRESENCE_SECTIONS,
+  isMissingCinematicSettingsMigration,
+  isReadingScale,
 } from '@/lib/profileTemplateSettings';
 import { getSupportedAccents, getTemplate } from '@/lib/profile_themes';
+import { getTemplateRegistryEntry } from '@/lib/profileTemplateRegistry';
 
 const VALID_TEMPLATES = TEMPLATES.map((t) => t.id);
 const VALID_ACCENTS = ACCENTS.map((a) => a.id);
@@ -39,6 +44,9 @@ export async function saveTemplateSettings(
     fontStyle: string;
     sectionOrder: unknown;
     hiddenSections?: unknown;
+    navigationOrder?: unknown;
+    homeSectionOrder?: unknown;
+    readingScale?: unknown;
   },
 ): Promise<TemplateSettingsSaveResult> {
   const supabase = await createClient();
@@ -56,10 +64,13 @@ export async function saveTemplateSettings(
     payload.sectionOrder.every((section) =>
       SCREEN_PRESENCE_SECTIONS.includes(section as (typeof SCREEN_PRESENCE_SECTIONS)[number])
     );
+  const validTypographyForTemplate =
+    isTypographyStyle(payload.fontStyle) &&
+    getTemplateRegistryEntry(template.id).typography.includes(payload.fontStyle);
   if (
     template.id !== payload.templateId ||
     !supportedPalette ||
-    !isTypographyStyle(payload.fontStyle) ||
+    !validTypographyForTemplate ||
     !submittedSectionsAreValid
   ) {
     return { ok: false, message: 'This template customization is not valid.' };
@@ -67,6 +78,9 @@ export async function saveTemplateSettings(
 
   const sectionOrder = normalizeSectionOrder(payload.sectionOrder);
   const hiddenSections = normalizeHiddenSections(payload.hiddenSections);
+  const navigationOrder = normalizeCinematicNavigationOrder(payload.navigationOrder);
+  const homeSectionOrder = normalizeCinematicHomeSectionOrder(payload.homeSectionOrder);
+  const readingScale = isReadingScale(payload.readingScale) ? payload.readingScale : 'medium';
   const { error } = await supabase.from('profile_template_settings').upsert({
     profile_id: user.id,
     template_id: template.id,
@@ -74,10 +88,21 @@ export async function saveTemplateSettings(
     font_style: payload.fontStyle,
     section_order: sectionOrder,
     hidden_sections: hiddenSections,
+    navigation_order: navigationOrder,
+    home_section_order: homeSectionOrder,
+    reading_scale: readingScale,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'profile_id,template_id' });
 
-  if (error) return { ok: false, message: 'Customization could not be saved.' };
+  if (error) {
+    if (isMissingCinematicSettingsMigration(error)) {
+      return {
+        ok: false,
+        message: 'Template customization is awaiting the Cinematic Showcase database migration.',
+      };
+    }
+    return { ok: false, message: 'Customization could not be saved.' };
+  }
   revalidatePath('/dashboard/profile');
   revalidatePath('/profile-preview');
   const { data: profile } = await supabase.from('profiles').select('slug').eq('id', user.id).single();

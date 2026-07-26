@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import MagioraLogo from '@/components/brand/MagioraLogo';
+import ProfilePoweredByFooter from '@/components/ProfilePoweredByFooter';
 import SocialLinksList from '@/components/SocialLinksList';
 import VideoEmbed from '@/components/VideoEmbed';
 import {
@@ -319,12 +319,7 @@ export default function ScreenPresenceProfile({
         )}
       </main>
 
-      <footer className="border-t px-4 py-9 text-center sm:px-6" style={{ borderColor: accent.border }}>
-        <Link href="/" target="_blank" rel="noreferrer" aria-label="Open Magiora Home in a new tab" className="inline-flex flex-col items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">
-          <MagioraLogo compact />
-          <span className="text-sm" style={{ color: accent.secondaryText }}>Hosted on Magiora</span>
-        </Link>
-      </footer>
+      <ProfilePoweredByFooter surface="light" borderColor={accent.border} />
     </article>
   );
 }

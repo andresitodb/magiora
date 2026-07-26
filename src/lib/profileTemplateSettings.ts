@@ -30,6 +30,7 @@ export type ScreenPresenceSectionId = (typeof SCREEN_PRESENCE_SECTIONS)[number];
 export type TypographyStyle =
   | 'editorial' | 'modern' | 'classic' | 'contemporary'
   | 'auteur' | 'premiere' | 'modern-cinema' | 'festival';
+export type ReadingScale = 'small' | 'medium' | 'large';
 
 export const TYPOGRAPHY_SYSTEMS: ReadonlyArray<{
   id: TypographyStyle;
@@ -38,15 +39,17 @@ export const TYPOGRAPHY_SYSTEMS: ReadonlyArray<{
   bodyClass: string;
   metadataClass: string;
   headingClass: string;
+  navClass: string;
+  displayWeightClass: string;
 }> = [
-  { id: 'editorial', name: 'Editorial', displayClass: 'font-serif', bodyClass: 'font-serif', metadataClass: 'tracking-[0.18em]', headingClass: 'tracking-[-0.025em]' },
-  { id: 'modern', name: 'Modern', displayClass: 'font-sans', bodyClass: 'font-sans', metadataClass: 'tracking-[0.12em]', headingClass: 'tracking-[-0.04em]' },
-  { id: 'classic', name: 'Classic', displayClass: 'font-serif', bodyClass: 'font-serif', metadataClass: 'tracking-[0.2em]', headingClass: 'tracking-normal' },
-  { id: 'contemporary', name: 'Contemporary', displayClass: 'font-sans', bodyClass: 'font-serif', metadataClass: 'tracking-[0.16em]', headingClass: 'tracking-[-0.015em]' },
-  { id: 'auteur', name: 'Auteur', displayClass: 'font-serif', bodyClass: 'font-sans', metadataClass: 'tracking-[0.24em]', headingClass: 'tracking-[-0.04em]' },
-  { id: 'premiere', name: 'Premiere', displayClass: 'font-serif', bodyClass: 'font-serif', metadataClass: 'tracking-[0.18em]', headingClass: 'tracking-[-0.02em]' },
-  { id: 'modern-cinema', name: 'Modern Cinema', displayClass: 'font-sans', bodyClass: 'font-sans', metadataClass: 'tracking-[0.14em]', headingClass: 'tracking-[-0.055em]' },
-  { id: 'festival', name: 'Festival', displayClass: 'font-sans', bodyClass: 'font-serif', metadataClass: 'tracking-[0.28em]', headingClass: 'tracking-[-0.01em]' },
+  { id: 'editorial', name: 'Editorial', displayClass: 'font-serif', bodyClass: 'font-serif', metadataClass: 'tracking-[0.18em]', headingClass: 'tracking-[-0.025em]', navClass: 'tracking-[0.18em]', displayWeightClass: 'font-medium' },
+  { id: 'modern', name: 'Modern', displayClass: 'font-sans', bodyClass: 'font-sans', metadataClass: 'tracking-[0.12em]', headingClass: 'tracking-[-0.04em]', navClass: 'tracking-[0.12em]', displayWeightClass: 'font-medium' },
+  { id: 'classic', name: 'Classic', displayClass: 'font-serif', bodyClass: 'font-serif', metadataClass: 'tracking-[0.2em]', headingClass: 'tracking-normal', navClass: 'tracking-[0.2em]', displayWeightClass: 'font-normal' },
+  { id: 'contemporary', name: 'Contemporary', displayClass: 'font-sans', bodyClass: 'font-serif', metadataClass: 'tracking-[0.16em]', headingClass: 'tracking-[-0.015em]', navClass: 'tracking-[0.16em]', displayWeightClass: 'font-medium' },
+  { id: 'auteur', name: 'Auteur', displayClass: 'font-serif italic', bodyClass: 'font-sans', metadataClass: 'tracking-[0.24em]', headingClass: 'tracking-[-0.035em]', navClass: 'font-serif tracking-[0.22em]', displayWeightClass: 'font-normal' },
+  { id: 'premiere', name: 'Premiere', displayClass: 'font-serif', bodyClass: 'font-serif', metadataClass: 'tracking-[0.2em]', headingClass: 'tracking-[-0.015em]', navClass: 'font-serif tracking-[0.2em]', displayWeightClass: 'font-semibold' },
+  { id: 'modern-cinema', name: 'Modern Cinema', displayClass: 'font-sans', bodyClass: 'font-sans', metadataClass: 'tracking-[0.08em]', headingClass: 'tracking-[-0.065em]', navClass: 'font-sans tracking-[0.08em]', displayWeightClass: 'font-light' },
+  { id: 'festival', name: 'Festival', displayClass: 'font-sans uppercase', bodyClass: 'font-serif', metadataClass: 'tracking-[0.32em]', headingClass: 'tracking-[-0.005em]', navClass: 'font-sans uppercase tracking-[0.28em]', displayWeightClass: 'font-bold' },
 ];
 
 export type ProfileTemplateSettings = {
@@ -57,6 +60,7 @@ export type ProfileTemplateSettings = {
   hiddenSections: ScreenPresenceSectionId[];
   navigationOrder: CinematicPageId[];
   homeSectionOrder: CinematicHomeSectionId[];
+  readingScale: ReadingScale;
 };
 
 export type StoredProfileTemplateSettings = {
@@ -67,10 +71,27 @@ export type StoredProfileTemplateSettings = {
   hidden_sections?: unknown;
   navigation_order?: unknown;
   home_section_order?: unknown;
+  reading_scale?: unknown;
 } | null;
+
+export function isMissingCinematicSettingsMigration(error: {
+  code?: string | null;
+  message?: string | null;
+} | null | undefined): boolean {
+  if (!error) return false;
+  const message = error.message?.toLowerCase() ?? '';
+  return (
+    (error.code === '42703' || error.code === 'PGRST204') &&
+    (message.includes('navigation_order') || message.includes('home_section_order') || message.includes('reading_scale'))
+  );
+}
 
 export function isTypographyStyle(value: unknown): value is TypographyStyle {
   return TYPOGRAPHY_SYSTEMS.some((system) => system.id === value);
+}
+
+export function isReadingScale(value: unknown): value is ReadingScale {
+  return value === 'small' || value === 'medium' || value === 'large';
 }
 
 export function normalizeSectionOrder(value: unknown): ScreenPresenceSectionId[] {
@@ -148,10 +169,15 @@ export function resolveProfileTemplateSettings({
       ? local.fontStyle
       : isTypographyStyle(saved?.font_style)
         ? saved.font_style
-        : 'editorial',
+        : templateId === 'cinematic' ? 'auteur' : 'editorial',
     sectionOrder: normalizeSectionOrder(local?.sectionOrder ?? saved?.section_order),
     hiddenSections: normalizeHiddenSections(local?.hiddenSections ?? saved?.hidden_sections),
     navigationOrder: normalizeCinematicNavigationOrder(local?.navigationOrder ?? saved?.navigation_order),
     homeSectionOrder: normalizeCinematicHomeSectionOrder(local?.homeSectionOrder ?? saved?.home_section_order),
+    readingScale: isReadingScale(local?.readingScale)
+      ? local.readingScale
+      : isReadingScale(saved?.reading_scale)
+        ? saved.reading_scale
+        : 'medium',
   };
 }

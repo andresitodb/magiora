@@ -16,6 +16,7 @@ export default function ProfileGalleryLightbox({
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const triggerRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     if (activeIndex === null) return;
@@ -106,6 +107,20 @@ export default function ProfileGalleryLightbox({
           style={{ backgroundColor: `${accent.overlayBackground}F2`, color: accent.overlayText }}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) close();
+          }}
+          onTouchStart={(event) => {
+            touchStartX.current = event.changedTouches[0]?.clientX ?? null;
+          }}
+          onTouchEnd={(event) => {
+            if (touchStartX.current === null || images.length < 2) return;
+            const distance = (event.changedTouches[0]?.clientX ?? touchStartX.current) - touchStartX.current;
+            touchStartX.current = null;
+            if (Math.abs(distance) < 45) return;
+            setActiveIndex((current) => current === null
+              ? 0
+              : distance > 0
+                ? (current - 1 + images.length) % images.length
+                : (current + 1) % images.length);
           }}
         >
           <div className="relative flex h-full w-full max-w-6xl items-center justify-center">

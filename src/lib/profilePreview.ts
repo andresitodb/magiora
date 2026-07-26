@@ -28,6 +28,8 @@ export type PreviewProject = {
   description?: string | null;
   reference_url?: string | null;
   reference_type?: 'imdb' | 'official' | null;
+  project_type?: string | null;
+  featured_at?: string | null;
 };
 
 export function aggregatePreviewProjects(projects: PreviewProject[]): PreviewProject[] {
@@ -70,6 +72,18 @@ export type ProfilePreviewData = {
   equipment?: PreviewEquipment[];
   contactEmail?: string;
   websiteUrl?: string;
+  phone?: string;
+  country?: string;
+  heroImageUrl?: string | null;
+  videoLinks?: { label: string; url: string }[];
+  representation?: {
+    agency?: string;
+    manager?: string;
+    agent?: string;
+    email?: string;
+    phone?: string;
+    website?: string;
+  };
 };
 
 export type ProfilePreviewPatch = Partial<ProfilePreviewData>;

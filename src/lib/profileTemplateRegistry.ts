@@ -1,7 +1,7 @@
 import type { AccentId, TemplateId } from './profile_themes.ts';
 
-export const CINEMATIC_PAGES = ['home', 'portfolio', 'reel', 'credits', 'about', 'gallery', 'contact'] as const;
-export const CINEMATIC_HOME_SECTIONS = ['featured-work', 'introduction', 'gallery-preview', 'selected-credits', 'contact-cta'] as const;
+export const CINEMATIC_PAGES = ['home', 'about', 'portfolio', 'reel', 'credits', 'gallery', 'equipment', 'contact'] as const;
+export const CINEMATIC_HOME_SECTIONS = ['introduction', 'featured_work', 'gallery_preview', 'selected_credits', 'contact_cta'] as const;
 export type CinematicPageId = (typeof CINEMATIC_PAGES)[number];
 export type CinematicHomeSectionId = (typeof CINEMATIC_HOME_SECTIONS)[number];
 export type PageModel = 'one-page' | 'multi-page';

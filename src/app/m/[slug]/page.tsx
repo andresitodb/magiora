@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import PublicProfileTabs from '@/components/PublicProfileTabs';
 import VerifiedBadge from '@/components/VerifiedBadge';
-import CinematicHero from '@/components/CinematicHero';
 import PortraitHero from '@/components/PortraitHero';
 import MinimalistHero from '@/components/MinimalistHero';
 import VideoEmbed from '@/components/VideoEmbed';
@@ -25,8 +24,9 @@ import {
   type ProfileVideoLink,
 } from '@/lib/profileMemberRetention';
 import ScreenPresenceProfile from '@/components/ScreenPresenceProfile';
+import CinematicShowcaseProfile from '@/components/CinematicShowcaseProfile';
 import { aggregatePreviewProjects, type PreviewProject, type ProfilePreviewData } from '@/lib/profilePreview';
-import { resolveProfileTemplateSettings } from '@/lib/profileTemplateSettings';
+import { isMissingCinematicSettingsMigration, resolveProfileTemplateSettings, type StoredProfileTemplateSettings } from '@/lib/profileTemplateSettings';
 import { resolveMemberEntitlement } from '@/lib/memberEntitlement';
 
 const FREE_GALLERY_DISPLAY_LIMIT = 3;
@@ -147,19 +147,78 @@ export default async function PublicProfilePage({
       ? profile.custom_role_label
       : profile.role_category?.replace('_', ' '));
 
-  const { data: screenTemplateSettings } = await supabase
+  const activeTemplateId = getTemplate(isMember ? profile.profile_theme : 'editorial').id;
+  const extendedSettingsResult = await supabase
     .from('profile_template_settings')
-    .select('template_id, palette_id, font_style, section_order, hidden_sections')
+    .select('template_id, palette_id, font_style, section_order, hidden_sections, navigation_order, home_section_order, reading_scale')
     .eq('profile_id', profile.id)
-    .eq('template_id', 'editorial')
+    .eq('template_id', activeTemplateId)
     .maybeSingle();
+  let activeTemplateSettings: StoredProfileTemplateSettings = extendedSettingsResult.data;
+  if (isMissingCinematicSettingsMigration(extendedSettingsResult.error)) {
+    const fallback = await supabase
+      .from('profile_template_settings')
+      .select('template_id, palette_id, font_style, section_order, hidden_sections')
+      .eq('profile_id', profile.id)
+      .eq('template_id', activeTemplateId)
+      .maybeSingle();
+    activeTemplateSettings = fallback.data;
+  }
   const resolvedTemplateSettings = resolveProfileTemplateSettings({
-    saved: isMember ? screenTemplateSettings : null,
+    saved: isMember ? activeTemplateSettings : null,
     legacyTemplate: isMember ? profile.profile_theme : 'editorial',
     legacyAccent: isMember ? profile.profile_accent : 'coral',
   });
   const template = getTemplate(resolvedTemplateSettings.templateId);
   const accent = getAccent(resolvedTemplateSettings.paletteId);
+
+  if (template.id === 'cinematic') {
+    const [{ data: ownedProjects }, { data: linkedCredits }] = await Promise.all([
+      supabase.from('projects')
+        .select('id, slug, title, tagline, poster_url, year, project_type, featured_at')
+        .eq('owner_id', profile.id).eq('visible', true)
+        .order('year', { ascending: false, nullsFirst: false }).limit(12),
+      supabase.from('project_credits')
+        .select('role_title, project:projects(id, slug, title, tagline, poster_url, year, project_type, featured_at, visible)')
+        .eq('profile_id', profile.id),
+    ]);
+    const creditedProjects = (linkedCredits ?? []).flatMap((credit) => {
+      const relation = Array.isArray(credit.project) ? credit.project[0] : credit.project;
+      return relation && relation.visible !== false
+        ? [{ ...relation, creditRole: credit.role_title } as PreviewProject]
+        : [];
+    });
+    const cinematicData: ProfilePreviewData = {
+      headshotUrl: profile.headshot_url,
+      displayName: profile.display_name ?? '',
+      roles: roleTitles,
+      city: profile.location_city ?? '',
+      state: profile.location_state ?? '',
+      bio: profile.bio ?? '',
+      languages: profile.languages?.map(getLanguageName) ?? [],
+      skills: getActiveProfileSkills(profile.skills ?? [], true),
+      demoReelUrl: profile.demo_reel_url ?? '',
+      gallery: profile.gallery ?? [],
+      experience: sortByYearDesc(profile.experience ?? []),
+      projects: aggregatePreviewProjects([
+        ...((ownedProjects ?? []) as PreviewProject[]),
+        ...creditedProjects,
+      ]),
+      recommendations: [],
+      socialLinks: profile.social_links ?? {},
+      equipment: profile.equipment ?? [],
+      contactEmail: profile.contact_email ?? '',
+      websiteUrl: profile.website_url ?? '',
+      phone: profile.phone ?? '',
+      country: profile.location_country ?? '',
+      videoLinks: getActiveProfileVideos(
+        (profile.video_links ?? []) as ProfileVideoLink[],
+        true,
+      ) as { label: string; url: string }[],
+      representation: profile.representation ?? {},
+    };
+    return <CinematicShowcaseProfile data={cinematicData} accent={accent} settings={resolvedTemplateSettings} slug={slug} />;
+  }
 
   const [
     { data: stories },
@@ -210,7 +269,7 @@ export default async function PublicProfilePage({
   const [{ data: ownedScreenProjects }, { data: creditedScreenProjects }] = await Promise.all([
     supabase
       .from('projects')
-      .select('id, slug, title, tagline, poster_url, year')
+      .select('id, slug, title, tagline, poster_url, year, project_type, featured_at')
       .eq('owner_id', profile.id)
       .eq('visible', true)
       .order('year', { ascending: false, nullsFirst: false })
@@ -218,7 +277,7 @@ export default async function PublicProfilePage({
     profileProjectIds.length > 0
       ? supabase
           .from('projects')
-          .select('id, slug, title, tagline, poster_url, year')
+          .select('id, slug, title, tagline, poster_url, year, project_type, featured_at')
           .in('id', profileProjectIds)
           .eq('visible', true)
           .limit(6)
@@ -332,7 +391,7 @@ export default async function PublicProfilePage({
     Object.values(social).some((value) => Boolean(value?.trim())) ||
     Boolean(rep.agency || rep.manager || rep.agent || rep.email || rep.phone || rep.website);
 
-  if (String(template.id) === 'editorial') {
+  if (template.id === 'editorial') {
     const creditedProjectsWithRoles = (creditedScreenProjects ?? []).map((project) => ({
       ...project,
       creditRoles: projectCreditRoles.get(project.id) ?? [],
@@ -359,6 +418,8 @@ export default async function PublicProfilePage({
       equipment,
       contactEmail: profile.contact_email ?? '',
       websiteUrl: profile.website_url ?? '',
+      videoLinks,
+      representation: rep,
     };
     return <ScreenPresenceProfile data={screenData} accent={accent} settings={resolvedTemplateSettings} />;
   }
@@ -415,16 +476,13 @@ export default async function PublicProfilePage({
           </div>
         )}
 
-        {template.id === 'cinematic' && (
-          <CinematicHero profile={profile} primaryTitle={primaryTitle} roleTitles={roleTitles} accent={accent} />
-        )}
         {(template.id === 'portrait' || template.id === 'stage') && (
           <PortraitHero profile={profile} primaryTitle={primaryTitle} roleTitles={roleTitles} accent={accent} />
         )}
         {(template.id === 'minimalist' || template.id === 'studio') && (
           <MinimalistHero profile={profile} primaryTitle={primaryTitle} roleTitles={roleTitles} accent={accent} />
         )}
-        {template.id === 'editorial' && (
+        {String(template.id) === 'editorial' && (
           <div className="mb-6">
             <p
               className="font-serif italic text-sm mb-1 capitalize"
@@ -515,7 +573,7 @@ export default async function PublicProfilePage({
           accent={accent}
           about={
             <div className="space-y-8 md:space-y-10">
-              {template.id === 'editorial' ? (
+              {String(template.id) === 'editorial' ? (
                 <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 md:gap-10 items-start">
                   <div
                     className="aspect-[4/5] rounded-md overflow-hidden mx-auto md:mx-0 max-w-[280px] w-full"

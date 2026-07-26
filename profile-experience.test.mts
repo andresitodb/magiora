@@ -55,8 +55,20 @@ import {
   resolveProfileTemplateSettings,
   SCREEN_PRESENCE_SECTIONS,
   TYPOGRAPHY_SYSTEMS,
+  normalizeCinematicNavigationOrder,
+  normalizeCinematicHomeSectionOrder,
+  isMissingCinematicSettingsMigration,
 } from './src/lib/profileTemplateSettings.ts';
+import {
+  CINEMATIC_HOME_SECTIONS,
+  CINEMATIC_PAGES,
+  PROFILE_TEMPLATE_REGISTRY,
+} from './src/lib/profileTemplateRegistry.ts';
 import { resolveMemberEntitlement } from './src/lib/memberEntitlement.ts';
+import {
+  getCinematicCareerSnapshot,
+  getShortBiography,
+} from './src/lib/cinematicSnapshot.ts';
 
 test('profile fields are grouped into the six editorial chapters', () => {
   assert.deepEqual(PROFILE_CHAPTERS.map((chapter) => chapter.label), [
@@ -364,8 +376,7 @@ test('profile preview omits empty sections, discovery modules, and keeps a minim
   assert.match(themeSource, /\{bio && <section/);
   assert.match(themeSource, /\{hasWork && <section/);
   assert.match(themeSource, /\{data\.recommendations\.length > 0 && <section/);
-  assert.match(themeSource, /Hosted on Magiora/);
-  assert.match(themeSource, /href="\/"/);
+  assert.match(themeSource, /ProfilePoweredByFooter/);
   assert.doesNotMatch(previewRoute, /Related Professionals|recommended|Directory/i);
 });
 
@@ -422,7 +433,7 @@ test('Screen Presence is a shared responsive renderer with reel, distinct credit
   assert.match(renderer, /target="_blank" rel="noreferrer"/);
   assert.match(renderer, /<SocialLinksList/);
   assert.match(renderer, /text-center/);
-  assert.match(renderer, /aria-label="Open Magiora Home in a new tab"/);
+  assert.match(renderer, /<ProfilePoweredByFooter/);
   assert.match(renderer, /aspect-\[4\/5\]/);
   assert.match(renderer, /object-\[50%_22%\]/);
   assert.match(renderer, /aspect-\[4\/3\]/);
@@ -450,6 +461,8 @@ test('Screen Presence refinement uses concise roles, conditional CTAs, explicit 
   assert.match(renderer, /View project →/);
   assert.match(renderer, /target="_blank" rel="noreferrer"/);
   assert.match(renderer, /<ProfileGalleryLightbox/);
+  assert.match(lightbox, /onTouchStart/);
+  assert.match(lightbox, /onTouchEnd/);
   assert.match(lightbox, /role="dialog"/);
   assert.match(lightbox, /aria-modal="true"/);
   assert.match(lightbox, /event\.key === 'Escape'/);
@@ -495,7 +508,7 @@ test('Screen Presence card owns palette and real-preview controls without nested
   assert.match(selector, /getSupportedAccents\(item\.id\)\.map/);
   assert.match(selector, /onClick=\{\(\) => setTemplateAccent\(item\.id, palette\.id\)\}/);
   assert.match(selector, /aria-pressed=\{itemAccentId === palette\.id\}/);
-  assert.match(selector, /Use \$\{palette\.name\} palette for Screen Presence/);
+  assert.match(selector, /Use \$\{palette\.name\} palette for \$\{item\.name\}/);
   assert.match(selector, /profile-preview\?template=\$\{encodeURIComponent\(item\.id\)\}&accent=/);
   assert.match(selector, /storePreviewPayload\(item\.id,/);
   assert.match(selector, /target="_blank"/);
@@ -536,7 +549,7 @@ test('Screen Presence preview switches among four named palettes locally', () =>
     'utf8',
   );
   assert.match(preview, /isScreenPresence = draft\.templateId === 'editorial'/);
-  assert.match(preview, /getSupportedAccents\('editorial'\)\.map/);
+  assert.match(preview, /getSupportedAccents\(draft\.templateId\)\.map/);
   assert.match(preview, /palette\.name/);
   assert.match(preview, /palette\.accent, palette\.accentSoft, palette\.surface/);
   assert.match(preview, /setDraft\(\(current\) => \(\{ \.\.\.current, paletteId: palette\.id \}\)\)/);
@@ -647,6 +660,7 @@ test('section normalization and move controls remain deterministic', () => {
 test('typography systems and persistent editor use validated Member-only settings', () => {
   assert.deepEqual(TYPOGRAPHY_SYSTEMS.map((system) => system.name), [
     'Editorial', 'Modern', 'Classic', 'Contemporary',
+    'Auteur', 'Premiere', 'Modern Cinema', 'Festival',
   ]);
   assert.equal(isTypographyStyle('modern'), true);
   assert.equal(isTypographyStyle('comic'), false);
@@ -677,12 +691,12 @@ test('full-screen customizer keeps live settings local until an explicit Member 
     'utf8',
   );
 
-  assert.match(customizer, /aria-label="Screen Presence customization controls"/);
+  assert.match(customizer, /aria-label=\{`\$\{getTemplate\(draft\.templateId\)\.name\} customization controls`\}/);
   assert.match(customizer, /role="tablist"/);
   assert.match(customizer, /\['colors', 'typography', 'sections'\]/);
   assert.match(customizer, /setDraft\(\(current\) => \(\{ \.\.\.current, paletteId: palette\.id \}\)\)/);
   assert.match(customizer, /setDraft\(\(current\) => \(\{ \.\.\.current, fontStyle: system\.id \}\)\)/);
-  assert.match(customizer, /arrayMove\(current\.sectionOrder, from, to\)/);
+  assert.match(customizer, /arrayMove\(order, from, to\)/);
   assert.match(customizer, /PointerSensor/);
   assert.match(customizer, /KeyboardSensor/);
   assert.match(customizer, /sortableKeyboardCoordinates/);
@@ -699,11 +713,219 @@ test('full-screen customizer keeps live settings local until an explicit Member 
   assert.doesNotMatch(publicProfile, /customization controls|ProfileTemplatePreviewPage/);
 });
 
-test('Screen Presence footer opens Magiora Home in a new tab', () => {
-  const renderer = readFileSync(new URL('./src/components/ScreenPresenceProfile.tsx', import.meta.url), 'utf8');
-  assert.match(renderer, /href="\/" target="_blank" rel="noreferrer"/);
-  assert.match(renderer, /aria-label="Open Magiora Home in a new tab"/);
-  assert.match(renderer, /Hosted on Magiora/);
+test('Cinematic Showcase is registered as a multi-page template without changing Screen Presence', () => {
+  assert.equal(PROFILE_TEMPLATE_REGISTRY.cinematic.pageModel, 'multi-page');
+  assert.equal(PROFILE_TEMPLATE_REGISTRY.editorial.pageModel, 'one-page');
+  assert.deepEqual(PROFILE_TEMPLATE_REGISTRY.cinematic.navigation, CINEMATIC_PAGES);
+  assert.deepEqual(PROFILE_TEMPLATE_REGISTRY.cinematic.homeSections, CINEMATIC_HOME_SECTIONS);
+  assert.deepEqual(getSupportedAccents('cinematic').map(({ name }) => name), [
+    'Noir', 'Silver Screen', 'Deep Burgundy', 'Midnight Blue',
+  ]);
+  assert.deepEqual(
+    TYPOGRAPHY_SYSTEMS.filter(({ id }) => ['auteur', 'premiere', 'modern-cinema', 'festival'].includes(id)).map(({ name }) => name),
+    ['Auteur', 'Premiere', 'Modern Cinema', 'Festival'],
+  );
+});
+
+test('Cinematic settings normalize navigation and home order independently', () => {
+  assert.deepEqual(normalizeCinematicNavigationOrder(['gallery', 'bad', 'home', 'gallery']), [
+    'gallery', 'home', 'about', 'portfolio', 'reel', 'credits', 'equipment', 'contact',
+  ]);
+  assert.deepEqual(normalizeCinematicHomeSectionOrder(['contact_cta', 'featured_work']), [
+    'contact_cta', 'featured_work', 'introduction', 'gallery_preview', 'selected_credits',
+  ]);
+  const resolved = resolveProfileTemplateSettings({
+    local: {
+      templateId: 'cinematic',
+      paletteId: 'noir',
+      fontStyle: 'festival',
+      navigationOrder: ['contact', 'home'],
+      homeSectionOrder: ['introduction', 'featured_work'],
+    },
+  });
+  assert.equal(resolved.paletteId, 'noir');
+  assert.equal(resolved.fontStyle, 'festival');
+  assert.deepEqual(resolved.navigationOrder.slice(0, 2), ['contact', 'home']);
+  assert.deepEqual(resolved.homeSectionOrder.slice(0, 2), ['introduction', 'featured_work']);
+});
+
+test('applied template migration remains original and Cinematic changes are additive', () => {
+  const original = readFileSync(
+    new URL('./supabase/migrations/202607250001_profile_template_settings.sql', import.meta.url),
+    'utf8',
+  );
+  const additive = readFileSync(
+    new URL('./supabase/migrations/202607250002_cinematic_template_settings.sql', import.meta.url),
+    'utf8',
+  );
+
+  assert.doesNotMatch(original, /navigation_order|home_section_order|noir|auteur|modern-cinema/);
+  assert.match(original, /profile_template_settings_palette_check check \(palette_id in \('coral','monochrome','forest','ocean','sunset','midnight'\)\)/);
+  assert.match(original, /profile_template_settings_font_check check \(font_style in \('editorial','modern','classic','contemporary'\)\)/);
+  assert.match(original, /profile_template_settings_section_order_array/);
+  assert.match(original, /profile_template_settings_hidden_sections_array/);
+  assert.match(original, /Public can read published template settings/);
+  assert.match(original, /on conflict \(profile_id, template_id\) do nothing/);
+
+  assert.match(additive, /add column if not exists navigation_order jsonb/);
+  assert.match(additive, /add column if not exists home_section_order jsonb/);
+  assert.match(additive, /\["home","about","portfolio","reel","credits","gallery","equipment","contact"\]/);
+  assert.match(additive, /\["introduction","featured_work","gallery_preview","selected_credits","contact_cta"\]/);
+  assert.match(additive, /add column if not exists reading_scale text/);
+  assert.match(additive, /reading_scale in \('small', 'medium', 'large'\)/);
+  assert.match(additive, /drop constraint if exists profile_template_settings_palette_check/);
+  assert.match(additive, /add constraint profile_template_settings_palette_check/);
+  for (const palette of ['coral', 'monochrome', 'forest', 'ocean', 'sunset', 'midnight', 'noir', 'silver-screen', 'deep-burgundy', 'midnight-blue']) {
+    assert.match(additive, new RegExp(`'${palette}'`));
+  }
+  assert.match(additive, /drop constraint if exists profile_template_settings_font_check/);
+  assert.match(additive, /add constraint profile_template_settings_font_check/);
+  for (const font of ['editorial', 'modern', 'classic', 'contemporary', 'auteur', 'premiere', 'modern-cinema', 'festival']) {
+    assert.match(additive, new RegExp(`'${font}'`));
+  }
+});
+
+test('missing Cinematic settings migration falls back for reads and is explicit for saves', () => {
+  assert.equal(isMissingCinematicSettingsMigration({
+    code: '42703',
+    message: 'column profile_template_settings.navigation_order does not exist',
+  }), true);
+  assert.equal(isMissingCinematicSettingsMigration({
+    code: 'PGRST204',
+    message: "Could not find the 'home_section_order' column in the schema cache",
+  }), true);
+  assert.equal(isMissingCinematicSettingsMigration({
+    code: '23514',
+    message: 'check constraint violation',
+  }), false);
+
+  const publicRoute = readFileSync(new URL('./src/app/m/[slug]/page.tsx', import.meta.url), 'utf8');
+  const nestedRoute = readFileSync(new URL('./src/app/m/[slug]/[page]/page.tsx', import.meta.url), 'utf8');
+  const previewRoute = readFileSync(new URL('./src/app/profile-preview/page.tsx', import.meta.url), 'utf8');
+  const action = readFileSync(new URL('./src/app/dashboard/profile/actions.ts', import.meta.url), 'utf8');
+  for (const source of [publicRoute, nestedRoute, previewRoute]) {
+    assert.match(source, /isMissingCinematicSettingsMigration/);
+    assert.match(source, /template_id, palette_id, font_style, section_order, hidden_sections/);
+  }
+  assert.match(action, /Template customization is awaiting the Cinematic Showcase database migration/);
+  assert.match(action, /Customization could not be saved/);
+});
+
+test('Cinematic public routes, renderer, CTAs, and customizer remain deterministic', () => {
+  const renderer = readFileSync(new URL('./src/components/CinematicShowcaseProfile.tsx', import.meta.url), 'utf8');
+  const nestedRoute = readFileSync(new URL('./src/app/m/[slug]/[page]/page.tsx', import.meta.url), 'utf8');
+  const publicRoute = readFileSync(new URL('./src/app/m/[slug]/page.tsx', import.meta.url), 'utf8');
+  const selector = readFileSync(new URL('./src/components/ThemeSelector.tsx', import.meta.url), 'utf8');
+  const customizer = readFileSync(new URL('./src/components/ProfileTemplatePreviewPage.tsx', import.meta.url), 'utf8');
+  const action = readFileSync(new URL('./src/app/dashboard/profile/actions.ts', import.meta.url), 'utf8');
+
+  assert.match(nestedRoute, /isCinematicPage\(page\)/);
+  assert.match(nestedRoute, /if \(!isMember \|\| getTemplate\(profile\.profile_theme\)\.id !== 'cinematic'\) notFound\(\)/);
+  assert.match(nestedRoute, /getCinematicAvailablePages\(data\)\.includes\(page\)/);
+  assert.match(renderer, /aria-current=\{page === target \? 'page'/);
+  assert.match(renderer, /getCinematicAvailablePages/);
+  assert.match(renderer, /View on IMDb ↗/);
+  assert.match(renderer, /Official website ↗/);
+  assert.match(renderer, /View project →/);
+  assert.match(renderer, /<VideoEmbed/);
+  assert.match(renderer, /<ProfileGalleryLightbox/);
+  assert.match(renderer, /<ProfilePoweredByFooter/);
+  assert.match(renderer, /projectRoles\(project\)/);
+  assert.match(publicRoute, /<CinematicShowcaseProfile/);
+  assert.doesNotMatch(publicRoute, /customization controls/);
+  assert.match(selector, /data-cinematic-showcase-card/);
+  assert.match(selector, /data-cinematic-showcase-controls/);
+  assert.match(customizer, /Cinematic navigation order/);
+  assert.match(customizer, /Cinematic home section order/);
+  assert.match(customizer, /onCinematicNavigate: setCinematicPage/);
+  assert.match(action, /navigation_order: navigationOrder/);
+  assert.match(action, /home_section_order: homeSectionOrder/);
+  assert.match(action, /hasPaidMembership\(user\.id\)/);
+});
+
+test('Cinematic refinement keeps the hero atmospheric and makes content navigation dynamic', () => {
+  const renderer = readFileSync(new URL('./src/components/CinematicShowcaseProfile.tsx', import.meta.url), 'utf8');
+  assert.match(renderer, /data\.heroImageUrl/);
+  assert.match(renderer, /project\.featured_at && project\.poster_url/);
+  assert.match(renderer, /data\.gallery\[0\] \|\| data\.headshotUrl/);
+  assert.match(renderer, /radial-gradient/);
+  assert.doesNotMatch(renderer, />View portfolio</i);
+  assert.doesNotMatch(renderer, />Watch reel</i);
+  assert.match(renderer, /featuredProject \? <ProjectFeature/);
+  assert.match(renderer, /max-h-\[26rem\].*object-contain/);
+  assert.match(renderer, /max-h-\[32rem\].*object-contain/);
+  assert.match(renderer, /about: true/);
+  assert.match(renderer, /equipment: Boolean\(data\.equipment\?\.length\)/);
+  assert.match(renderer, /page === 'equipment'/);
+  assert.match(renderer, /data\.phone && <a href=\{`tel:/);
+  assert.match(renderer, /IMDb/);
+  assert.match(renderer, /Official Website/);
+  assert.match(renderer, /Magiora Project/);
+});
+
+test('Cinematic Reading Scale persists independently and the customizer minimizes off content', () => {
+  const customizer = readFileSync(new URL('./src/components/ProfileTemplatePreviewPage.tsx', import.meta.url), 'utf8');
+  const action = readFileSync(new URL('./src/app/dashboard/profile/actions.ts', import.meta.url), 'utf8');
+  const renderer = readFileSync(new URL('./src/components/CinematicShowcaseProfile.tsx', import.meta.url), 'utf8');
+  assert.equal(resolveProfileTemplateSettings({ legacyTemplate: 'cinematic' }).readingScale, 'medium');
+  assert.equal(resolveProfileTemplateSettings({ local: { templateId: 'cinematic', readingScale: 'large' } }).readingScale, 'large');
+  assert.match(customizer, /\['small', 'medium', 'large'\]/);
+  assert.match(customizer, /readingScale: scale/);
+  assert.match(customizer, /readingScale: draft\.readingScale/);
+  assert.match(customizer, /sm:right-4/);
+  assert.match(customizer, /controlsOpen \? 'w-\[calc\(100%-1\.5rem\)\] max-w-xl' : 'w-auto'/);
+  assert.match(customizer, /controlsOpen \? 'Minimize' : 'Customize'/);
+  assert.match(action, /reading_scale: readingScale/);
+  assert.match(renderer, /data-reading-scale=\{resolved\.readingScale\}/);
+  assert.match(renderer, /small: 'text-sm leading-7'/);
+  assert.match(renderer, /large: 'text-lg leading-9'/);
+});
+
+test('profile templates share an adaptive Magiora footer', () => {
+  const screen = readFileSync(new URL('./src/components/ScreenPresenceProfile.tsx', import.meta.url), 'utf8');
+  const cinematic = readFileSync(new URL('./src/components/CinematicShowcaseProfile.tsx', import.meta.url), 'utf8');
+  const footer = readFileSync(new URL('./src/components/ProfilePoweredByFooter.tsx', import.meta.url), 'utf8');
+  assert.match(screen, /ProfilePoweredByFooter/);
+  assert.match(cinematic, /ProfilePoweredByFooter/);
+  assert.match(footer, /surface: 'light' \| 'dark'/);
+  assert.match(footer, /Powered by Magiora/);
+  assert.match(footer, /target="_blank"/);
+  assert.match(footer, /rel="noreferrer"/);
+  assert.match(footer, /aria-label="Open Magiora Home in a new tab"/);
+  assert.doesNotMatch(footer, /filter:/);
+});
+
+test('Cinematic Home metrics are real, unique, and omit zero values', () => {
+  const data = {
+    displayName: 'Ava Stone',
+    roles: ['Director', 'director', 'Writer'],
+    projects: [
+      { title: 'Salt Line', slug: 'salt-line' },
+      { title: 'Salt Line duplicate', slug: 'salt-line' },
+    ],
+    experience: [
+      { production: 'Salt Line', role: 'Director', year: 2025 },
+      { production: 'Salt Line', role: 'Director', year: 2025 },
+    ],
+    gallery: ['one.jpg', 'one.jpg', 'two.jpg'],
+  } as unknown as ProfilePreviewData;
+  assert.deepEqual(getCinematicCareerSnapshot(data), [
+    { id: 'projects', label: 'Projects', value: 1 },
+    { id: 'credits', label: 'Credits', value: 1 },
+    { id: 'gallery', label: 'Gallery', value: 2 },
+    { id: 'roles', label: 'Roles', value: 2 },
+  ]);
+});
+
+test('Cinematic Home uses an excerpt and full-image artwork', () => {
+  const renderer = readFileSync(new URL('./src/components/CinematicShowcaseProfile.tsx', import.meta.url), 'utf8');
+  assert.equal(getShortBiography('A short biography.'), 'A short biography.');
+  assert.ok(getShortBiography('word '.repeat(100), 80).endsWith('…'));
+  assert.match(renderer, /line-clamp-4/);
+  assert.match(renderer, /data\.gallery\.slice\(0, 3\)/);
+  assert.match(renderer, /h-full w-full object-contain/);
+  assert.match(renderer, /selected_credits: null/);
+  assert.match(renderer, /aria-label="Career snapshot"/);
 });
 
 test('Member entitlement consistently accepts the profile plan and active subscriptions', () => {

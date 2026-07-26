@@ -39,6 +39,10 @@ import {
   type ScreenPresenceSectionId,
   type StoredProfileTemplateSettings,
 } from '@/lib/profileTemplateSettings';
+import {
+  type CinematicHomeSectionId,
+  type CinematicPageId,
+} from '@/lib/profileTemplateRegistry';
 
 const SECTION_NAMES: Record<ScreenPresenceSectionId, string> = {
   about: 'About',
@@ -51,7 +55,7 @@ const SECTION_NAMES: Record<ScreenPresenceSectionId, string> = {
   contact: 'Contact',
 };
 
-type Panel = 'colors' | 'typography' | 'sections';
+type Panel = 'colors' | 'typography' | 'reading' | 'sections' | 'navigation' | 'home';
 
 export default function ProfileTemplatePreviewPage({
   initialTemplate,
@@ -77,6 +81,7 @@ export default function ProfileTemplatePreviewPage({
   const [panel, setPanel] = useState<Panel>('colors');
   const [controlsOpen, setControlsOpen] = useState(true);
   const [message, setMessage] = useState('');
+  const [cinematicPage, setCinematicPage] = useState<CinematicPageId>('home');
   const [isPending, startTransition] = useTransition();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -84,6 +89,8 @@ export default function ProfileTemplatePreviewPage({
   );
   const dirty = JSON.stringify(draft) !== JSON.stringify(savedSettings);
   const isScreenPresence = draft.templateId === 'editorial';
+  const isCinematic = draft.templateId === 'cinematic';
+  const isCustomizable = isScreenPresence || isCinematic;
 
   useEffect(() => {
     const stored = window.localStorage.getItem(PROFILE_TEMPLATE_PREVIEW_STORAGE_KEY);
@@ -121,12 +128,14 @@ export default function ProfileTemplatePreviewPage({
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
-  function reorderSections(event: DragEndEvent) {
+  function reorderSections(event: DragEndEvent, kind: 'screen' | 'navigation' | 'home' = 'screen') {
     if (!event.over || event.active.id === event.over.id) return;
     setDraft((current) => {
-      const from = current.sectionOrder.indexOf(event.active.id as ScreenPresenceSectionId);
-      const to = current.sectionOrder.indexOf(event.over!.id as ScreenPresenceSectionId);
-      return { ...current, sectionOrder: arrayMove(current.sectionOrder, from, to) };
+      const key = kind === 'screen' ? 'sectionOrder' : kind === 'navigation' ? 'navigationOrder' : 'homeSectionOrder';
+      const order = current[key] as string[];
+      const from = order.indexOf(String(event.active.id));
+      const to = order.indexOf(String(event.over!.id));
+      return { ...current, [key]: arrayMove(order, from, to) };
     });
   }
 
@@ -143,6 +152,9 @@ export default function ProfileTemplatePreviewPage({
         fontStyle: draft.fontStyle,
         sectionOrder: draft.sectionOrder,
         hiddenSections: draft.hiddenSections,
+        navigationOrder: draft.navigationOrder,
+        homeSectionOrder: draft.homeSectionOrder,
+        readingScale: draft.readingScale,
       });
       setMessage(result.message);
       if (result.ok) setSavedSettings(draft);
@@ -155,18 +167,21 @@ export default function ProfileTemplatePreviewPage({
   }
 
   return (
-    <div className={isScreenPresence ? 'pb-36 sm:pb-28' : undefined}>
+    <div className={isCustomizable ? 'pb-28 sm:pb-0' : undefined}>
       <CompleteProfileSite
         template={draft.templateId}
         accent={getAccent(draft.paletteId)}
         data={previewData}
         settings={draft}
+        {...(isCinematic ? { cinematicPage, onCinematicNavigate: setCinematicPage } : {})}
       />
 
-      {isScreenPresence && (
+      {isCustomizable && (
         <aside
-          aria-label="Screen Presence customization controls"
-          className="fixed bottom-3 left-1/2 z-[60] w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-md border border-stone-300 bg-stone-50 p-2.5 shadow-[0_14px_40px_-24px_rgba(0,0,0,0.7)] sm:bottom-4"
+          aria-label={`${getTemplate(draft.templateId).name} customization controls`}
+          className={`fixed bottom-3 left-1/2 z-[60] -translate-x-1/2 rounded-md border border-stone-300 bg-stone-50 p-2.5 shadow-[0_14px_40px_-24px_rgba(0,0,0,0.7)] sm:bottom-4 sm:left-auto sm:right-4 sm:translate-x-0 ${
+            controlsOpen ? 'w-[calc(100%-1.5rem)] max-w-xl' : 'w-auto'
+          }`}
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -174,13 +189,14 @@ export default function ProfileTemplatePreviewPage({
                 type="button"
                 onClick={() => setControlsOpen((current) => !current)}
                 aria-expanded={controlsOpen}
+                aria-label={controlsOpen ? 'Minimize template customization controls' : 'Open template customization controls'}
                 className="rounded-sm border border-stone-300 px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                Customize
+                {controlsOpen ? 'Minimize' : 'Customize'}
               </button>
-              {dirty && <span className="text-xs font-medium text-[#76591E]">Unsaved changes</span>}
+              {controlsOpen && dirty && <span className="text-xs font-medium text-[#76591E]">Unsaved changes</span>}
             </div>
-            <div className="flex items-center gap-2">
+            {controlsOpen && <div className="flex items-center gap-2">
               <Link
                 href="/dashboard/profile"
                 onClick={(event) => {
@@ -196,19 +212,19 @@ export default function ProfileTemplatePreviewPage({
               <button type="button" onClick={save} disabled={!dirty || isPending} className="k-button k-button-primary disabled:cursor-not-allowed disabled:opacity-45">
                 {isPending ? 'Saving…' : 'Save'}
               </button>
-            </div>
+            </div>}
           </div>
 
           {controlsOpen && (
             <div className="mt-2 border-t border-stone-200 pt-2">
-              <div role="tablist" aria-label="Template customization" className="grid grid-cols-3 gap-1">
-                {(['colors', 'typography', 'sections'] as Panel[]).map((item) => (
+              <div role="tablist" aria-label="Template customization" className={`grid gap-1 ${isCinematic ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-3'}`}>
+                {(isCinematic ? ['colors', 'typography', 'reading', 'navigation', 'home'] : ['colors', 'typography', 'sections'] as Panel[]).map((item) => (
                   <button
                     key={item}
                     type="button"
                     role="tab"
                     aria-selected={panel === item}
-                    onClick={() => setPanel(item)}
+                    onClick={() => setPanel(item as Panel)}
                     className={`rounded-sm px-2 py-2 text-xs font-medium capitalize focus-visible:outline focus-visible:outline-2 ${
                       panel === item ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'
                     }`}
@@ -221,7 +237,7 @@ export default function ProfileTemplatePreviewPage({
               <div role="tabpanel" className="mt-2 max-h-56 overflow-y-auto pr-1">
                 {panel === 'colors' && (
                   <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-                    {getSupportedAccents('editorial').map((palette) => (
+                    {getSupportedAccents(draft.templateId).map((palette) => (
                       <button
                         key={palette.id}
                         type="button"
@@ -246,7 +262,10 @@ export default function ProfileTemplatePreviewPage({
 
                 {panel === 'typography' && (
                   <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-                    {TYPOGRAPHY_SYSTEMS.map((system) => (
+                    {TYPOGRAPHY_SYSTEMS.filter((system) => isCinematic
+                      ? ['auteur', 'premiere', 'modern-cinema', 'festival'].includes(system.id)
+                      : ['editorial', 'modern', 'classic', 'contemporary'].includes(system.id)
+                    ).map((system) => (
                       <button
                         key={system.id}
                         type="button"
@@ -256,8 +275,25 @@ export default function ProfileTemplatePreviewPage({
                           draft.fontStyle === system.id ? 'border-stone-900 ring-1 ring-stone-900' : 'border-stone-200'
                         }`}
                       >
-                        <span className={`block text-base ${system.displayClass}`}>Ag</span>
+                        <span className={`block text-lg ${system.displayClass} ${system.displayWeightClass}`}>Cinema</span>
                         <span className={`block text-[11px] text-stone-600 ${system.metadataClass}`}>{system.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {panel === 'reading' && isCinematic && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['small', 'medium', 'large'] as const).map((scale) => (
+                      <button
+                        key={scale}
+                        type="button"
+                        onClick={() => setDraft((current) => ({ ...current, readingScale: scale }))}
+                        aria-pressed={draft.readingScale === scale}
+                        className={`rounded-sm border p-2 text-left capitalize focus-visible:outline focus-visible:outline-2 ${
+                          draft.readingScale === scale ? 'border-stone-900 ring-1 ring-stone-900' : 'border-stone-200'
+                        }`}
+                      >
+                        <span className={scale === 'small' ? 'text-xs' : scale === 'large' ? 'text-base' : 'text-sm'}>{scale}</span>
                       </button>
                     ))}
                   </div>
@@ -274,10 +310,28 @@ export default function ProfileTemplatePreviewPage({
                     </SortableContext>
                   </DndContext>
                 )}
+                {panel === 'navigation' && isCinematic && (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => reorderSections(event, 'navigation')}>
+                    <SortableContext items={draft.navigationOrder} strategy={verticalListSortingStrategy}>
+                      <ol className="space-y-1" aria-label="Cinematic navigation order">
+                        {draft.navigationOrder.map((item) => <SortableItem key={item} id={item} label={item === 'home' ? 'Home' : item[0].toUpperCase() + item.slice(1)} />)}
+                      </ol>
+                    </SortableContext>
+                  </DndContext>
+                )}
+                {panel === 'home' && isCinematic && (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => reorderSections(event, 'home')}>
+                    <SortableContext items={draft.homeSectionOrder} strategy={verticalListSortingStrategy}>
+                      <ol className="space-y-1" aria-label="Cinematic home section order">
+                        {draft.homeSectionOrder.map((item) => <SortableItem key={item} id={item} label={item.split('_').map((word) => word[0].toUpperCase() + word.slice(1)).join(' ')} />)}
+                      </ol>
+                    </SortableContext>
+                  </DndContext>
+                )}
               </div>
             </div>
           )}
-          <p aria-live="polite" className="mt-2 min-h-4 text-xs text-stone-600">{message}</p>
+          {controlsOpen && <p aria-live="polite" className="mt-2 min-h-4 text-xs text-stone-600">{message}</p>}
         </aside>
       )}
     </div>
@@ -285,6 +339,10 @@ export default function ProfileTemplatePreviewPage({
 }
 
 function SortableSection({ id, label }: { id: ScreenPresenceSectionId; label: string }) {
+  return <SortableItem id={id} label={label} />;
+}
+
+function SortableItem({ id, label }: { id: ScreenPresenceSectionId | CinematicPageId | CinematicHomeSectionId; label: string }) {
   const {
     attributes,
     listeners,
