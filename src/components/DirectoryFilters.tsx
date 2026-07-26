@@ -37,6 +37,7 @@ export default function DirectoryFilters({
   const [, startTransition] = useTransition();
 
   const [q, setQ] = useState(currentQuery);
+  const [openCombobox, setOpenCombobox] = useState<'role' | 'city' | 'language' | null>(null);
   const lastRequestedQuery = useRef(currentQuery);
 
   function pushFilter(
@@ -83,7 +84,7 @@ export default function DirectoryFilters({
   return (
     <div
       data-directory-filter-panel
-      className="k-card relative z-20 overflow-visible p-3 md:p-4 space-y-3"
+      className="k-card p-3 md:p-4 space-y-3"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
         <div>
@@ -104,7 +105,6 @@ export default function DirectoryFilters({
             Role
           </label>
           <DirectoryCombobox
-            key={currentRole}
             options={roleFilters}
             currentValue={currentRole}
             onChange={(value) => pushFilter({ role: value || null })}
@@ -112,6 +112,8 @@ export default function DirectoryFilters({
             emptyLabel="No matching roles"
             ariaLabel="Filter by role"
             clearLabel="Clear role filter"
+            isOpen={openCombobox === 'role'}
+            onOpenChange={(open) => setOpenCombobox((current) => open ? 'role' : current === 'role' ? null : current)}
           />
         </div>
 
@@ -120,7 +122,6 @@ export default function DirectoryFilters({
             City
           </label>
           <DirectoryCombobox
-            key={currentCity}
             options={cityFilters}
             currentValue={currentCity}
             onChange={(value) => pushFilter({ city: value || null })}
@@ -128,6 +129,8 @@ export default function DirectoryFilters({
             emptyLabel="No matching cities"
             ariaLabel="Filter by city"
             clearLabel="Clear city filter"
+            isOpen={openCombobox === 'city'}
+            onOpenChange={(open) => setOpenCombobox((current) => open ? 'city' : current === 'city' ? null : current)}
           />
         </div>
 
@@ -136,7 +139,6 @@ export default function DirectoryFilters({
             Language
           </label>
           <DirectoryCombobox
-            key={currentLang}
             options={languageFilters}
             currentValue={currentLang}
             onChange={(value) => pushFilter({ lang: value || null })}
@@ -144,6 +146,8 @@ export default function DirectoryFilters({
             emptyLabel="No matching languages"
             ariaLabel="Filter by language"
             clearLabel="Clear language filter"
+            isOpen={openCombobox === 'language'}
+            onOpenChange={(open) => setOpenCombobox((current) => open ? 'language' : current === 'language' ? null : current)}
           />
         </div>
 

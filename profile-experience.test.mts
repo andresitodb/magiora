@@ -1015,23 +1015,25 @@ test('Directory combobox exposes keyboard and listbox semantics and resets pagin
   assert.match(filters, /No matching languages/);
 });
 
-test('Directory Role and Language listboxes escape the filter card clipping context', () => {
+test('Directory listboxes render in flow and expand the filter card', () => {
   const combobox = readFileSync(new URL('./src/components/DirectoryCombobox.tsx', import.meta.url), 'utf8');
   const filters = readFileSync(new URL('./src/components/DirectoryFilters.tsx', import.meta.url), 'utf8');
   assert.match(filters, /data-directory-filter-panel/);
-  assert.match(filters, /relative z-20 overflow-visible/);
+  assert.doesNotMatch(filters, /relative z-20 overflow-visible/);
   assert.equal(filters.match(/<DirectoryCombobox/g)?.length, 3);
   assert.match(combobox, /data-directory-combobox/);
-  assert.match(combobox, /absolute left-0 top-full z-10/);
+  assert.doesNotMatch(combobox, /role="listbox" className="[^"]*(?:absolute|top-full|z-)/);
+  assert.doesNotMatch(combobox, /role="listbox"[\s\S]{0,120}className="k-card/);
   assert.match(combobox, /max-h-64 w-full overflow-x-hidden overflow-y-auto/);
   assert.match(combobox, /role="combobox"/);
   assert.match(combobox, /role="listbox"/);
   assert.match(combobox, /aria-activedescendant/);
   assert.match(combobox, /event\.key === 'Escape'/);
-  assert.match(combobox, /onClick=\{\(\) => select\(option\)\}/);
-  assert.match(combobox, /event\.key === 'Enter'.*select\(matches\[activeIndex\]\)/);
-  assert.match(combobox, /document\.addEventListener\('pointerdown'/);
-  assert.doesNotMatch(combobox, /setTimeout\(\(\) => setOpen/);
+  assert.match(combobox, /onPointerDown=\{\(event\) => \{/);
+  assert.match(combobox, /event\.key === 'Enter'[\s\S]*select\(filteredOptions\[highlightedIndex\]\)/);
+  assert.match(combobox, /onBlur=\{\(event\) => \{/);
+  assert.doesNotMatch(combobox, /document\.addEventListener/);
+  assert.doesNotMatch(combobox, /setTimeout/);
   assert.match(filters, /cityFilters/);
 });
 
@@ -1056,11 +1058,19 @@ test('Directory focus lists all available roles, languages, and cities before na
 
 test('Directory selected values do not narrow their listboxes until the user types', () => {
   const combobox = readFileSync(new URL('./src/components/DirectoryCombobox.tsx', import.meta.url), 'utf8');
-  assert.match(combobox, /const \[searching, setSearching\] = useState\(false\)/);
-  assert.match(combobox, /searching \? filterDirectoryOptions\(options, input\) : options/);
-  assert.match(combobox, /onFocus=\{\(\) => \{ setOpen\(true\); setSearching\(false\); \}\}/);
-  assert.match(combobox, /onChange=\{\(event\) => \{ setInput\(event\.target\.value\); setSearching\(true\)/);
-  assert.match(combobox, /setSearching\(false\)/);
+  const filters = readFileSync(new URL('./src/components/DirectoryFilters.tsx', import.meta.url), 'utf8');
+  assert.match(combobox, /const selectedOption = options\.find/);
+  assert.match(combobox, /const \[typedSearch, setTypedSearch\] = useState\(''\)/);
+  assert.match(combobox, /const \[highlightedIndex, setHighlightedIndex\]/);
+  assert.match(combobox, /filterDirectoryOptions\(options, typedSearch\)/);
+  assert.match(combobox, /value=\{isOpen \? typedSearch : selectedOption\?\.label \?\? ''\}/);
+  assert.match(combobox, /onFocus=\{\(\) => \{\s*setTypedSearch\(''\);\s*onOpenChange\(true\)/);
+  assert.match(combobox, /onChange=\{\(event\) => \{\s*setTypedSearch\(event\.target\.value\)/);
+  assert.match(filters, /const \[openCombobox, setOpenCombobox\]/);
+  assert.match(filters, /isOpen=\{openCombobox === 'role'\}/);
+  assert.match(filters, /isOpen=\{openCombobox === 'city'\}/);
+  assert.match(filters, /isOpen=\{openCombobox === 'language'\}/);
+  assert.doesNotMatch(filters, /key=\{current(?:Role|City|Lang)\}/);
 });
 
 test('Directory controls own their selected state without a redundant Active row', () => {

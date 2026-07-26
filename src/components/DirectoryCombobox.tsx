@@ -1,10 +1,18 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { filterDirectoryOptions, type DirectoryFilterOption } from '@/lib/directoryFilterOptions';
 
 export default function DirectoryCombobox({
-  options, currentValue, onChange, placeholder, emptyLabel, ariaLabel, clearLabel,
+  options,
+  currentValue,
+  onChange,
+  placeholder,
+  emptyLabel,
+  ariaLabel,
+  clearLabel,
+  isOpen,
+  onOpenChange,
 }: {
   options: DirectoryFilterOption[];
   currentValue: string;
@@ -13,75 +21,113 @@ export default function DirectoryCombobox({
   emptyLabel: string;
   ariaLabel: string;
   clearLabel: string;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const selected = options.find((option) => option.value === currentValue);
-  const [input, setInput] = useState(selected?.label ?? '');
-  const [searching, setSearching] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const selectedOption = options.find((option) => option.value === currentValue);
+  const [typedSearch, setTypedSearch] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const matches = useMemo(
-    () => searching ? filterDirectoryOptions(options, input) : options,
-    [input, options, searching],
+  const filteredOptions = useMemo(
+    () => filterDirectoryOptions(options, typedSearch),
+    [options, typedSearch],
   );
 
-  useEffect(() => {
-    const closeOnOutsidePointer = (event: PointerEvent) => {
-      if (!wrapperRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-        setActiveIndex(-1);
-        setSearching(false);
-        setInput(options.find((option) => option.value === currentValue)?.label ?? '');
-      }
-    };
-    document.addEventListener('pointerdown', closeOnOutsidePointer);
-    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer);
-  }, [currentValue, options]);
-
   const select = (option?: DirectoryFilterOption) => {
-    setInput(option?.label ?? '');
-    onChange(option?.value ?? '');
-    setOpen(false);
-    setActiveIndex(-1);
-    setSearching(false);
+    const value = option?.value ?? '';
+    setTypedSearch('');
+    onOpenChange(false);
+    setHighlightedIndex(-1);
+    onChange(value);
   };
 
-  return <div ref={wrapperRef} className="relative min-w-0" data-directory-combobox>
+  return <div
+    ref={wrapperRef}
+    className="relative min-w-0"
+    data-directory-combobox
+    onBlur={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+        onOpenChange(false);
+        setHighlightedIndex(-1);
+        setTypedSearch('');
+      }
+    }}
+  >
     <input
       ref={inputRef}
       role="combobox"
       aria-label={ariaLabel}
-      aria-expanded={open}
+      aria-expanded={isOpen}
       aria-controls={listboxId}
       aria-autocomplete="list"
-      aria-activedescendant={activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined}
-      value={input}
+      aria-activedescendant={highlightedIndex >= 0 ? `${listboxId}-${highlightedIndex}` : undefined}
+      value={isOpen ? typedSearch : selectedOption?.label ?? ''}
       placeholder={placeholder}
       className="k-control pr-9"
-      onFocus={() => { setOpen(true); setSearching(false); }}
-      onChange={(event) => { setInput(event.target.value); setSearching(true); setOpen(true); setActiveIndex(-1); }}
+      onFocus={() => {
+        setTypedSearch('');
+        onOpenChange(true);
+        setHighlightedIndex(-1);
+      }}
+      onChange={(event) => {
+        setTypedSearch(event.target.value);
+        onOpenChange(true);
+        setHighlightedIndex(-1);
+      }}
       onKeyDown={(event) => {
-        if (event.key === 'ArrowDown') { event.preventDefault(); setOpen(true); setActiveIndex((index) => Math.min(index + 1, matches.length - 1)); }
-        if (event.key === 'ArrowUp') { event.preventDefault(); setActiveIndex((index) => Math.max(index - 1, 0)); }
-        if (event.key === 'Enter' && open && activeIndex >= 0) { event.preventDefault(); select(matches[activeIndex]); }
-        if (event.key === 'Escape') { setOpen(false); setActiveIndex(-1); }
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          onOpenChange(true);
+          setHighlightedIndex((index) => Math.min(index + 1, filteredOptions.length - 1));
+        }
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          setHighlightedIndex((index) => Math.max(index - 1, 0));
+        }
+        if (event.key === 'Enter' && isOpen && highlightedIndex >= 0) {
+          event.preventDefault();
+          select(filteredOptions[highlightedIndex]);
+        }
+        if (event.key === 'Escape') {
+          onOpenChange(false);
+          setHighlightedIndex(-1);
+          setTypedSearch('');
+        }
       }}
     />
-    {(currentValue || input) && <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { select(); inputRef.current?.focus(); }} aria-label={clearLabel} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 hover:text-[#712B13] focus-visible:outline focus-visible:outline-2">×</button>}
-    {open && <div id={listboxId} role="listbox" className="k-card absolute left-0 top-full z-10 mt-1 max-h-64 w-full overflow-x-hidden overflow-y-auto shadow-lg">
-      {matches.map((option, index) => <button
+    {(currentValue || typedSearch) && <button
+      type="button"
+      onPointerDown={(event) => event.preventDefault()}
+      onClick={() => {
+        select();
+        inputRef.current?.focus();
+      }}
+      aria-label={clearLabel}
+      className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 hover:text-[#712B13] focus-visible:outline focus-visible:outline-2"
+    >×</button>}
+    {isOpen && <div
+      id={listboxId}
+      role="listbox"
+      className="mt-1 max-h-64 w-full overflow-x-hidden overflow-y-auto rounded-[var(--magiora-radius)] border border-[var(--magiora-border)] bg-[var(--magiora-surface)] shadow-sm"
+    >
+      {filteredOptions.map((option, index) => <button
         id={`${listboxId}-${index}`}
         role="option"
         aria-selected={option.value === currentValue}
         key={option.value}
         type="button"
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => select(option)}
-        className={`flex min-h-11 w-full items-center justify-between border-b border-stone-100 px-3 py-2 text-left text-sm font-serif hover:bg-[#FAECE7] focus-visible:outline focus-visible:outline-2 ${index === activeIndex ? 'bg-[#FAECE7]' : ''}`}
+        onPointerDown={(event) => {
+          event.preventDefault();
+          select(option);
+        }}
+        onClick={(event) => {
+          if (event.detail === 0) select(option);
+        }}
+        className={`flex min-h-11 w-full items-center justify-between border-b border-stone-100 px-3 py-2 text-left text-sm font-serif hover:bg-[#FAECE7] focus-visible:outline focus-visible:outline-2 ${index === highlightedIndex ? 'bg-[#FAECE7]' : ''}`}
       ><span>{option.label}</span><span className="text-xs text-stone-400">{option.count}</span></button>)}
-      {input.trim().length >= 2 && matches.length === 0 && <p role="status" className="px-3 py-3 text-sm italic text-stone-500">{emptyLabel}</p>}
+      {typedSearch.trim().length >= 2 && filteredOptions.length === 0 && <p role="status" className="px-3 py-3 text-sm italic text-stone-500">{emptyLabel}</p>}
     </div>}
   </div>;
 }
